@@ -1,0 +1,37 @@
+# Python and packaging
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+*.spec
+
+# Local runtime state and configuration
+.env
+.env.*
+!.env.example
+*.log
+*.jsonl
+*.sqlite*
+*.db
+*.db-shm
+*.db-wal
+runtime/
+local-settings.json
+work/
+
+# Local character resources and installer artifacts
+assets/local/
+*.zip
+*.exe
+*.msi
+
+# Editor and operating system
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
