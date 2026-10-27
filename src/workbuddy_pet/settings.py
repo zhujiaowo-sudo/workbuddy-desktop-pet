@@ -26,6 +26,7 @@ class Settings:
     collapse_seconds: int = 30
     character: str = 'builtin'
     compact: bool = False
+    card_position: tuple[int,int] | None = None
 
 
 def clamp_position(position: tuple[int, int], size: tuple[int, int], screens: Sequence[Rect]) -> tuple[int, int]:
@@ -57,11 +58,14 @@ def load_settings(root: Path) -> Settings:
         if character != 'builtin' and not (isinstance(character, str) and re.fullmatch('[0-9a-f]{32}', character)):
             character = 'builtin'
         seconds = value.get('collapse_seconds', 30)
+        card_position=value.get('card_position')
+        if not (isinstance(card_position,list) and len(card_position)==2 and all(type(n) is int and abs(n)<100000 for n in card_position)):
+            card_position=None
         return Settings(path, size, value.get("notifications") if type(value.get("notifications")) is bool else True,
                         tuple(position) if position else None, value.get("startup") is True,
                         value.get('card_only') is True, value.get('auto_collapse', True) is True,
                         seconds if type(seconds) is int and 10 <= seconds <= 600 else 30,
-                        character, value.get('compact') is True)
+                        character, value.get('compact') is True,tuple(card_position) if card_position else None)
     except (OSError, ValueError, TypeError):
         return Settings()
 

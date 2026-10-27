@@ -25,6 +25,7 @@ from .ui.materials import MaterialPanel
 from .ui.chat import ChatPanel
 from .materials import MaterialLibrary, MaterialError
 from .local_data import LocalDataReader
+from .placement import card_position,fit_capsule_pet
 from .background import Task
 from .ui.settings import SettingsDialog
 from .ui.tray import PetTray
@@ -79,6 +80,8 @@ class Controller(QObject):
         self.requested_days = None
         self.next_data = 0
         self.active_pack = None
+        self._card_placed = False
+        self._last_card_pos = None
         try:
             ids = json.loads((root / "acknowledged.json").read_text(encoding="utf-8"))
             self.acknowledged = deque([s for s in ids if isinstance(s, str)][-512:], maxlen=512) if isinstance(ids, list) else deque(maxlen=512)
@@ -91,6 +94,7 @@ class Controller(QObject):
         self.pet.player = self.player
         self.pet.open_requested.connect(self.open_card)
         self.pet.settings_requested.connect(self.open_settings)
+        self.pet.page_requested.connect(self.open_page)
         self.pet.moved.connect(self.position_bubble)
         self.pet.moved.connect(self.schedule_position_save)
         self.bubble.open_requested.connect(self.open_workbuddy)
@@ -100,7 +104,7 @@ class Controller(QObject):
         self.bubble.data_requested.connect(self.load_data)
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
-        self.bubble.resized.connect(self.clamp_card)
+        self.bubble.resized.connect(self.position_bubble)
         self.bubble.chat = ChatPanel(self.root,lambda:self.settings.workbuddy_path,self.workbuddy_home)
         self.bubble.chat.open_requested.connect(self.open_current_conversation)
         self.bubble.add_page(self.bubble.chat,'聊天')
@@ -158,20 +162,34 @@ class Controller(QObject):
         position = position or (screen.right() - self.pet.width() - 35, screen.bottom() - self.pet.height() - 30)
         x, y = clamp_position(position, (self.pet.width(), self.pet.height()), self.screens())
         self.pet.move(x, y)
+        if self.settings.card_only and self.settings.card_position:
+            self.bubble.move(*clamp_position(self.settings.card_position,(self.bubble.width(),self.bubble.height()),self.screens()))
+            self._card_placed=True
         self.position_bubble()
 
     def position_bubble(self, *_):
-        desired = (self.pet.x() - self.bubble.width() + 20, self.pet.y() - 15)
-        x, y = clamp_position(desired, (self.bubble.width(), self.bubble.height()), self.screens())
+        size=(self.bubble.width(),self.bubble.height())
+        if self.settings.card_only and self._card_placed:
+            x,y=clamp_position((self.bubble.x(),self.bubble.y()),size,self.screens())
+        else:
+            rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height())
+            if self.bubble.compact:
+                anchor=fit_capsule_pet(rect,size,self.screens())
+                if anchor!=(rect.x,rect.y):
+                    self.pet.move(*anchor)
+                    rect=Rect(*anchor,rect.width,rect.height)
+            x,y=card_position(rect,size,self.screens(),compact=self.bubble.compact)
         self.bubble.move(x, y)
+        self._last_card_pos=(x,y)
+        self._card_placed=True
 
     def card_moved(self,x,y):
-        self.pet.move(x+self.bubble.width()-20,y+15)
+        if not self.settings.card_only and self._last_card_pos:
+            dx,dy=x-self._last_card_pos[0],y-self._last_card_pos[1]
+            self.pet.move(*clamp_position((self.pet.x()+dx,self.pet.y()+dy),(self.pet.width(),self.pet.height()),self.screens()))
+            self.position_bubble()
+        else:self._last_card_pos=(x,y)
         self.schedule_position_save()
-
-    def clamp_card(self):
-        x,y=clamp_position((self.bubble.x(),self.bubble.y()),(self.bubble.width(),self.bubble.height()),self.screens())
-        if (x,y)!=(self.bubble.x(),self.bubble.y()):self.bubble.move(x,y)
 
     def save_compact(self,value):
         self.settings=replace(self.settings,compact=value)
@@ -179,8 +197,18 @@ class Controller(QObject):
 
     def open_card(self):
         self.user_visible=True
+        self.pet.setVisible(not self.settings.card_only)
         self.bubble.show();self.bubble.set_compact(False)
+        self.position_bubble()
         self.bubble.raise_();self.bubble.activateWindow()
+
+    def open_page(self,key):
+        if key=='capsule':
+            self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
+            self.position_bubble()
+        else:
+            self.bubble.open_page(key)
+            self.open_card()
 
     def enable_card_only(self):
         self.apply_settings(replace(self.settings,card_only=True))
@@ -260,6 +288,12 @@ class Controller(QObject):
         self.save_timer.start()
 
     def save_position(self):
+        if self.settings.card_only:
+            position=clamp_position((self.bubble.x(),self.bubble.y()),(self.bubble.width(),self.bubble.height()),self.screens())
+            self.bubble.move(*position)
+            self.settings=replace(self.settings,card_position=position)
+            save_settings(self.root,self.settings)
+            return
         x, y = clamp_position((self.pet.x(), self.pet.y()), (self.pet.width(), self.pet.height()), self.screens())
         self.pet.move(x, y)
         self.settings = replace(self.settings, position=(x, y))
@@ -325,8 +359,7 @@ class Controller(QObject):
                 self.dialog.hint.setText("没有找到有效的 WorkBuddy.exe，请重新选择程序位置。")
 
     def open_settings(self):
-        self.open_card()
-        self.bubble.tabs.setCurrentIndex(self.bubble.tabs.count()-1)
+        self.open_page('settings')
 
     def apply_settings(self, settings):
         try:
@@ -387,11 +420,18 @@ class Controller(QObject):
 
     def capture(self, path: Path):
         from PySide6.QtGui import QColor, QPainter, QPixmap
-        image = QPixmap(self.bubble.width()+self.pet.width()+50,max(self.bubble.height()+40,self.pet.height()+40))
+        bounds=self.bubble.geometry()
+        if not self.settings.card_only:bounds=bounds.united(self.pet.geometry())
+        bounds=bounds.adjusted(-16,-16,16,16)
+        import math
+        ratio=self.bubble.devicePixelRatioF()
+        image = QPixmap(math.ceil(bounds.width()*ratio),math.ceil(bounds.height()*ratio))
+        image.setDevicePixelRatio(ratio)
         image.fill(QColor("#eef5fa"))
         painter = QPainter(image)
-        painter.drawPixmap(15, 20, self.bubble.grab())
-        if not self.settings.card_only:painter.drawPixmap(self.bubble.width()+30, 20, self.pet.grab())
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        painter.drawPixmap(self.bubble.x()-bounds.x(),self.bubble.y()-bounds.y(), self.bubble.grab())
+        if not self.settings.card_only:painter.drawPixmap(self.pet.x()-bounds.x(),self.pet.y()-bounds.y(), self.pet.grab())
         painter.end()
         path.parent.mkdir(parents=True, exist_ok=True)
         image.save(str(path))

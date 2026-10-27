@@ -3,7 +3,7 @@ import math
 
 from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QMenu
 
 from ..state import DisplayState
 
@@ -38,6 +38,7 @@ class PetWindow(QWidget):
     settings_requested = Signal()
     moved = Signal(int, int)
     acknowledged = Signal()
+    page_requested = Signal(str)
 
     def __init__(self, size: int = 160, demo: bool = False):
         super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -51,6 +52,15 @@ class PetWindow(QWidget):
         self.press_position = None
         self.dragging = False
         self.player = None
+        self.context_menu = QMenu(self)
+        self.context_menu.setStyleSheet('QMenu{background:#fbfeff;border:1px solid #d9e7f1;padding:5px;} QMenu::item{padding:7px 18px;color:#2b506d;} QMenu::item:selected{background:#e7f2fb;border-radius:5px;}')
+        for label,key in (('任务详情','details'),('积分与模型','data'),('聊天','chat'),('角色与素材','materials'),('设置与连接','settings')):
+            action=self.context_menu.addAction(label)
+            action.setData(key)
+            action.triggered.connect(lambda checked=False,page=key:self.page_requested.emit(page))
+        self.context_menu.addSeparator()
+        action=self.context_menu.addAction('收成胶囊');action.setData('capsule')
+        action.triggered.connect(lambda:self.page_requested.emit('capsule'))
         self.set_pet_size(size)
         self.timer = QTimer(self)
         self.timer.setInterval(40)
@@ -177,7 +187,8 @@ class PetWindow(QWidget):
             self.press_position = None
 
     def contextMenuEvent(self, event):
-        self.settings_requested.emit()
+        self.context_menu.popup(event.globalPos())
+        event.accept()
 
     def showEvent(self, event):
         super().showEvent(event)
