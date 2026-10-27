@@ -1,0 +1,30 @@
+name: Windows build and tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - run: python -m pip install -r requirements-dev.lock
+      - run: python -m pytest -q
+        env:
+          QT_QPA_PLATFORM: offscreen
+      - run: python tools/build_windows.py --work C:/wb-pet-build
+      - run: python tools/verify_package.py --scratch C:/wb-pet-smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workbuddy-desktop-pet-windows-x64
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt

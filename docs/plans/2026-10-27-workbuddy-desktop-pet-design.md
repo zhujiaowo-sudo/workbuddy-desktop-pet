@@ -4,7 +4,7 @@
 
 范围来源：用户已选择 WorkBuddy 专用桌宠，并指定 GitHub 仓库 `zhujiaowo-sudo/workbuddy-desktop-pet`。本设计将此前讨论的状态动画、等待确认与完成提醒、点击唤起细化为可验证的首版。
 
-状态：待实施计划确认；尚未实现或完成本机 Hook 联调。
+状态：用户已确认直接开发。首版实现与主要 Hook 实机联调已完成；审批、失败及子任务的额外事件验证见 `docs/compatibility.md`。
 
 ## 1. 产品范围
 

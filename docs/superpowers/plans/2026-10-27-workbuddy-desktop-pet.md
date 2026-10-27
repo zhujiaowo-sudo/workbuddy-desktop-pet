@@ -132,8 +132,16 @@ pyproject.toml
 
 ## Plan Review and Execution
 
-This initial repository is a design-stage deliverable. No application implementation has been completed by this plan's creation.
+The user approved direct implementation in the current session on 2026-10-27. No subagents were used. The optional execution skills named in the standard header were unavailable; implementation was performed directly as requested.
 
-Before implementation, review the scope and choose either direct implementation in the current session or task-based subagent implementation. Whichever method is selected must preserve the live-validation gate and should not replace the user's existing WorkBuddy or desktop-pet setup.
+Execution results:
 
-The named execution skills in this plan's standard header must be checked for availability before use. If they are unavailable, identify the missing skill and agree on direct execution rather than silently claiming to have used it.
+- Collector, spool, state reducer, configuration transactions, desktop UI, tray, settings, diagnostics and packaging implemented.
+- 36 local automated tests passed, including malformed input, queue rotation, lock contention, multi-session state, acknowledgement, offscreen UI and configuration preservation.
+- Formal plugin and marketplace manifests passed the validator shipped with WorkBuddy 5.9.2 / Agent CLI 2.165.0.
+- Packaged collector, PowerShell stdin/argument forwarding, GUI startup and capture passed after correcting an ICU packaging collision.
+- The user triggered a real command task; SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop and Notification events were observed. The live pet reached done/connected with one unread completion, and a subsequent prompt changed it to thinking.
+- Waiting/review, failure and child-session transitions have synthetic coverage; corresponding live desktop events remain unverified. See `docs/compatibility.md`.
+- GitHub Actions is configured to run tests, build and verify the executable. Its remote outcome must be reported separately after the workflow actually runs.
+
+The unchecked task steps above are retained as the original plan, not an assertion that every live capability was observed. Current verification evidence is summarized here and in the compatibility record.
