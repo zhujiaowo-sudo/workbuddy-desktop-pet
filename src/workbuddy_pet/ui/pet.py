@@ -2,7 +2,7 @@
 import math
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal,QVariantAnimation
 from PySide6.QtGui import QColor, QFont, QIcon, QImage, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QMenu
 
@@ -44,6 +44,7 @@ class PetWindow(QWidget):
     moved = Signal(int, int)
     acknowledged = Signal()
     page_requested = Signal(str)
+    interact_requested = Signal()
 
     def __init__(self, size: int = 160, demo: bool = False, *, use_builtin_image=True):
         super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -57,6 +58,11 @@ class PetWindow(QWidget):
         self.press_position = None
         self.dragging = False
         self.player = None
+        self.motion=0.0
+        self.motion_animation=QVariantAnimation(self);self.motion_animation.setDuration(650)
+        self.motion_animation.setStartValue(0.0);self.motion_animation.setEndValue(1.0)
+        self.motion_animation.valueChanged.connect(self._set_motion)
+        self.motion_animation.finished.connect(lambda:self._set_motion(0.0))
         self.default_pixmap=QPixmap(str(DEFAULT_PORTRAIT)) if use_builtin_image else QPixmap()
         self.default_bounds=None
         if not self.default_pixmap.isNull():
@@ -65,7 +71,7 @@ class PetWindow(QWidget):
             self.default_bounds=alpha_bounds(Image.frombytes('RGBA',(image.width(),image.height()),bytes(image.bits())))
         self.context_menu = QMenu(self)
         self.context_menu.setStyleSheet('QMenu{background:#fbfeff;border:1px solid #d9e7f1;padding:5px;} QMenu::item{padding:7px 18px;color:#2b506d;} QMenu::item:selected{background:#e7f2fb;border-radius:5px;}')
-        for label,key in (('任务详情','details'),('积分与模型','data'),('聊天','chat'),('角色与素材','materials'),('设置与连接','settings')):
+        for label,key in (('数据小卡','summary'),('任务详情','details'),('积分与模型','data'),('聊天','chat'),('角色与素材','materials'),('设置与连接','settings')):
             action=self.context_menu.addAction(label)
             action.setData(key)
             action.triggered.connect(lambda checked=False,page=key:self.page_requested.emit(page))
@@ -110,9 +116,18 @@ class PetWindow(QWidget):
         right=target.x()+math.ceil(bounds[2]*sx);bottom=target.y()+math.ceil(bounds[3]*sy)
         return QRect(left,top,right-left,bottom-top)
 
+    def _set_motion(self,value):self.motion=float(value);self.update()
+
+    def play_interaction_motion(self):
+        self.motion_animation.stop();self.motion_animation.start()
+
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self.motion:
+            cx,cy=self.width()/2,self.height()
+            p.translate(cx,cy-3*math.sin(math.pi*self.motion))
+            p.rotate(2*math.sin(2*math.pi*self.motion));p.translate(-cx,-cy)
         pixmap=self.player.pixmap if self.player and self.player.pixmap else self.default_pixmap
         if not pixmap.isNull():
             p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
@@ -210,10 +225,11 @@ class PetWindow(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and self.press_position is not None:
             if not self.dragging:
-                self.open_requested.emit()
+                self.interact_requested.emit()
             self.press_position = None
 
     def contextMenuEvent(self, event):
+        self.press_position=None;self.dragging=False
         self.context_menu.popup(event.globalPos())
         event.accept()
 
@@ -226,6 +242,7 @@ class PetWindow(QWidget):
     def hideEvent(self, event):
         super().hideEvent(event)
         self.timer.stop()
+        self.motion_animation.stop();self.motion=0.0
         if self.player:
             self.player.set_visible(False)
 

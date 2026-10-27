@@ -36,7 +36,8 @@ def main():
     assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
     from workbuddy_pet import __version__
-    for page,mode,card_only in (('summary','summary',True),('capsule','capsule',True),('data','expanded',True),('capsule','capsule',False)):
+    for page,mode,card_only in (('summary','summary',True),('capsule','capsule',True),('data','expanded',True),
+                               ('capsule','capsule',False),('interaction','capsule',False)):
         suffix=page+('-card' if card_only else '-pet')
         gui_root=root/('gui-'+suffix)
         result = subprocess.run([str(exe), "--root", str(gui_root), "--demo", "--smoke-seconds", "2",
@@ -48,9 +49,11 @@ def main():
         assert runtime["demo"] is True and runtime["version"] == __version__
         assert runtime['card_only']==card_only and runtime['visible'] is True and runtime['view_mode']==mode
         if not card_only:assert runtime['capsule_gap']==8,'Frozen capsule does not follow the visible portrait'
+        if page=='interaction':assert runtime['interacting'] is True,'Frozen interaction was not activated'
+        assert runtime['checkin_state']=='disabled','Packaged demo must never query or claim check-in'
         assert (root/('preview-'+suffix+'.png')).is_file()
     print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
-                      'three_views':True,'visible_docking':True,"captures": str(root)}, indent=2))
+                      'three_views':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
 
 
 if __name__ == "__main__":

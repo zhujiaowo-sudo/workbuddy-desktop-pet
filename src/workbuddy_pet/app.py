@@ -25,9 +25,11 @@ from .ui.materials import MaterialPanel
 from .ui.chat import ChatPanel
 from .materials import MaterialLibrary, MaterialError
 from .local_data import LocalDataReader
-from .placement import card_position,fit_capsule_pet
+from .placement import card_position,fit_capsule_pet,panel_height_limit
 from .background import Task
 from .balance import read_balance
+from .checkin import CheckinSnapshot,read_checkin,perform_checkin,local_day
+from .interaction import Interaction,response_for_click
 from .ui.settings import SettingsDialog
 from .ui.tray import PetTray
 from .windows import configure_startup, discover_workbuddy, open_workbuddy, open_conversation, validate_workbuddy_path
@@ -84,6 +86,11 @@ class Controller(QObject):
         self.balance_job=None
         self.next_balance=0
         self.last_balance_query=0
+        self.checkin_job=None;self.next_checkin=0;self.checkin_snapshot=CheckinSnapshot();self.checkin_day=local_day()
+        self.active_interaction=None;self.interaction_deadline=0;self.interaction_index=0;self.last_pet_click=-1
+        self.interaction_timer=QTimer(self);self.interaction_timer.setSingleShot(True)
+        self.interaction_timer.timeout.connect(self.finish_interaction)
+        self._positioning=False
         self._card_placed = False
         self._last_card_pos = None
         try:
@@ -98,6 +105,7 @@ class Controller(QObject):
         self.player.bounds_changed.connect(self.position_bubble)
         self.pet.player = self.player
         self.pet.open_requested.connect(self.open_card)
+        self.pet.interact_requested.connect(self.interact)
         self.pet.settings_requested.connect(self.open_settings)
         self.pet.page_requested.connect(self.open_page)
         self.pet.moved.connect(self.position_bubble)
@@ -109,6 +117,7 @@ class Controller(QObject):
         self.bubble.data_requested.connect(self.load_data)
         self.bubble.balance_requested.connect(self.open_balance)
         self.bubble.refresh_requested.connect(self.refresh_data)
+        self.bubble.checkin_requested.connect(self.checkin_clicked)
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
         self.bubble.resized.connect(self.position_bubble)
@@ -175,24 +184,26 @@ class Controller(QObject):
         self.position_bubble()
 
     def position_bubble(self, *_):
-        if self.shutting_down:return
-        size=(self.bubble.width(),self.bubble.height())
-        if self.settings.card_only and self._card_placed:
-            x,y=clamp_position((self.bubble.x(),self.bubble.y()),size,self.screens())
-        else:
-            rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height())
-            visible=self.pet.content_rect()
-            anchor=Rect(rect.x+visible.x(),rect.y+visible.y(),visible.width(),visible.height())
-            if self.bubble.compact:
+        if self.shutting_down or self._positioning:return
+        self._positioning=True
+        try:
+            size=(self.bubble.width(),self.bubble.height())
+            if self.settings.card_only and self._card_placed:
+                x,y=clamp_position((self.bubble.x(),self.bubble.y()),size,self.screens())
+            else:
+                rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height())
+                visible=self.pet.content_rect()
+                anchor=Rect(rect.x+visible.x(),rect.y+visible.y(),visible.width(),visible.height())
+                self.bubble.fit_height(panel_height_limit(rect,anchor,self.screens()))
+                size=(self.bubble.width(),self.bubble.height())
                 fitted=fit_capsule_pet(rect,size,self.screens(),anchor=anchor)
                 if fitted!=(rect.x,rect.y):
                     self.pet.move(*fitted)
                     anchor=Rect(anchor.x+fitted[0]-rect.x,anchor.y+fitted[1]-rect.y,anchor.width,anchor.height)
                     rect=Rect(*fitted,rect.width,rect.height)
-            x,y=card_position(rect,size,self.screens(),compact=self.bubble.compact,anchor=anchor)
-        self.bubble.move(x, y)
-        self._last_card_pos=(x,y)
-        self._card_placed=True
+                x,y=card_position(rect,size,self.screens(),compact=self.bubble.compact,anchor=anchor)
+            self.bubble.move(x,y);self._last_card_pos=(x,y);self._card_placed=True
+        finally:self._positioning=False
 
     def card_moved(self,x,y):
         if not self.settings.card_only and self._last_card_pos:
@@ -207,6 +218,7 @@ class Controller(QObject):
         save_settings(self.root,self.settings)
 
     def open_card(self):
+        self.finish_interaction()
         self.user_visible=True
         self.pet.setVisible(not self.settings.card_only)
         self.bubble.show();self.bubble.open_summary(manual=True)
@@ -214,6 +226,8 @@ class Controller(QObject):
         self.bubble.raise_();self.bubble.activateWindow()
 
     def open_page(self,key):
+        if key=='summary':self.open_card();return
+        self.finish_interaction()
         if key=='capsule':
             self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
             self.position_bubble()
@@ -221,6 +235,25 @@ class Controller(QObject):
             self.user_visible=True;self.pet.setVisible(not self.settings.card_only);self.bubble.show()
             self.bubble.open_page(key)
             self.position_bubble();self.bubble.raise_();self.bubble.activateWindow()
+
+    def interact(self):
+        now=time.monotonic()
+        if self.last_pet_click>=0 and now-self.last_pet_click<.35:return
+        self.last_pet_click=now
+        response=response_for_click(self.interaction_index);self.interaction_index+=1
+        self.respond(response)
+
+    def respond(self,response):
+        if not self.user_visible or self.shutting_down:return
+        self.active_interaction=response;self.interaction_deadline=time.monotonic()+response.seconds
+        self.bubble.show_interaction(response.text,response.seconds);self.pet.play_interaction_motion()
+        self.interaction_timer.start(round(response.seconds*1000));self.refresh()
+
+    def finish_interaction(self):
+        was_active=self.active_interaction is not None
+        self.interaction_timer.stop();self.active_interaction=None;self.interaction_deadline=0
+        self.bubble.clear_interaction()
+        if was_active and not self.shutting_down:self.refresh()
 
     def enable_card_only(self):
         self.apply_settings(replace(self.settings,card_only=True))
@@ -297,6 +330,64 @@ class Controller(QObject):
         if self.settings.balance_enabled:
             self.next_balance=0
             self.load_balance()
+        self.next_checkin=0;self.load_checkin()
+
+    def load_checkin(self):
+        if not self.settings.checkin_enabled:
+            self.next_checkin=float('inf')
+            self.checkin_snapshot=CheckinSnapshot('disabled',message='每日签到未启用，点击在设置中授权')
+            self.bubble.set_checkin(self.checkin_snapshot)
+            return
+        if self.demo or self.shutting_down or self.checkin_job:return
+        self._start_checkin(False)
+
+    def checkin_clicked(self):
+        if not self.settings.checkin_enabled:
+            self.open_settings();self.dialog.hint.setText('勾选“授权查询签到，点击按钮时领取”并保存；仅点击签到按钮会领取积分。')
+            QTimer.singleShot(0,self.focus_checkin_setting)
+            return
+        if self.demo:
+            self.bubble.show_interaction('演示模式不会领取积分',4);return
+        if self.checkin_job or self.shutting_down:return
+        self._start_checkin(True)
+
+    def focus_checkin_setting(self):
+        if not self.shutting_down:
+            self.bubble.tabs.pages.widget(4).ensureWidgetVisible(self.dialog.checkin_enabled,8,16)
+
+    def _start_checkin(self,claim):
+        self.next_checkin=time.monotonic()+300;started_day=local_day()
+        self.bubble.set_checkin_busy(claim)
+        def function():
+            if not self.settings.checkin_enabled or self.checkin_job is None or self.checkin_job.cancel.is_set():
+                return CheckinSnapshot('disabled',message='签到授权未启用')
+            if claim:return perform_checkin(self.workbuddy_home,lambda:not self.settings.checkin_enabled or self.checkin_job is None or self.checkin_job.cancel.is_set())
+            return read_checkin(self.workbuddy_home)
+        self.checkin_job=Task(function,self)
+        def received(snapshot):
+            if self.shutting_down or not self.settings.checkin_enabled:return
+            if not claim and started_day!=local_day():self.next_checkin=0;return
+            self.checkin_snapshot=snapshot;self.bubble.set_checkin(snapshot)
+            if claim:
+                if snapshot.state=='claimed':
+                    text=f'签到成功，领取 {snapshot.awarded:g} 积分！' if snapshot.awarded is not None else '签到成功，正在刷新积分～'
+                    self.respond(Interaction(text,'done',5))
+                elif snapshot.checked:self.respond(Interaction('今天已经签到过啦～','waiting'))
+                else:self.bubble.show_interaction(snapshot.message,5)
+                if snapshot.checked:
+                    if self.settings.balance_enabled:self.next_balance=0;self.load_balance()
+                    self.next_checkin=time.monotonic()+5
+                elif snapshot.state in ('uncertain','error'):self.next_checkin=time.monotonic()+5
+        def failed(_):
+            if self.shutting_down or not self.settings.checkin_enabled:return
+            self.checkin_snapshot=CheckinSnapshot('uncertain' if claim else 'unknown',message='签到结果待确认，请刷新或打开 WorkBuddy')
+            self.bubble.set_checkin(self.checkin_snapshot);self.next_checkin=time.monotonic()+5
+        def finished():
+            job=self.checkin_job;self.checkin_job=None
+            if job:job.deleteLater()
+            if not self.shutting_down and self.settings.checkin_enabled and self.next_checkin<=time.monotonic():self.load_checkin()
+        self.checkin_job.done.connect(received);self.checkin_job.failed.connect(failed)
+        self.checkin_job.finished.connect(finished);self.checkin_job.start()
 
     def load_balance(self):
         if not self.settings.balance_enabled:
@@ -367,7 +458,8 @@ class Controller(QObject):
         self.pet.set_display(display)
         self.bubble.set_display(display)
         if self.active_pack and self.pet.isVisible():
-            try:self.player.load(self.active_pack,display.state)
+            action=self.active_interaction.action if self.active_interaction and time.monotonic()<self.interaction_deadline else display.state
+            try:self.player.load(self.active_pack,action)
             except MaterialError:
                 self.player.clear();self.active_pack=None
                 self.pet.timer.start()
@@ -375,6 +467,11 @@ class Controller(QObject):
         self.bubble.maybe_collapse(self.settings)
         if time.monotonic()>=self.next_data:self.load_data(self.bubble.range.currentData())
         if time.monotonic()>=self.next_balance:self.load_balance()
+        day=local_day()
+        if day!=self.checkin_day:
+            self.checkin_day=day;self.checkin_snapshot=CheckinSnapshot();self.next_checkin=0
+            self.bubble.set_checkin(self.checkin_snapshot)
+        if time.monotonic()>=self.next_checkin:self.load_checkin()
         for reminder in display.reminders:
             if reminder.id not in self.sent:
                 self.sent.add(reminder.id)
@@ -387,6 +484,9 @@ class Controller(QObject):
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
                 "compact":self.bubble.compact,"view_mode":self.bubble.mode,"balance_available":self.bubble.balance is not None,
                 "animation_loaded":bool(self.player.frames),
+                "interacting":self.active_interaction is not None and time.monotonic()<self.interaction_deadline,
+                "checkin_state":self.checkin_snapshot.state,
+                "panel_gap":self.pet.y()+self.pet.content_rect().y()-self.bubble.y()-self.bubble.height() if not self.settings.card_only else None,
                 "capsule_gap":self.pet.y()+self.pet.content_rect().y()-self.bubble.y()-self.bubble.height()
                     if self.bubble.compact and not self.settings.card_only else None,
                 "position": [self.pet.x(), self.pet.y()]})
@@ -428,6 +528,8 @@ class Controller(QObject):
             save_settings(self.root, settings)
             self.settings = settings
             self.next_balance=0
+            self.next_checkin=0
+            if not settings.checkin_enabled and self.checkin_job:self.checkin_job.cancel.set()
             self.pet.set_pet_size(settings.size)
             self.pet.setVisible(self.user_visible and not settings.card_only)
             self.player.set_visible(self.pet.isVisible())
@@ -498,9 +600,11 @@ class Controller(QObject):
             return
         self.shutting_down = True
         self.timer.stop()
+        self.interaction_timer.stop()
         if self.demo and hasattr(self,'demo_timer'):self.demo_timer.stop()
         if self.stats_job:self.stats_job.cancel.set()
         if self.balance_job:self.balance_job.cancel.set()
+        if self.checkin_job:self.checkin_job.cancel.set()
         self.bubble.chat.shutdown()
         self.bubble.materials.shutdown()
         self.player.clear()
@@ -573,7 +677,8 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
         controller.open_settings()
     if capture:
         def capture_view():
-            if capture_page in ('capsule','summary'):controller.bubble.set_mode(capture_page)
+            if capture_page=='interaction':controller.bubble.set_compact(True);controller.interact()
+            elif capture_page in ('capsule','summary'):controller.bubble.set_mode(capture_page)
             else:controller.bubble.open_page(capture_page)
             app.processEvents()
             controller.capture(capture)

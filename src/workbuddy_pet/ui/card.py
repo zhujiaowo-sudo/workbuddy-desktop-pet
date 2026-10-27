@@ -1,7 +1,7 @@
 """Compact opaque card with separate navigation and content surfaces."""
 import math
 import time
-from PySide6.QtCore import Qt,QEvent,Signal,QRectF
+from PySide6.QtCore import Qt,QEvent,Signal,QRectF,QSize
 from PySide6.QtGui import QColor,QPainter,QPen
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTabBar,
     QStackedWidget,QScrollArea,QComboBox,QTableWidget,QTableWidgetItem,QHeaderView,
@@ -9,9 +9,10 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButto
 
 from ..state import DisplayState
 from .pet import LABELS,SUBTITLES,mascot_icon
-from .icons import action_button
+from .icons import action_button,action_icon
 
 PAGE_KEYS=('details','data','chat','materials','settings')
+MODE_SIZES={'capsule':(342,36),'summary':(320,202),'expanded':(360,540)}
 
 
 class PageTabs(QWidget):
@@ -61,6 +62,7 @@ class CardWindow(QWidget):
     resized=Signal()
     balance_requested=Signal()
     refresh_requested=Signal()
+    checkin_requested=Signal()
 
     def __init__(self,demo=False):
         super().__init__(None,Qt.WindowType.Tool|Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -71,16 +73,23 @@ class CardWindow(QWidget):
         self.mode='summary';self.compact=False;self.demo=demo;self.display=DisplayState()
         self.last_interaction=time.monotonic();self.drag_origin=None;self.pressed=None;self.child_drag=None
         self.local_sessions={};self.current_session=None;self.balance=None
+        self.interaction_text='';self.interaction_until=0
         self.root_layout=QVBoxLayout(self);self.root_layout.setContentsMargins(0,0,0,0);self.root_layout.setSpacing(0)
         self.compact_bar=QWidget();compact=QHBoxLayout(self.compact_bar);compact.setContentsMargins(0,0,0,0);compact.setSpacing(6)
-        self.capsule=QPushButton();self.capsule.setFixedHeight(32);self.capsule.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.signin_button=QPushButton();self.signin_button.setFixedSize(36,36);self.signin_button.setIconSize(QSize(20,20))
+        self.signin_button.setFocusPolicy(Qt.FocusPolicy.NoFocus);self.signin_button.setAccessibleName('WorkBuddy 每日签到')
+        self.signin_button.clicked.connect(self.checkin_requested)
+        self.signin_button.setIcon(action_icon('checkin'))
+        self.signin_button.setStyleSheet('background:#fbfeff;border:1px solid #d7eafa;border-radius:18px;padding:7px;')
+        self.signin_button.setToolTip('每日签到：等待状态，点击设置授权')
+        self.capsule=QPushButton();self.capsule.setFixedSize(200,36);self.capsule.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.capsule.setAccessibleName('展开 WorkBuddy 卡片')
-        self.capsule.setStyleSheet('background:#e9f4fc;border-radius:16px;color:#28628b;font-size:11px;font-weight:600;')
+        self.capsule.setStyleSheet('background:#e9f4fc;border-radius:18px;color:#28628b;font-size:12px;font-weight:600;')
         self.capsule.clicked.connect(lambda:self.open_summary(manual=True))
-        self.balance_badge=QPushButton('积分待同步');self.balance_badge.setFixedSize(86,32);self.balance_badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.balance_badge.setStyleSheet('background:#edf5fc;border-radius:16px;color:#477c9f;font-size:10px;padding:3px;')
+        self.balance_badge=QPushButton('积分待同步');self.balance_badge.setFixedSize(94,36);self.balance_badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.balance_badge.setStyleSheet('background:#edf5fc;border-radius:18px;color:#477c9f;font-size:11px;font-weight:700;padding:3px;')
         self.balance_badge.clicked.connect(self.balance_requested)
-        compact.addWidget(self.capsule,1);compact.addWidget(self.balance_badge);self.root_layout.addWidget(self.compact_bar)
+        compact.addWidget(self.signin_button);compact.addWidget(self.capsule);compact.addWidget(self.balance_badge);self.root_layout.addWidget(self.compact_bar)
         self.full=QWidget();full=QVBoxLayout(self.full);full.setContentsMargins(0,0,0,0);full.setSpacing(8)
         self.expanded=QWidget();expanded=QVBoxLayout(self.expanded);expanded.setContentsMargins(12,8,12,10);expanded.setSpacing(6)
         row=QHBoxLayout();self.page_title=QLabel('任务详情');self.page_title.setStyleSheet('font-size:12px;font-weight:600;')
@@ -105,12 +114,13 @@ class CardWindow(QWidget):
         for button in (self.refresh_button,self.details_button,self.data_button,self.chat_button,self.settings_button,self.collapse_button):header.addWidget(button)
         summary.addWidget(self.header)
         self.title=QLabel();self.title.setStyleSheet('font-size:11px;color:#67859b;')
-        self.subtitle=QLabel();self.subtitle.setWordWrap(True);self.subtitle.setStyleSheet('font-size:10px;color:#8197a8;')
+        self.subtitle=QLabel();self.subtitle.setTextFormat(Qt.TextFormat.PlainText);self.subtitle.setFixedHeight(18)
+        self.subtitle.setStyleSheet('font-size:11px;color:#347dad;')
         self.subtitle.hide()
         self.session_link=QPushButton();self.session_link.setFixedHeight(24);self.session_link.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.session_link.setStyleSheet('text-align:left;background:transparent;color:#2b648e;padding:0;font-size:12px;font-weight:600;')
         self.session_link.clicked.connect(lambda:self.conversation_requested.emit(self.current_session) if self.current_session else self.open_requested.emit())
-        summary.addWidget(self.session_link);summary.addWidget(self.title)
+        summary.addWidget(self.session_link);summary.addWidget(self.title);summary.addWidget(self.subtitle)
         metrics=QHBoxLayout();metrics.setSpacing(8)
         self.remaining_value,self.remaining_note=self.add_metric(metrics,'剩余积分','待同步','个人账户')
         self.today_value,self.today_note=self.add_metric(metrics,'今日消耗','待同步','本机记录')
@@ -173,7 +183,7 @@ class CardWindow(QWidget):
 
     def eventFilter(self,watched,event):
         if event.type() in (QEvent.Type.MouseButtonPress,QEvent.Type.KeyPress,QEvent.Type.Wheel):self.last_interaction=time.monotonic()
-        if self.compact and watched in (self.capsule,self.balance_badge):
+        if self.compact and watched in (self.capsule,self.balance_badge,self.signin_button):
             if event.type()==QEvent.Type.MouseButtonPress and event.button()==Qt.MouseButton.LeftButton:
                 self.child_drag=(event.globalPosition().toPoint(),self.pos(),False)
             elif event.type()==QEvent.Type.MouseMove and self.child_drag and event.buttons() & Qt.MouseButton.LeftButton:
@@ -203,12 +213,38 @@ class CardWindow(QWidget):
         self.mode=mode;self.compact=mode=='capsule'
         self.full.setVisible(not self.compact);self.compact_bar.setVisible(self.compact)
         self.expanded.setVisible(mode=='expanded')
-        self.setFixedSize(*{'capsule':(272,32),'summary':(320,202),'expanded':(360,540)}[mode])
+        self.setFixedSize(*MODE_SIZES[mode])
         self.root_layout.activate()
         self.update_session_link();self.last_interaction=time.monotonic()
         if manual:self.compact_changed.emit(self.compact)
         self.resized.emit()
         self.update()
+
+    def fit_height(self,maximum):
+        if self.compact:return
+        minimum=202 if self.mode=='summary' else 320
+        height=min(MODE_SIZES[self.mode][1],max(minimum,maximum))
+        if self.height()!=height:self.setFixedHeight(height);self.root_layout.activate()
+
+    def show_interaction(self,text,seconds=4):
+        self.interaction_text=str(text)[:100];self.interaction_until=time.monotonic()+seconds
+        self.last_interaction=time.monotonic();self.update_session_link()
+
+    def clear_interaction(self):
+        self.interaction_text='';self.interaction_until=0;self.update_session_link()
+
+    def set_checkin(self,snapshot):
+        self.signin_button.setEnabled(True)
+        self.signin_button.setProperty('checkinState',snapshot.state)
+        self.signin_button.setIcon(action_icon('checked' if snapshot.checked else 'checkin'))
+        note=snapshot.message
+        if snapshot.daily_credit is not None:note+=f'\n基础签到积分：{snapshot.daily_credit:g}'
+        if snapshot.awarded is not None:note+=f'\n本次领取：{snapshot.awarded:g} 积分'
+        self.signin_button.setToolTip(note)
+
+    def set_checkin_busy(self,claiming=False):
+        self.signin_button.setEnabled(False);self.signin_button.setIcon(action_icon('refresh'))
+        self.signin_button.setToolTip('正在签到，请稍候…' if claiming else '正在查询签到状态…')
 
     def maybe_collapse(self,settings,now=None):
         now=time.monotonic() if now is None else now;focus=QApplication.focusWidget()
@@ -220,7 +256,7 @@ class CardWindow(QWidget):
         self.display=display;title,subtitle=LABELS[display.state],SUBTITLES[display.state]
         if display.connection=='disconnected':title,subtitle='等待 WorkBuddy 连接','打开设置，完成首次连接'
         elif display.connection=='stale':subtitle='暂时没有新进展，可打开 WorkBuddy 查看'
-        self.title.setText(title);self.subtitle.setText(subtitle);self.ack.setVisible(bool(display.reminders))
+        self.title.setText(title);self.title.setToolTip(subtitle);self.ack.setVisible(bool(display.reminders))
         labels={'connected':'已收到 WorkBuddy 事件','disconnected':'等待 WorkBuddy 连接','stale':'任务状态可能已过期'}
         self.connection.setText(labels.get(display.connection,display.connection)+f' · {display.session_count} 个任务');self.update_session_link()
 
@@ -233,13 +269,18 @@ class CardWindow(QWidget):
         short={'idle':'待命','thinking':'思考中','working':'执行中','waiting':'等回复','review':'待确认','done':'已完成','failed':'需查看'}[self.display.state]
         if self.display.connection=='disconnected':short='待连接'
         text=short+(' · '+name if name else '')
-        self.capsule.setText(self.capsule.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,164));self.capsule.setToolTip(text+'\n点击展开数据模式')
+        interacting=bool(self.interaction_text) and time.monotonic()<self.interaction_until
+        shown=self.interaction_text if interacting else text
+        self.capsule.setText(self.capsule.fontMetrics().elidedText(shown,Qt.TextElideMode.ElideRight,186))
+        self.capsule.setToolTip((shown+'\n当前任务：' if interacting else '')+text+'\n点击展开数据模式')
+        self.subtitle.setVisible(interacting)
+        if interacting:self.subtitle.setText(self.subtitle.fontMetrics().elidedText(self.interaction_text,Qt.TextElideMode.ElideRight,self.width()-28))
 
     def set_balance(self,value,source_note='WorkBuddy 余额需要客户端授权接口；本机消耗记录不能推算剩余积分'):
         valid=type(value) in (int,float) and math.isfinite(value) and value>=0
         self.balance=value if valid else None
         text=f'{value:,.2f}' if valid else '积分待同步'
-        self.balance_badge.setText(self.balance_badge.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,80))
+        self.balance_badge.setText(self.balance_badge.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,88))
         self.balance_badge.setToolTip((f'剩余可用积分：{value:,.2f}\n' if valid else '')+source_note)
         self.balance_label.setText(f'剩余可用积分：{value:,.2f}' if valid else '剩余可用积分：待同步');self.balance_label.setToolTip(source_note)
         self.remaining_value.setText(f'{value:,.2f}' if valid else '待同步')

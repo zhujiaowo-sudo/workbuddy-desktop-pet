@@ -28,6 +28,7 @@ class Settings:
     compact: bool = False
     card_position: tuple[int,int] | None = None
     balance_enabled: bool = False
+    checkin_enabled: bool = False
 
 
 def clamp_position(position: tuple[int, int], size: tuple[int, int], screens: Sequence[Rect]) -> tuple[int, int]:
@@ -66,7 +67,8 @@ def load_settings(root: Path) -> Settings:
                         tuple(position) if position else None, value.get("startup") is True,
                         value.get('card_only') is True, value.get('auto_collapse', True) is True,
                         seconds if type(seconds) is int and 10 <= seconds <= 600 else 30,
-                        character, value.get('compact') is True,tuple(card_position) if card_position else None,value.get('balance_enabled') is True)
+                        character, value.get('compact') is True,tuple(card_position) if card_position else None,
+                        value.get('balance_enabled') is True,value.get('checkin_enabled') is True)
     except (OSError, ValueError, TypeError):
         return Settings()
 

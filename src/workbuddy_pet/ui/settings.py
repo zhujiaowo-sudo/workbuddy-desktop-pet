@@ -64,6 +64,10 @@ class SettingsDialog(QDialog):
         self.balance_enabled.setChecked(settings.balance_enabled)
         self.balance_enabled.setToolTip('使用 WorkBuddy 的本地连接票据查询个人账户余额；票据仅用于本机认证，不上传或保存到桌宠目录。')
         form.addRow('积分余额',self.balance_enabled)
+        self.checkin_enabled=QCheckBox('授权查询签到，点击按钮时领取')
+        self.checkin_enabled.setChecked(settings.checkin_enabled)
+        self.checkin_enabled.setToolTip('通过 WorkBuddy 本地连接查询签到状态；仅点击签到按钮时领取。不自动签到，票据仅用于本机握手。')
+        form.addRow('每日签到',self.checkin_enabled)
         layout.addLayout(form)
         self.hint = QLabel("首次连接将安装本地状态插件。请保存后连接，再在 WorkBuddy 新建一个任务。")
         self.hint.setWordWrap(True)
@@ -97,7 +101,8 @@ class SettingsDialog(QDialog):
         self.saved.emit(replace(self.settings, workbuddy_path=self.path.text().strip(), size=self.size.value(),
                                 notifications=self.notify.isChecked(), startup=self.startup.isChecked(),
                                 card_only=self.card_only.isChecked(), auto_collapse=self.auto_collapse.isChecked(),
-                                collapse_seconds=self.collapse_seconds.value(),balance_enabled=self.balance_enabled.isChecked()))
+                                collapse_seconds=self.collapse_seconds.value(),balance_enabled=self.balance_enabled.isChecked(),
+                                checkin_enabled=self.checkin_enabled.isChecked()))
 
     def set_diagnostic(self, report: dict):
         labels = {"plugin_not_configured": "尚未连接", "waiting_for_event": "已配置，等待 WorkBuddy 新任务",

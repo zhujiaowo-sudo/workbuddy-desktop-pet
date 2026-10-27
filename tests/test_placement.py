@@ -10,16 +10,17 @@ def test_capsule_is_centered_above_pet_for_each_size():
         assert y+32==pet.y-8
 
 
-def test_expanded_card_and_screen_edge_never_cover_pet():
+def test_every_panel_is_above_and_never_covers_pet():
     screen=Rect(0,0,1920,1040)
     pet=Rect(1600,700,124,146)
     x,y=card_position(pet,(360,540),[screen],compact=False)
-    assert x+360==pet.x-8 and y+540==pet.y+pet.height
+    assert abs(x+180-(pet.x+62))<=1 and y+540==pet.y-8
     pet=Rect(0,0,124,146)
-    x,y=card_position(pet,(272,32),[screen],compact=True)
-    assert x>=0 and y>=pet.y+pet.height
-    x,y=card_position(pet,(360,540),[screen],compact=False)
-    assert x>=pet.x+pet.width and y>=0
+    for size in ((342,36),(320,202),(360,540)):
+        fitted=fit_capsule_pet(pet,size,[screen]);window=Rect(*fitted,124,146)
+        x,y=card_position(window,size,[screen],compact=size[1]==36)
+        assert x>=0 and y>=0 and y+size[1]==window.y-8
+        assert abs(x+size[0]/2-(window.x+62))<=1
 
 
 def test_secondary_screen_and_bottom_edge():

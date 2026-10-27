@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--settings", action="store_true")
     parser.add_argument("--smoke-seconds", type=float, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--capture", type=Path, help=argparse.SUPPRESS)
-    parser.add_argument('--capture-page',choices=('summary','details','data','chat','materials','settings','capsule'),default='summary',help=argparse.SUPPRESS)
+    parser.add_argument('--capture-page',choices=('summary','details','data','chat','materials','settings','capsule','interaction'),default='summary',help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.hook:
         try:

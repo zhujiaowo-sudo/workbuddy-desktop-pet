@@ -102,6 +102,7 @@ def test_context_menu_selects_page_before_expansion(tmp_path,qt_app):
         action.trigger();qt_app.processEvents()
         key=action.data()
         if key=='capsule':assert controller.bubble.compact
+        elif key=='summary':assert controller.bubble.mode=='summary'
         else:
             assert not controller.bubble.compact
             assert controller.bubble.tabs.currentIndex()==('details','data','chat','materials','settings').index(key)
@@ -166,12 +167,15 @@ def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
     card.set_display(DisplayState('working','connected','s'))
     card.set_balance(123.45,'synthetic')
     card.set_compact(True);qt_app.processEvents()
-    assert card.mode=='capsule' and card.size().toTuple()==(272,32)
+    assert card.mode=='capsule' and card.size().toTuple()==(342,36)
     assert card.balance_badge.text()=='123.45'
     image=card.grab().toImage()
     ratio=image.devicePixelRatio()
     # Transparent rounded corners and the gap between the only two modules.
     assert image.pixelColor(0,0).alpha()==0
+    assert image.pixelColor(round((card.signin_button.geometry().right()+3)*ratio),round(18*ratio)).alpha()==0
+    assert card.capsule.font().pixelSize()==12 and card.balance_badge.font().pixelSize()==11
+    assert card.balance_badge.font().bold() and card.signin_button.size().toTuple()==(36,36)
     gap=card.capsule.geometry().right()+3
     assert image.pixelColor(round(gap*ratio),round(16*ratio)).alpha()==0
     QTest.mouseClick(card.capsule,Qt.MouseButton.LeftButton);qt_app.processEvents()
@@ -199,6 +203,24 @@ def test_unindexed_current_session_does_not_show_another_session(qt_app):
     card.set_display(DisplayState('working','connected','new'))
     assert card.current_session=='new' and '旧会话' not in card.session_link.text()
     card.close()
+
+
+def test_all_views_are_centered_above_and_dashboard_fits_small_screen(tmp_path,qt_app,monkeypatch):
+    from workbuddy_pet.app import Controller
+    from workbuddy_pet.settings import Rect
+    save_settings(tmp_path,Settings(size=224,notifications=False))
+    controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
+    controller.demo_timer.stop();controller.timer.stop()
+    screen=Rect(0,0,1280,690);monkeypatch.setattr(controller,'screens',lambda:[screen])
+    controller.pet.move(500,100)
+    for mode in ('capsule','summary','expanded','capsule'):
+        controller.bubble.set_mode(mode);qt_app.processEvents();controller.position_bubble()
+        visible=controller.pet.content_rect();card=controller.bubble
+        assert abs(card.x()+card.width()/2-(controller.pet.x()+visible.x()+visible.width()/2))<=1
+        assert card.y()+card.height()==controller.pet.y()+visible.y()-8
+        assert card.y()>=0 and controller.pet.y()+controller.pet.height()<=690
+        if mode=='expanded':assert 320<=card.height()<540
+    controller.shutdown()
 
 
 def test_dragging_capsule_module_moves_without_expanding(qt_app):

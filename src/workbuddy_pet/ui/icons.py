@@ -26,6 +26,12 @@ def action_icon(kind):
     elif kind=='collapse':p.drawLine(5,10,15,10)
     elif kind=='close':
         p.drawLine(6,6,14,14);p.drawLine(14,6,6,14)
+    elif kind=='checkin':
+        p.drawRoundedRect(QRectF(4,5,12,11),2,2);p.drawLine(4,8,16,8)
+        p.drawLine(7,3,7,6);p.drawLine(13,3,13,6)
+        p.drawLine(7,12,9,14);p.drawLine(9,14,13,10)
+    elif kind=='checked':
+        p.drawLine(5,10,9,14);p.drawLine(9,14,16,6)
     p.end();return QIcon(pixmap)
 
 

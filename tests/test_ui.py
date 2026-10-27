@@ -8,7 +8,7 @@ from workbuddy_pet.ui.pet import PetWindow, StatusBubble
 def test_click_and_drag_are_distinct(qt_app):
     pet = PetWindow()
     opened = []
-    pet.open_requested.connect(lambda: opened.append(True))
+    pet.interact_requested.connect(lambda: opened.append(True))
     pet.show()
     QTest.mouseClick(pet, Qt.MouseButton.LeftButton, pos=QPoint(80, 90))
     assert len(opened) == 1
