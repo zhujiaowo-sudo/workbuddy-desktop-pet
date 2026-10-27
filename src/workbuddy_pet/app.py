@@ -381,6 +381,7 @@ class Controller(QObject):
                 "sessions": display.session_count, "unread": len(display.reminders), "demo": self.demo,
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
                 "compact":self.bubble.compact,"view_mode":self.bubble.mode,"balance_available":self.bubble.balance is not None,
+                "animation_loaded":bool(self.player.frames),
                 "position": [self.pet.x(), self.pet.y()]})
         except (OSError, ValueError):
             pass

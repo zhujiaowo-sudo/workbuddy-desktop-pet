@@ -1,0 +1,12 @@
+薄荷星伴 / Mint Orbit Companion
+作者：Buddy娘
+素材版本：1.0.1
+许可：Creative Commons Attribution 4.0 International (CC-BY-4.0)
+许可链接：https://creativecommons.org/licenses/by/4.0/
+
+来源：用户提供的 mint-orbit-hd-v1.0.1.zip 和同目录配套轻量包。
+公开原包：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1
+
+两份ZIP保持原始字节及清单不变。
+程序内 assets/mint-orbit-idle.png 是高清包 idle.webp 第一帧的透明PNG格式导出；未改绘角色。
+使用与再分发请保留作者、许可链接及改动说明。该素材不属于本项目旧CC0机器人素材。

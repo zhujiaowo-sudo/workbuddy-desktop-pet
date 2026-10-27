@@ -1,11 +1,14 @@
 """An original vector mascot and a separate, compact status card."""
 import math
+from pathlib import Path
 
 from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QMenu
 
 from ..state import DisplayState
+
+DEFAULT_PORTRAIT=Path(__file__).resolve().parents[1]/'assets/mint-orbit-idle.png'
 
 COLORS = {"idle": "#65a9d5", "thinking": "#8d85eb", "working": "#3998f2", "review": "#f3aa4f",
           "waiting": "#ee9b69", "done": "#47bba0", "failed": "#e97a89"}
@@ -17,6 +20,8 @@ SUBTITLES = {"idle": "陪你把今天的事情做好", "thinking": "正在整理
 
 
 def mascot_icon() -> QIcon:
+    portrait=QIcon(str(DEFAULT_PORTRAIT))
+    if not portrait.isNull():return portrait
     pixmap = QPixmap(64, 64)
     pixmap.fill(Qt.GlobalColor.transparent)
     p = QPainter(pixmap)
@@ -40,7 +45,7 @@ class PetWindow(QWidget):
     acknowledged = Signal()
     page_requested = Signal(str)
 
-    def __init__(self, size: int = 160, demo: bool = False):
+    def __init__(self, size: int = 160, demo: bool = False, *, use_builtin_image=True):
         super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setWindowTitle("WorkBuddy 桌宠")
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -52,6 +57,7 @@ class PetWindow(QWidget):
         self.press_position = None
         self.dragging = False
         self.player = None
+        self.default_pixmap=QPixmap(str(DEFAULT_PORTRAIT)) if use_builtin_image else QPixmap()
         self.context_menu = QMenu(self)
         self.context_menu.setStyleSheet('QMenu{background:#fbfeff;border:1px solid #d9e7f1;padding:5px;} QMenu::item{padding:7px 18px;color:#2b506d;} QMenu::item:selected{background:#e7f2fb;border-radius:5px;}')
         for label,key in (('任务详情','details'),('积分与模型','data'),('聊天','chat'),('角色与素材','materials'),('设置与连接','settings')):
@@ -76,7 +82,7 @@ class PetWindow(QWidget):
         self.update()
 
     def animate(self):
-        if self.player and self.player.frames:
+        if self.player and self.player.frames or not self.default_pixmap.isNull():
             self.timer.stop()
             return
         if self.isVisible():
@@ -86,9 +92,9 @@ class PetWindow(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        if self.player and self.player.pixmap:
+        pixmap=self.player.pixmap if self.player and self.player.pixmap else self.default_pixmap
+        if not pixmap.isNull():
             p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-            pixmap = self.player.pixmap
             target = pixmap.size().scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio)
             p.drawPixmap((self.width()-target.width())//2, self.height()-target.height(), pixmap.scaled(target, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
             p.end()

@@ -20,7 +20,7 @@ class MaterialPanel(QWidget):
         note.setWordWrap(True);layout.addWidget(note)
         self.choices=QComboBox();layout.addWidget(self.choices)
         self.description=QLabel();self.description.setTextFormat(Qt.TextFormat.PlainText);self.description.setWordWrap(True);layout.addWidget(self.description)
-        self.preview=QLabel('内置小搭子无需下载');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(130);layout.addWidget(self.preview)
+        self.preview=QLabel('薄荷星伴静态形象无需下载');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(130);layout.addWidget(self.preview)
         self.player=AnimationPlayer(self);self.player.changed.connect(self.update_preview)
         self.choices.currentIndexChanged.connect(self.preview_selected)
         row=QHBoxLayout()
@@ -40,7 +40,7 @@ class MaterialPanel(QWidget):
 
     def reload(self,selected=None):
         selected=selected or self.choices.currentData()
-        self.choices.blockSignals(True);self.choices.clear();self.choices.addItem('小搭子 · 内置矢量角色','builtin')
+        self.choices.blockSignals(True);self.choices.clear();self.choices.addItem('薄荷星伴 · 内置静态形象','builtin')
         try:
             for pack in self.library.list_packs():
                 self.choices.addItem(pack.name+' · '+('高清' if pack.quality=='hd' else '轻量'),pack.key)
@@ -55,7 +55,7 @@ class MaterialPanel(QWidget):
         if key in (None,'builtin'):
             from .pet import mascot_icon
             self.preview.setPixmap(mascot_icon().pixmap(110,110))
-            self.description.setText('原创程序绘制角色，随核心程序提供。')
+            self.description.setText('作者：Buddy娘 / CC-BY-4.0\n默认静态形象随程序提供，7状态动画可独立下载。')
             return
         try:
             pack=self.library.load(key)

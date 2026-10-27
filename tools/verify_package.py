@@ -33,6 +33,7 @@ def main():
     result=subprocess.run([str(exe),'--root',str(root/'materials'),'--import-pet',str(project/'examples/starter-pet')],capture_output=True,timeout=20)
     assert result.returncode==0 and list((root/'materials/characters').glob('*/manifest.json')), 'Frozen material decoder/import failed'
     assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Optional material catalog missing'
+    assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
     from workbuddy_pet import __version__
     for page,mode in (('summary','summary'),('capsule','capsule'),('data','expanded')):

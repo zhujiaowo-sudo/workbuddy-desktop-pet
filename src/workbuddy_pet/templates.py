@@ -14,7 +14,7 @@ from .state import DisplayState
 def export_starter(destination: Path):
     from .ui.pet import PetWindow
     from PySide6.QtCore import QBuffer, QIODevice
-    pet=PetWindow(size=256)
+    pet=PetWindow(size=256,use_builtin_image=False)
     try:
         buffer=QBuffer();buffer.open(QIODevice.OpenModeFlag.WriteOnly)
         pet.grab().save(buffer,'PNG')
@@ -34,7 +34,7 @@ def export_default(destination: Path, quality='light'):
     if quality not in ('light', 'hd'):
         raise ValueError('未知画质')
     resolution = 256 if quality == 'light' else 512
-    pet = PetWindow(size=resolution)
+    pet = PetWindow(size=resolution,use_builtin_image=False)
     payload = {}
     try:
         for state in STATES:

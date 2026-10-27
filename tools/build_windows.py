@@ -58,6 +58,7 @@ def main():
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--windowed",
                     "--name", "WorkBuddyDesktopPet", "--icon", str(icon), "--paths", str(project / "src"),
                     '--add-data',str(project/'src/workbuddy_pet/catalog.json')+';workbuddy_pet',
+                    '--add-data',str(project/'src/workbuddy_pet/assets')+';workbuddy_pet/assets',
                     "--distpath", str(project / "dist"), "--workpath", str(work / "pyinstaller"),
                     "--specpath", str(work), str(project / "launch.py")], cwd=project, check=True)
     dist = project / "dist/WorkBuddyDesktopPet"

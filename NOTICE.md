@@ -20,7 +20,13 @@
 
 ## 本项目新增内容
 
-已独立实现 WorkBuddy 适配、Windows 卡片、统计和角色包系统。默认“小搭子”为独立程序绘制的原创形象，其导出角色图像与示例包以 CC0-1.0 提供，许可文本见 https://creativecommons.org/publicdomain/zero/1.0/legalcode 。此声明仅覆盖该原创形象及导出图像，不覆盖整个程序代码、白龙人物或其他用户素材。导入的角色各自遵循作者声明的许可。
+已独立实现 WorkBuddy 适配、Windows 卡片、统计和角色包系统。原“小搭子”机器人为独立程序绘制的原创形象，保留为资源缺失时的回退和创作模板；其导出图像与示例包以 CC0-1.0 提供，许可文本见 https://creativecommons.org/publicdomain/zero/1.0/legalcode 。此声明不覆盖新默认形象、整个程序代码、白龙人物或其他用户素材。
+
+## 默认形象：薄荷星伴
+
+作者：**Buddy娘**。版本：1.0.1。许可：**CC-BY-4.0**，见 https://creativecommons.org/licenses/by/4.0/ 。素材来自用户提供的高清ZIP及配套轻量ZIP，公开原包见[发布页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1)。
+
+两档动画ZIP保持原始字节及清单不变。内置 `assets/mint-orbit-idle.png` 为高清待机动画首帧的透明PNG格式导出，未改绘角色。署名及来源说明随程序保留在 `licenses/mint-orbit/NOTICE.txt`。该形象不适用旧机器人素材的CC0声明。
 
 本项目原创代码的正式开源发行许可尚未指定；当前未对未引入的第三方代码或素材授予任何许可。
 

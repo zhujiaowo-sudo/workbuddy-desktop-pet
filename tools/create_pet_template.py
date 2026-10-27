@@ -15,7 +15,7 @@ from workbuddy_pet.templates import export_default
 def main():
     parser=argparse.ArgumentParser(description='生成原创小搭子轻量/高清示例包')
     parser.add_argument('--output',type=Path,default=project/'dist/materials')
-    parser.add_argument('--catalog',action='store_true',help='更新程序内默认素材下载清单')
+    parser.add_argument('--catalog',action='store_true',help='将默认下载清单切回旧CC0机器人示例；不指定时仅导出示例')
     args=parser.parse_args()
     app=QApplication.instance() or QApplication(sys.argv[:1])
     entries={}
