@@ -11,18 +11,18 @@ python -m venv .venv
 .venv\Scripts\python tools/build_windows.py --work C:/wb-pet-build
 ```
 
-产物为 `dist/workbuddy-desktop-pet-0.2.1-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。
+产物为 `dist/workbuddy-desktop-pet-0.3.0-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。
 
 程序包不捆绑外部人物动画。`仅卡片启动.vbs` 使用同一核心程序，仅隐藏人物；之后可在素材页启用角色。默认动画包独立生成并上传 Release：`python tools/create_pet_template.py --catalog`，发布附件与程序内 catalog.json 的字节数及 SHA-256 必须一致。
 
 ## 首次连接
 
 1. 解压到固定位置。首次构建是未签名预览版，不修改系统安全设置。
-2. 启动桌宠，右键角色或点状态卡上的省略号打开设置。
+2. 启动桌宠，右键角色或点数据小卡顶栏的齿轮打开设置。
 3. 选择本机已经安装的 `WorkBuddy.exe`，保存设置。
 4. 点击“连接 WorkBuddy”，它只添加本项目拥有的本地插件市场和启用条目，原有设置先备份。
 5. 在 WorkBuddy 新建一个任务。如果始终没有收到事件，保存工作后重新打开 WorkBuddy，再发起新任务。
-6. 点击角色展开卡片；点击会话名称进入对应任务，“打开 WorkBuddy”唤起主程序。审批操作仍然在 WorkBuddy 内完成。
+6. 点击角色进入数据模式，查看会话、剩余积分和今日消耗；顶栏统计图标展开详细看板。点击会话名称进入对应任务，“打开 WorkBuddy”唤起主程序。审批操作仍然在 WorkBuddy 内完成。
 
 “演示”模式仅展示合成事件，不表示已连接。用户数据保存在 `%LOCALAPPDATA%/WorkBuddyDesktopPet`；源代码目录不保存 WorkBuddy 对话或登录凭据。
 

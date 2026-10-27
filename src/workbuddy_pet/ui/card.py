@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButto
 
 from ..state import DisplayState
 from .pet import LABELS,SUBTITLES,mascot_icon
+from .icons import action_button
 
 PAGE_KEYS=('details','data','chat','materials','settings')
 
@@ -59,6 +60,7 @@ class CardWindow(QWidget):
     compact_changed=Signal(bool)
     resized=Signal()
     balance_requested=Signal()
+    refresh_requested=Signal()
 
     def __init__(self,demo=False):
         super().__init__(None,Qt.WindowType.Tool|Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -66,40 +68,60 @@ class CardWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet('QLabel{color:#2d4a62;} QPushButton{border:0;border-radius:7px;padding:5px 7px;font-size:11px;color:#3179aa;background:#edf6fc;} '
             'QPushButton:hover{background:#dfeefa;} QLineEdit,QTextEdit,QSpinBox{background:white;}')
-        self.compact=False;self.demo=demo;self.display=DisplayState()
-        self.last_interaction=time.monotonic();self.drag_origin=None;self.pressed=None
+        self.mode='summary';self.compact=False;self.demo=demo;self.display=DisplayState()
+        self.last_interaction=time.monotonic();self.drag_origin=None;self.pressed=None;self.child_drag=None
         self.local_sessions={};self.current_session=None;self.balance=None
-        self.root_layout=QVBoxLayout(self);self.root_layout.setContentsMargins(14,10,14,12);self.root_layout.setSpacing(0)
+        self.root_layout=QVBoxLayout(self);self.root_layout.setContentsMargins(0,0,0,0);self.root_layout.setSpacing(0)
         self.compact_bar=QWidget();compact=QHBoxLayout(self.compact_bar);compact.setContentsMargins(0,0,0,0);compact.setSpacing(6)
         self.capsule=QPushButton();self.capsule.setFixedHeight(32);self.capsule.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.capsule.setAccessibleName('展开 WorkBuddy 卡片')
         self.capsule.setStyleSheet('background:#e9f4fc;border-radius:16px;color:#28628b;font-size:11px;font-weight:600;')
-        self.capsule.clicked.connect(lambda:self.set_compact(False))
+        self.capsule.clicked.connect(lambda:self.open_summary(manual=True))
         self.balance_badge=QPushButton('积分待同步');self.balance_badge.setFixedSize(86,32);self.balance_badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.balance_badge.setStyleSheet('background:#edf7f2;border-radius:14px;color:#49806b;font-size:10px;padding:3px;')
+        self.balance_badge.setStyleSheet('background:#edf5fc;border-radius:16px;color:#477c9f;font-size:10px;padding:3px;')
         self.balance_badge.clicked.connect(self.balance_requested)
         compact.addWidget(self.capsule,1);compact.addWidget(self.balance_badge);self.root_layout.addWidget(self.compact_bar)
-        self.full=QWidget();full=QVBoxLayout(self.full);full.setContentsMargins(0,0,0,0);full.setSpacing(6)
+        self.full=QWidget();full=QVBoxLayout(self.full);full.setContentsMargins(0,0,0,0);full.setSpacing(8)
+        self.expanded=QWidget();expanded=QVBoxLayout(self.expanded);expanded.setContentsMargins(12,8,12,10);expanded.setSpacing(6)
+        row=QHBoxLayout();self.page_title=QLabel('任务详情');self.page_title.setStyleSheet('font-size:12px;font-weight:600;')
+        self.back_button=action_button('close','关闭展开面板，返回数据模式');self.back_button.clicked.connect(self.open_summary)
+        row.addWidget(self.page_title);row.addStretch();row.addWidget(self.back_button);expanded.addLayout(row)
+        self.divider=QFrame();self.divider.setFixedHeight(1);self.divider.setStyleSheet('background:#e1ebf3;border:0;');expanded.addWidget(self.divider)
+        self.tabs=PageTabs();expanded.addWidget(self.tabs,1);full.addWidget(self.expanded,1)
+        self.tabs.currentChanged.connect(self.update_page_title)
+        self.summary=QWidget();self.summary.setFixedHeight(202)
+        summary=QVBoxLayout(self.summary);summary.setContentsMargins(12,8,12,8);summary.setSpacing(4)
         self.header=QWidget();header=QHBoxLayout(self.header);header.setContentsMargins(0,0,0,0);header.setSpacing(6)
-        self.brand=QLabel('WORKBUDDY / 小搭子'+(' · 演示' if demo else ''));self.brand.setStyleSheet('font-size:9px;color:#7896ac;')
-        self.collapse_button=QPushButton('收起');self.collapse_button.setFixedSize(42,24)
-        self.collapse_button.setToolTip('收成胶囊');self.collapse_button.setAccessibleName('收成胶囊')
+        header.setSpacing(2)
+        self.brand=QLabel('WorkBuddy'+(' · 演示' if demo else ''));self.brand.setStyleSheet('font-size:11px;color:#578bb0;font-weight:600;')
+        self.refresh_button=action_button('refresh','刷新积分和本机统计');self.refresh_button.clicked.connect(self.refresh_requested)
+        self.details_button=action_button('details','任务详情');self.details_button.clicked.connect(lambda:self.open_page('details'))
+        self.data_button=action_button('data','展开数据看板');self.data_button.clicked.connect(self.open_data)
+        self.chat_button=action_button('chat','聊天');self.chat_button.clicked.connect(lambda:self.open_page('chat'))
+        self.settings_button=action_button('settings','设置与连接');self.settings_button.clicked.connect(lambda:self.open_page('settings'))
+        self.collapse_button=action_button('collapse','收成胶囊')
         self.collapse_button.clicked.connect(lambda:self.set_compact(True,manual=True))
-        header.addWidget(self.brand);header.addStretch();header.addWidget(self.collapse_button);full.addWidget(self.header)
-        self.title=QLabel();self.title.setStyleSheet('font-size:14px;font-weight:600;')
+        header.addWidget(self.brand);header.addStretch()
+        for button in (self.refresh_button,self.details_button,self.data_button,self.chat_button,self.settings_button,self.collapse_button):header.addWidget(button)
+        summary.addWidget(self.header)
+        self.title=QLabel();self.title.setStyleSheet('font-size:11px;color:#67859b;')
         self.subtitle=QLabel();self.subtitle.setWordWrap(True);self.subtitle.setStyleSheet('font-size:10px;color:#8197a8;')
-        full.addWidget(self.title);full.addWidget(self.subtitle)
+        self.subtitle.hide()
         self.session_link=QPushButton();self.session_link.setFixedHeight(24);self.session_link.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.session_link.setStyleSheet('text-align:left;background:#eef7fd;color:#2f7dad;padding:4px 7px;')
-        self.session_link.clicked.connect(lambda:self.conversation_requested.emit(self.current_session) if self.current_session else None)
-        full.addWidget(self.session_link)
+        self.session_link.setStyleSheet('text-align:left;background:transparent;color:#2b648e;padding:0;font-size:12px;font-weight:600;')
+        self.session_link.clicked.connect(lambda:self.conversation_requested.emit(self.current_session) if self.current_session else self.open_requested.emit())
+        summary.addWidget(self.session_link);summary.addWidget(self.title)
+        metrics=QHBoxLayout();metrics.setSpacing(8)
+        self.remaining_value,self.remaining_note=self.add_metric(metrics,'剩余积分','待同步','个人账户')
+        self.today_value,self.today_note=self.add_metric(metrics,'今日消耗','待同步','本机记录')
+        summary.addLayout(metrics,1)
         row=QHBoxLayout();row.setSpacing(6)
         self.open_button=QPushButton('打开 WorkBuddy ↗');self.open_button.clicked.connect(self.open_requested)
-        self.data_button=QPushButton('积分与模型');self.data_button.clicked.connect(self.open_data)
+        self.materials_button=QPushButton('素材');self.materials_button.clicked.connect(lambda:self.open_page('materials'))
         self.ack=QPushButton('已读');self.ack.clicked.connect(self.acknowledged)
-        row.addWidget(self.open_button);row.addWidget(self.data_button);row.addStretch();row.addWidget(self.ack);full.addLayout(row)
-        self.divider=QFrame();self.divider.setFixedHeight(1);self.divider.setStyleSheet('background:#e1ebf3;border:0;');full.addWidget(self.divider)
-        self.tabs=PageTabs();full.addWidget(self.tabs,1);self.root_layout.addWidget(self.full,1)
+        for button in (self.open_button,self.materials_button,self.ack):button.setFixedHeight(22)
+        row.addWidget(self.open_button);row.addStretch();row.addWidget(self.materials_button);row.addWidget(self.ack);summary.addLayout(row)
+        full.addWidget(self.summary);self.root_layout.addWidget(self.full,1)
         self.details=QWidget();detail=QVBoxLayout(self.details);detail.setContentsMargins(4,6,4,4);detail.setSpacing(8)
         self.connection=QLabel();self.connection.setWordWrap(True);detail.addWidget(self.connection)
         help_text=QLabel('任务开始、执行和完成时，小搭子会同步状态。确认操作仍在 WorkBuddy 中处理。')
@@ -127,6 +149,22 @@ class CardWindow(QWidget):
         self.tabs.addTab(self.stats,'数据')
         self.set_balance(None);self.set_display(DisplayState());self.set_compact(False);self.observe_activity()
 
+    @staticmethod
+    def add_metric(row,heading,value,note):
+        frame=QWidget();frame.setObjectName('metric')
+        frame.setStyleSheet('QWidget#metric{background:#eef6fc;border-radius:10px;}')
+        layout=QVBoxLayout(frame);layout.setContentsMargins(10,6,10,6);layout.setSpacing(0)
+        caption=QLabel(heading);caption.setStyleSheet('font-size:10px;color:#7793a8;')
+        number=QLabel(value);number.setStyleSheet('font-size:21px;font-weight:600;color:#28668f;')
+        number.setMinimumWidth(0)
+        foot=QLabel(note);foot.setStyleSheet('font-size:9px;color:#7e9aae;')
+        layout.addWidget(caption);layout.addWidget(number);layout.addWidget(foot);row.addWidget(frame,1)
+        return number,foot
+
+    def update_page_title(self,index):
+        names=('任务详情','数据看板','聊天','角色与素材','设置与连接')
+        if 0<=index<len(names):self.page_title.setText(names[index])
+
     def add_page(self,widget,name):self.tabs.addTab(widget,name);self.observe_activity()
 
     def observe_activity(self):
@@ -135,23 +173,41 @@ class CardWindow(QWidget):
 
     def eventFilter(self,watched,event):
         if event.type() in (QEvent.Type.MouseButtonPress,QEvent.Type.KeyPress,QEvent.Type.Wheel):self.last_interaction=time.monotonic()
+        if self.compact and watched in (self.capsule,self.balance_badge):
+            if event.type()==QEvent.Type.MouseButtonPress and event.button()==Qt.MouseButton.LeftButton:
+                self.child_drag=(event.globalPosition().toPoint(),self.pos(),False)
+            elif event.type()==QEvent.Type.MouseMove and self.child_drag and event.buttons() & Qt.MouseButton.LeftButton:
+                origin,position,dragged=self.child_drag;delta=event.globalPosition().toPoint()-origin
+                if dragged or delta.manhattanLength()>6:
+                    self.child_drag=(origin,position,True);self.move(position+delta);self.moved.emit(self.x(),self.y());return True
+            elif event.type()==QEvent.Type.MouseButtonRelease and self.child_drag:
+                dragged=self.child_drag[2];self.child_drag=None
+                if dragged:watched.setDown(False);return True
         return super().eventFilter(watched,event)
 
     def open_page(self,key):
         if key not in PAGE_KEYS:return
         index=PAGE_KEYS.index(key)
         if index<self.tabs.count():self.tabs.setCurrentIndex(index)
-        self.set_compact(False)
+        self.set_mode('expanded',manual=True)
         if key=='data':self.data_requested.emit(self.range.currentData())
 
     def open_data(self):self.open_page('data')
 
-    def set_compact(self,value,manual=False):
-        self.compact=bool(value);self.full.setVisible(not value);self.compact_bar.setVisible(value)
-        self.root_layout.setContentsMargins(*((8,10,8,10) if value else (14,10,14,12)))
-        self.setFixedSize(272,52) if value else self.setFixedSize(360,440)
+    def open_summary(self,checked=False,*,manual=False):self.set_mode('summary',manual=manual)
+
+    def set_compact(self,value,manual=False):self.set_mode('capsule' if value else 'summary',manual=manual)
+
+    def set_mode(self,mode,manual=False):
+        if mode not in ('capsule','summary','expanded'):return
+        self.mode=mode;self.compact=mode=='capsule'
+        self.full.setVisible(not self.compact);self.compact_bar.setVisible(self.compact)
+        self.expanded.setVisible(mode=='expanded')
+        self.setFixedSize(*{'capsule':(272,32),'summary':(320,202),'expanded':(360,540)}[mode])
+        self.root_layout.activate()
         self.update_session_link();self.last_interaction=time.monotonic()
-        if manual:self.compact_changed.emit(bool(value))
+        if manual:self.compact_changed.emit(self.compact)
+        self.resized.emit()
         self.update()
 
     def maybe_collapse(self,settings,now=None):
@@ -170,27 +226,33 @@ class CardWindow(QWidget):
 
     def update_session_link(self):
         selected=self.local_sessions.get(self.display.session_id)
-        if selected is None and self.local_sessions:selected=next(iter(self.local_sessions.values()))
-        self.current_session=selected.id if selected else None;name=selected.title if selected else ''
-        self.session_link.setVisible(selected is not None)
-        self.session_link.setText(self.session_link.fontMetrics().elidedText(name+' ↗',Qt.TextElideMode.ElideRight,304));self.session_link.setToolTip(name)
+        if not self.display.session_id and self.local_sessions:selected=next(iter(self.local_sessions.values()))
+        self.current_session=self.display.session_id or (selected.id if selected else None)
+        name=selected.title if selected else '当前会话' if self.current_session else ''
+        self.session_link.setText(self.session_link.fontMetrics().elidedText(name+' ↗' if name else '尚无会话 · 打开 WorkBuddy ↗',Qt.TextElideMode.ElideRight,self.width()-28));self.session_link.setToolTip(name)
         short={'idle':'待命','thinking':'思考中','working':'执行中','waiting':'等回复','review':'待确认','done':'已完成','failed':'需查看'}[self.display.state]
         if self.display.connection=='disconnected':short='待连接'
         text=short+(' · '+name if name else '')
-        self.capsule.setText(self.capsule.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,148));self.capsule.setToolTip(text+'\n点击展开卡片')
+        self.capsule.setText(self.capsule.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,164));self.capsule.setToolTip(text+'\n点击展开数据模式')
 
     def set_balance(self,value,source_note='WorkBuddy 余额需要客户端授权接口；本机消耗记录不能推算剩余积分'):
         valid=type(value) in (int,float) and math.isfinite(value) and value>=0
         self.balance=value if valid else None
-        text=f'余 {value:,.2f}' if valid else '积分待同步'
+        text=f'{value:,.2f}' if valid else '积分待同步'
         self.balance_badge.setText(self.balance_badge.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,80))
         self.balance_badge.setToolTip((f'剩余可用积分：{value:,.2f}\n' if valid else '')+source_note)
         self.balance_label.setText(f'剩余可用积分：{value:,.2f}' if valid else '剩余可用积分：待同步');self.balance_label.setToolTip(source_note)
+        self.remaining_value.setText(f'{value:,.2f}' if valid else '待同步')
+        self.remaining_value.setToolTip(self.balance_badge.toolTip())
+        self.remaining_note.setToolTip(source_note)
 
     def set_snapshot(self,snapshot,active_ids=()):
         self.local_sessions={s.id:s for s in snapshot.sessions};self.update_session_link()
         self.total.setText(f'{snapshot.total_credit:,.3f} 积分 · {snapshot.request_count} 次请求' if snapshot.available else '统计暂不可用')
         self.scope.setText(snapshot.message)
+        self.today_value.setText(f'{snapshot.today_credit:,.3f}' if snapshot.available else '待同步')
+        self.today_note.setText(f'本机 · {snapshot.today_requests} 次请求' if snapshot.available else '本机记录暂不可读')
+        self.today_value.setToolTip(f'{snapshot.today_date} 本地零点至今\n仅本机记录，非完整账单；{snapshot.unknown_time} 次缺时间未计入今日')
         self.missing.setText(f'{snapshot.unknown_model} 次缺模型，{snapshot.unknown_time} 次缺时间。缺时间不进入日期筛选；上下文不累计为消耗。')
         self.table.setRowCount(len(snapshot.models))
         for row,model in enumerate(snapshot.models):
@@ -212,7 +274,12 @@ class CardWindow(QWidget):
         painter=QPainter(self);painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
         painter.fillRect(self.rect(),Qt.GlobalColor.transparent);painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(QPen(QColor('#d8e8f3'),1));painter.setBrush(QColor('#fbfeff'))
-        painter.drawRoundedRect(QRectF(.5,.5,self.width()-1,self.height()-1),18,18);painter.end()
+        if not self.compact:
+            for surface in (self.expanded,self.summary):
+                if surface.isHidden():continue
+                rect=QRectF(surface.geometry()).adjusted(.5,.5,-.5,-.5)
+                painter.drawRoundedRect(rect,16,16)
+        painter.end()
 
     def mousePressEvent(self,event):
         if event.button()==Qt.MouseButton.LeftButton:self.pressed=event.globalPosition().toPoint();self.drag_origin=self.pos()

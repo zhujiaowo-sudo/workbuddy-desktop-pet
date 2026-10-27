@@ -107,6 +107,7 @@ class Controller(QObject):
         self.bubble.conversation_requested.connect(self.jump_conversation)
         self.bubble.data_requested.connect(self.load_data)
         self.bubble.balance_requested.connect(self.open_balance)
+        self.bubble.refresh_requested.connect(self.refresh_data)
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
         self.bubble.resized.connect(self.position_bubble)
@@ -203,7 +204,7 @@ class Controller(QObject):
     def open_card(self):
         self.user_visible=True
         self.pet.setVisible(not self.settings.card_only)
-        self.bubble.show();self.bubble.set_compact(False)
+        self.bubble.show();self.bubble.open_summary(manual=True)
         self.position_bubble()
         self.bubble.raise_();self.bubble.activateWindow()
 
@@ -212,8 +213,9 @@ class Controller(QObject):
             self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
             self.position_bubble()
         else:
+            self.user_visible=True;self.pet.setVisible(not self.settings.card_only);self.bubble.show()
             self.bubble.open_page(key)
-            self.open_card()
+            self.position_bubble();self.bubble.raise_();self.bubble.activateWindow()
 
     def enable_card_only(self):
         self.apply_settings(replace(self.settings,card_only=True))
@@ -281,9 +283,15 @@ class Controller(QObject):
             self.open_settings()
             self.dialog.hint.setText('勾选“授权本地查询剩余积分”并保存后，桌宠会通过 WorkBuddy 本地通道只读查询余额。')
             return
-        self.open_page('data')
+        self.open_card()
         self.next_balance=0
         self.load_balance()
+
+    def refresh_data(self):
+        self.load_data(self.bubble.range.currentData())
+        if self.settings.balance_enabled:
+            self.next_balance=0
+            self.load_balance()
 
     def load_balance(self):
         if not self.settings.balance_enabled:
@@ -372,7 +380,7 @@ class Controller(QObject):
                 "at": time.time(), "state": display.state, "connection": display.connection,
                 "sessions": display.session_count, "unread": len(display.reminders), "demo": self.demo,
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
-                "compact":self.bubble.compact,"balance_available":self.bubble.balance is not None,
+                "compact":self.bubble.compact,"view_mode":self.bubble.mode,"balance_available":self.bubble.balance is not None,
                 "position": [self.pet.x(), self.pet.y()]})
         except (OSError, ValueError):
             pass
@@ -499,7 +507,7 @@ class Controller(QObject):
 
 def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False,
             smoke_seconds=0, capture: Path | None = None, workbuddy_home: Path | None = None, card_only=False,
-            capture_page='details') -> int:
+            capture_page='summary') -> int:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("WorkBuddyDesktopPet")
     app.setOrganizationName("WorkBuddyDesktopPet")
@@ -557,8 +565,8 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
         controller.open_settings()
     if capture:
         def capture_view():
-            controller.bubble.set_compact(capture_page=='capsule')
-            if capture_page!='capsule':controller.bubble.tabs.setCurrentIndex(('details','data','chat','materials','settings').index(capture_page))
+            if capture_page in ('capsule','summary'):controller.bubble.set_mode(capture_page)
+            else:controller.bubble.open_page(capture_page)
             app.processEvents()
             controller.capture(capture)
         QTimer.singleShot(700,capture_view)

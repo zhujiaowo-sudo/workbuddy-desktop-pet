@@ -15,6 +15,7 @@ import re
 import secrets
 import struct
 import time
+from . import __version__
 
 SUMMARY_PATH='/billing/meter/get-user-resource-summary'
 PIPE_PREFIX='\\\\.\\pipe\\wbipc-'
@@ -101,7 +102,7 @@ def _summary(home: Path,transport_factory=_NamedPipe):
         nonce=secrets.token_urlsafe(16)
         pipe.send({'type':'session_hello','protocol_min':1,'protocol_max':1,'client_nonce':nonce,
             'ticket_id':hashlib.sha256(ticket.encode()).hexdigest()[:16],
-            'client':{'kind':'desktop-pet','id':'workbuddy-desktop-pet-balance','version':'0.2.1'}})
+            'client':{'kind':'desktop-pet','id':'workbuddy-desktop-pet-balance','version':__version__}})
         challenge=pipe.receive()
         server_nonce=challenge.get('server_nonce','')
         if challenge.get('type')!='session_challenge' or not isinstance(server_nonce,str) or not 16<=len(server_nonce)<=128:

@@ -38,6 +38,9 @@ class UsageSnapshot:
     unknown_model: int = 0
     unknown_time: int = 0
     days: int | None = None
+    today_credit: float = 0
+    today_requests: int = 0
+    today_date: str = ''
 
 
 def timestamp(value):
@@ -144,7 +147,12 @@ class LocalDataReader:
         sessions, totals = [], {}
         total = Decimal(0)
         count = unknown_model = unknown_time = 0
-        cutoff = (time.time() if now is None else now) - days * 86400 if days else None
+        current = time.time() if now is None else now
+        local_day = datetime.fromtimestamp(current).replace(hour=0,minute=0,second=0,microsecond=0)
+        midnight = local_day.timestamp()
+        today_total = Decimal(0)
+        today_count = 0
+        cutoff = current - days * 86400 if days else None
         for sid, title, custom, selected, used, size, credit_raw in rows:
             session_total = Decimal(0)
             try:
@@ -161,6 +169,9 @@ class LocalDataReader:
                 unknown_time += at is None
                 cost = Decimal(str(amount))
                 session_total += cost
+                if at is not None and midnight <= at <= current:
+                    today_total += cost
+                    today_count += 1
                 if cutoff is not None and (at is None or at < cutoff):
                     continue
                 entry = totals.setdefault(model, [0, Decimal(0)])
@@ -172,4 +183,5 @@ class LocalDataReader:
                                         float(session_total), used or 0, size or 0))
         models = tuple(ModelUsage(model, n, float(cost)) for model, (n, cost) in sorted(totals.items(), key=lambda p: -p[1][1]))
         return UsageSnapshot(True, '本机记录 · 含本机账户；不代表完整账单', tuple(sessions), models,
-                             float(total), count, unknown_model, unknown_time, days)
+                             float(total), count, unknown_model, unknown_time, days,
+                             float(today_total),today_count,local_day.date().isoformat())

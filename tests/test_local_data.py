@@ -55,3 +55,23 @@ def test_deep_link_escapes_and_rejects_control():
     for bad in ('', '../evil', 's\n', 'x?y', 'x\\y'):
         with pytest.raises(ValueError):
             conversation_url(bad)
+
+
+def test_today_uses_local_midnight_and_is_independent_of_report_range(tmp_path):
+    path=fixture_home(tmp_path)
+    # Naive datetime uses the machine's local calendar, including its DST rules.
+    midnight=datetime(2026,10,27).timestamp()
+    now=datetime(2026,10,27,12).timestamp()
+    credits={'yesterday':5,'midnight':1.2,'now':2.3,'future':7,'unknown':11}
+    with sqlite3.connect(tmp_path/'workbuddy.db') as db:
+        db.execute('UPDATE session_usage SET credit_json=? WHERE session_id=?',(json.dumps(credits),'s'))
+    events=[{'timestamp':at,'providerData':{'conversationRequestId':rid,'requestModelId':'test'}}
+            for rid,at in [('yesterday',midnight-1),('midnight',midnight),('now',now),('future',now+1)]]
+    path.write_text('\n'.join(json.dumps(e) for e in [*events,events[1]]),encoding='utf-8')
+    reader=LocalDataReader(tmp_path)
+    for days in (None,7,30):
+        snap=reader.snapshot(days,now)
+        assert snap.today_credit==3.5 and snap.today_requests==2
+        assert snap.today_date=='2026-10-27' and snap.unknown_time==1
+    tomorrow=reader.snapshot(now=datetime(2026,10,28).timestamp())
+    assert tomorrow.today_credit==0 and tomorrow.today_requests==0

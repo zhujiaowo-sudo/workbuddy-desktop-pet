@@ -78,7 +78,8 @@ def test_collapse_reanchors_above_pet_without_moving_it(tmp_path,qt_app,monkeypa
         assert controller.bubble.y()+controller.bubble.height()==controller.pet.y()-8
         controller.bubble.set_compact(False);qt_app.processEvents()
         assert controller.pet.pos()==position
-        assert controller.bubble.width()==360 and controller.bubble.height()==440
+        assert controller.bubble.mode=='summary'
+        assert controller.bubble.width()==320 and controller.bubble.height()==202
     controller.shutdown()
 
 
@@ -107,7 +108,7 @@ def test_navigation_never_overlaps_divider_and_content(qt_app):
     from PySide6.QtCore import QPoint
     card=CardWindow()
     for name in ('聊天','素材','设置'):card.add_page(QLabel(name),name)
-    card.show()
+    card.open_page('details');card.show()
     for _ in range(3):
         for index in range(card.tabs.count()):
             card.tabs.setCurrentIndex(index);qt_app.processEvents()
@@ -116,7 +117,7 @@ def test_navigation_never_overlaps_divider_and_content(qt_app):
             content_top=card.tabs.pages.mapTo(card,QPoint()).y()
             assert tab_top>=divider_bottom+5
             assert content_top>=tab_top+card.tabs.bar.height()+5
-            assert card.collapse_button.mapTo(card,QPoint()).y()<35
+            assert card.collapse_button.mapTo(card.summary,QPoint()).y()<35
             assert card.collapse_button.mapTo(card,QPoint()).x()>card.width()/2
             image=card.grab().toImage()
             assert image.pixelColor(2,card.height()//2).alpha()==255
@@ -148,3 +149,67 @@ def test_card_only_position_is_independent_of_pet(tmp_path,qt_app):
     assert controller.bubble.pos().toTuple()==(210,190)
     assert controller.pet.pos()==pet_position
     controller.shutdown()
+
+
+def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
+    from workbuddy_pet.app import Controller
+    from workbuddy_pet.local_data import UsageSnapshot,SessionInfo
+    controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
+    controller.demo_timer.stop();QTest.qWait(60);card=controller.bubble
+    card.set_snapshot(UsageSnapshot(True,sessions=(SessionInfo('s','测试会话','model'),),
+                                    today_credit=3.5,today_requests=2,today_date='2026-10-27'))
+    card.set_display(DisplayState('working','connected','s'))
+    card.set_balance(123.45,'synthetic')
+    card.set_compact(True);qt_app.processEvents()
+    assert card.mode=='capsule' and card.size().toTuple()==(272,32)
+    assert card.balance_badge.text()=='123.45'
+    image=card.grab().toImage()
+    ratio=image.devicePixelRatio()
+    # Transparent rounded corners and the gap between the only two modules.
+    assert image.pixelColor(0,0).alpha()==0
+    gap=card.capsule.geometry().right()+3
+    assert image.pixelColor(round(gap*ratio),round(16*ratio)).alpha()==0
+    QTest.mouseClick(card.capsule,Qt.MouseButton.LeftButton);qt_app.processEvents()
+    assert card.mode=='summary' and not card.expanded.isVisible()
+    assert card.remaining_value.text()=='123.45' and card.today_value.text()=='3.500'
+    assert card.session_link.isVisible() and card.session_link.toolTip()=='测试会话'
+    QTest.mouseClick(card.data_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
+    assert card.mode=='expanded' and card.tabs.currentIndex()==1
+    assert card.summary.isVisible() and card.expanded.isVisible()
+    QTest.mouseClick(card.back_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
+    assert card.mode=='summary'
+    controller.open_page('settings');qt_app.processEvents()
+    assert card.mode=='expanded' and card.tabs.currentIndex()==4
+    controller.open_card();qt_app.processEvents()
+    assert card.mode=='summary'
+    QTest.mouseClick(card.collapse_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
+    assert card.mode=='capsule'
+    controller.shutdown()
+
+
+def test_unindexed_current_session_does_not_show_another_session(qt_app):
+    from workbuddy_pet.local_data import UsageSnapshot,SessionInfo
+    card=CardWindow()
+    card.set_snapshot(UsageSnapshot(True,sessions=(SessionInfo('old','旧会话','m'),)))
+    card.set_display(DisplayState('working','connected','new'))
+    assert card.current_session=='new' and '旧会话' not in card.session_link.text()
+    card.close()
+
+
+def test_dragging_capsule_module_moves_without_expanding(qt_app):
+    from PySide6.QtCore import QPointF,QEvent
+    from PySide6.QtGui import QMouseEvent
+    card=CardWindow();card.set_compact(True);card.move(200,200);card.show();qt_app.processEvents()
+    button=card.capsule
+    origin=button.mapToGlobal(button.rect().center())
+    moves=[];card.moved.connect(lambda x,y:moves.append((x,y)))
+    for kind,delta,pressed,buttons in (
+        (QEvent.Type.MouseButtonPress,0,Qt.MouseButton.LeftButton,Qt.MouseButton.LeftButton),
+        (QEvent.Type.MouseMove,30,Qt.MouseButton.NoButton,Qt.MouseButton.LeftButton),
+        (QEvent.Type.MouseButtonRelease,30,Qt.MouseButton.LeftButton,Qt.MouseButton.NoButton)):
+        point=QPointF(origin.x()+delta,origin.y()+delta)
+        event=QMouseEvent(kind,QPointF(10,10),point,pressed,buttons,Qt.KeyboardModifier.NoModifier)
+        qt_app.sendEvent(button,event)
+    assert moves and moves[-1]==(230,230) and card.compact
+    assert not button.isDown()
+    card.close()
