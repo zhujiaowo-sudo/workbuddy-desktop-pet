@@ -45,4 +45,6 @@ Files: ui/pet.py, placement.py, app.py, tests/test_placement.py, tests/test_card
 
 - [x] 合成数据及真实素材7状态预览，全部测试、冻结程序验证。
 - [x] 更新本机，核对224大小、高清动画及8px间距；提交推送。
-- [ ] CI通过后发布v0.3.2核心和校验文件，素材下载保留v0.3.1。
+- [x] CI通过后发布v0.3.2核心和校验文件，素材下载保留v0.3.1。
+
+交付：代码1cd0add；[Windows CI通过](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40512443075)；[v0.3.2公开发布](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.2)。85项测试、冻结程序和匿名校验文件下载通过。本机保留size=224与高清人物，运行记录确认胶囊间距8；应用图标固定为原蓝色小搭子。素材原包、连接及余额授权未变。
