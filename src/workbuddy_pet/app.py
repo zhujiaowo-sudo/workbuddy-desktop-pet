@@ -27,6 +27,7 @@ from .materials import MaterialLibrary, MaterialError
 from .local_data import LocalDataReader
 from .placement import card_position,fit_capsule_pet
 from .background import Task
+from .balance import read_balance
 from .ui.settings import SettingsDialog
 from .ui.tray import PetTray
 from .windows import configure_startup, discover_workbuddy, open_workbuddy, open_conversation, validate_workbuddy_path
@@ -80,6 +81,9 @@ class Controller(QObject):
         self.requested_days = None
         self.next_data = 0
         self.active_pack = None
+        self.balance_job=None
+        self.next_balance=0
+        self.last_balance_query=0
         self._card_placed = False
         self._last_card_pos = None
         try:
@@ -102,6 +106,7 @@ class Controller(QObject):
         self.bubble.acknowledged.connect(self.acknowledge)
         self.bubble.conversation_requested.connect(self.jump_conversation)
         self.bubble.data_requested.connect(self.load_data)
+        self.bubble.balance_requested.connect(self.open_balance)
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
         self.bubble.resized.connect(self.position_bubble)
@@ -271,6 +276,37 @@ class Controller(QObject):
         self.stats_job.finished.connect(finished)
         self.stats_job.start()
 
+    def open_balance(self):
+        if not self.settings.balance_enabled:
+            self.open_settings()
+            self.dialog.hint.setText('勾选“授权本地查询剩余积分”并保存后，桌宠会通过 WorkBuddy 本地通道只读查询余额。')
+            return
+        self.open_page('data')
+        self.next_balance=0
+        self.load_balance()
+
+    def load_balance(self):
+        if not self.settings.balance_enabled:
+            self.bubble.set_balance(None,'在设置中启用“授权本地查询剩余积分”')
+            self.bubble.balance_badge.setText('积分未启用')
+            self.bubble.balance_label.setText('剩余可用积分：未启用')
+            return
+        if self.demo or self.balance_job or self.shutting_down:return
+        self.next_balance=time.monotonic()+60
+        self.last_balance_query=time.monotonic()
+        self.balance_job=Task(lambda:read_balance(self.workbuddy_home),self)
+        def received(snapshot):
+            if not self.settings.balance_enabled or self.shutting_down:return
+            stamp=time.strftime('%H:%M:%S',time.localtime(snapshot.at)) if snapshot.at else ''
+            self.bubble.set_balance(snapshot.remaining,snapshot.message+(' · '+stamp+' 更新' if stamp else ''))
+        def finished():
+            job=self.balance_job;self.balance_job=None
+            if job:job.deleteLater()
+        self.balance_job.done.connect(received)
+        self.balance_job.failed.connect(lambda _:self.bubble.set_balance(None,'余额查询暂不可用'))
+        self.balance_job.finished.connect(finished)
+        self.balance_job.start()
+
     def jump_conversation(self,session_id):
         try:
             open_conversation(session_id)
@@ -301,6 +337,8 @@ class Controller(QObject):
         self.position_bubble()
 
     def consume(self, events):
+        if self.settings.balance_enabled and any(event.kind=='Stop' for event in events):
+            self.next_balance=min(self.next_balance,max(time.monotonic()+3,self.last_balance_query+15))
         for event in events:
             self.sessions = reduce_event(self.sessions, event)
             display = derive_display(self.sessions, time.time())
@@ -323,6 +361,7 @@ class Controller(QObject):
                 self.bubble.materials.status.setText('动画读取失败，已暂时使用内置角色。')
         self.bubble.maybe_collapse(self.settings)
         if time.monotonic()>=self.next_data:self.load_data(self.bubble.range.currentData())
+        if time.monotonic()>=self.next_balance:self.load_balance()
         for reminder in display.reminders:
             if reminder.id not in self.sent:
                 self.sent.add(reminder.id)
@@ -333,7 +372,8 @@ class Controller(QObject):
                 "at": time.time(), "state": display.state, "connection": display.connection,
                 "sessions": display.session_count, "unread": len(display.reminders), "demo": self.demo,
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
-                "compact":self.bubble.compact,"position": [self.pet.x(), self.pet.y()]})
+                "compact":self.bubble.compact,"balance_available":self.bubble.balance is not None,
+                "position": [self.pet.x(), self.pet.y()]})
         except (OSError, ValueError):
             pass
 
@@ -371,6 +411,7 @@ class Controller(QObject):
                 configure_startup(settings.startup, runtime_command(self.root))
             save_settings(self.root, settings)
             self.settings = settings
+            self.next_balance=0
             self.pet.set_pet_size(settings.size)
             self.pet.setVisible(self.user_visible and not settings.card_only)
             self.player.set_visible(self.pet.isVisible())
@@ -443,6 +484,7 @@ class Controller(QObject):
         self.timer.stop()
         if self.demo and hasattr(self,'demo_timer'):self.demo_timer.stop()
         if self.stats_job:self.stats_job.cancel.set()
+        if self.balance_job:self.balance_job.cancel.set()
         self.bubble.chat.shutdown()
         self.bubble.materials.shutdown()
         self.player.clear()

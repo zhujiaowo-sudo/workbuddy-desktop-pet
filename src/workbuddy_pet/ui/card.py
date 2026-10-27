@@ -58,6 +58,7 @@ class CardWindow(QWidget):
     moved=Signal(int,int)
     compact_changed=Signal(bool)
     resized=Signal()
+    balance_requested=Signal()
 
     def __init__(self,demo=False):
         super().__init__(None,Qt.WindowType.Tool|Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -76,7 +77,7 @@ class CardWindow(QWidget):
         self.capsule.clicked.connect(lambda:self.set_compact(False))
         self.balance_badge=QPushButton('积分待同步');self.balance_badge.setFixedSize(86,32);self.balance_badge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.balance_badge.setStyleSheet('background:#edf7f2;border-radius:14px;color:#49806b;font-size:10px;padding:3px;')
-        self.balance_badge.clicked.connect(self.open_requested)
+        self.balance_badge.clicked.connect(self.balance_requested)
         compact.addWidget(self.capsule,1);compact.addWidget(self.balance_badge);self.root_layout.addWidget(self.compact_bar)
         self.full=QWidget();full=QVBoxLayout(self.full);full.setContentsMargins(0,0,0,0);full.setSpacing(6)
         self.header=QWidget();header=QHBoxLayout(self.header);header.setContentsMargins(0,0,0,0);header.setSpacing(6)
@@ -181,7 +182,9 @@ class CardWindow(QWidget):
     def set_balance(self,value,source_note='WorkBuddy 余额需要客户端授权接口；本机消耗记录不能推算剩余积分'):
         valid=type(value) in (int,float) and math.isfinite(value) and value>=0
         self.balance=value if valid else None
-        self.balance_badge.setText(f'余 {value:,.1f} 分' if valid else '积分待同步');self.balance_badge.setToolTip(source_note)
+        text=f'余 {value:,.2f}' if valid else '积分待同步'
+        self.balance_badge.setText(self.balance_badge.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,80))
+        self.balance_badge.setToolTip((f'剩余可用积分：{value:,.2f}\n' if valid else '')+source_note)
         self.balance_label.setText(f'剩余可用积分：{value:,.2f}' if valid else '剩余可用积分：待同步');self.balance_label.setToolTip(source_note)
 
     def set_snapshot(self,snapshot,active_ids=()):
