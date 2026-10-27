@@ -2,11 +2,12 @@
 import math
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QFont, QIcon, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QFont, QIcon, QImage, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QMenu
 
 from ..state import DisplayState
+from ..materials import alpha_bounds
 
 DEFAULT_PORTRAIT=Path(__file__).resolve().parents[1]/'assets/mint-orbit-idle.png'
 
@@ -20,8 +21,7 @@ SUBTITLES = {"idle": "陪你把今天的事情做好", "thinking": "正在整理
 
 
 def mascot_icon() -> QIcon:
-    portrait=QIcon(str(DEFAULT_PORTRAIT))
-    if not portrait.isNull():return portrait
+    """Fixed original app/tray identity, independent of all character assets."""
     pixmap = QPixmap(64, 64)
     pixmap.fill(Qt.GlobalColor.transparent)
     p = QPainter(pixmap)
@@ -58,6 +58,11 @@ class PetWindow(QWidget):
         self.dragging = False
         self.player = None
         self.default_pixmap=QPixmap(str(DEFAULT_PORTRAIT)) if use_builtin_image else QPixmap()
+        self.default_bounds=None
+        if not self.default_pixmap.isNull():
+            from PIL import Image
+            image=self.default_pixmap.toImage().convertToFormat(QImage.Format.Format_RGBA8888)
+            self.default_bounds=alpha_bounds(Image.frombytes('RGBA',(image.width(),image.height()),bytes(image.bits())))
         self.context_menu = QMenu(self)
         self.context_menu.setStyleSheet('QMenu{background:#fbfeff;border:1px solid #d9e7f1;padding:5px;} QMenu::item{padding:7px 18px;color:#2b506d;} QMenu::item:selected{background:#e7f2fb;border-radius:5px;}')
         for label,key in (('任务详情','details'),('积分与模型','data'),('聊天','chat'),('角色与素材','materials'),('设置与连接','settings')):
@@ -89,14 +94,30 @@ class PetWindow(QWidget):
             self.tick += 1
             self.update()
 
+    def image_target_rect(self,pixmap):
+        target=pixmap.size().scaled(self.size(),Qt.AspectRatioMode.KeepAspectRatio)
+        return QRect((self.width()-target.width())//2,self.height()-target.height(),target.width(),target.height())
+
+    def content_rect(self):
+        """The stable visible silhouette in local logical coordinates, not the canvas."""
+        animated=self.player is not None and self.player.pixmap is not None
+        pixmap=self.player.pixmap if animated else self.default_pixmap
+        bounds=self.player.content_bounds if animated else self.default_bounds
+        if pixmap.isNull() or bounds is None:return self.rect()
+        target=self.image_target_rect(pixmap)
+        sx,sy=target.width()/pixmap.width(),target.height()/pixmap.height()
+        left=target.x()+math.floor(bounds[0]*sx);top=target.y()+math.floor(bounds[1]*sy)
+        right=target.x()+math.ceil(bounds[2]*sx);bottom=target.y()+math.ceil(bounds[3]*sy)
+        return QRect(left,top,right-left,bottom-top)
+
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         pixmap=self.player.pixmap if self.player and self.player.pixmap else self.default_pixmap
         if not pixmap.isNull():
             p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-            target = pixmap.size().scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio)
-            p.drawPixmap((self.width()-target.width())//2, self.height()-target.height(), pixmap.scaled(target, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            target=self.image_target_rect(pixmap)
+            p.drawPixmap(target.topLeft(),pixmap.scaled(target.size(),Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
             p.end()
             return
         p.scale(self.width() / 184, self.height() / 219)

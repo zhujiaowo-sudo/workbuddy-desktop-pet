@@ -95,6 +95,7 @@ class Controller(QObject):
         self.bubble = CardWindow(demo)
         self.player = AnimationPlayer(self)
         self.player.changed.connect(self.pet.update)
+        self.player.bounds_changed.connect(self.position_bubble)
         self.pet.player = self.player
         self.pet.open_requested.connect(self.open_card)
         self.pet.settings_requested.connect(self.open_settings)
@@ -174,17 +175,21 @@ class Controller(QObject):
         self.position_bubble()
 
     def position_bubble(self, *_):
+        if self.shutting_down:return
         size=(self.bubble.width(),self.bubble.height())
         if self.settings.card_only and self._card_placed:
             x,y=clamp_position((self.bubble.x(),self.bubble.y()),size,self.screens())
         else:
             rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height())
+            visible=self.pet.content_rect()
+            anchor=Rect(rect.x+visible.x(),rect.y+visible.y(),visible.width(),visible.height())
             if self.bubble.compact:
-                anchor=fit_capsule_pet(rect,size,self.screens())
-                if anchor!=(rect.x,rect.y):
-                    self.pet.move(*anchor)
-                    rect=Rect(*anchor,rect.width,rect.height)
-            x,y=card_position(rect,size,self.screens(),compact=self.bubble.compact)
+                fitted=fit_capsule_pet(rect,size,self.screens(),anchor=anchor)
+                if fitted!=(rect.x,rect.y):
+                    self.pet.move(*fitted)
+                    anchor=Rect(anchor.x+fitted[0]-rect.x,anchor.y+fitted[1]-rect.y,anchor.width,anchor.height)
+                    rect=Rect(*fitted,rect.width,rect.height)
+            x,y=card_position(rect,size,self.screens(),compact=self.bubble.compact,anchor=anchor)
         self.bubble.move(x, y)
         self._last_card_pos=(x,y)
         self._card_placed=True
@@ -382,6 +387,8 @@ class Controller(QObject):
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
                 "compact":self.bubble.compact,"view_mode":self.bubble.mode,"balance_available":self.bubble.balance is not None,
                 "animation_loaded":bool(self.player.frames),
+                "capsule_gap":self.pet.y()+self.pet.content_rect().y()-self.bubble.y()-self.bubble.height()
+                    if self.bubble.compact and not self.settings.card_only else None,
                 "position": [self.pet.x(), self.pet.y()]})
         except (OSError, ValueError):
             pass

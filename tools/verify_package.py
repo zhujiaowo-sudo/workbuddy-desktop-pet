@@ -36,19 +36,21 @@ def main():
     assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
     from workbuddy_pet import __version__
-    for page,mode in (('summary','summary'),('capsule','capsule'),('data','expanded')):
-        gui_root=root/('gui-'+page)
+    for page,mode,card_only in (('summary','summary',True),('capsule','capsule',True),('data','expanded',True),('capsule','capsule',False)):
+        suffix=page+('-card' if card_only else '-pet')
+        gui_root=root/('gui-'+suffix)
         result = subprocess.run([str(exe), "--root", str(gui_root), "--demo", "--smoke-seconds", "2",
-                                 '--workbuddy-home',str(root/'absent-workbuddy'),'--card-only',
-                                 '--capture-page',page,'--capture',str(root/('preview-'+page+'.png'))],
+                                 '--workbuddy-home',str(root/'absent-workbuddy'),*(['--card-only'] if card_only else []),
+                                 '--capture-page',page,'--capture',str(root/('preview-'+suffix+'.png'))],
                                 env=env,capture_output=True,timeout=20)
         assert result.returncode == 0, f"Frozen GUI failed: exit={result.returncode}, stderr={result.stderr[-2000:]!r}"
         runtime = json.loads((gui_root / "runtime.json").read_text(encoding="utf-8"))
         assert runtime["demo"] is True and runtime["version"] == __version__
-        assert runtime['card_only'] is True and runtime['visible'] is True and runtime['view_mode']==mode
-        assert (root/('preview-'+page+'.png')).is_file()
+        assert runtime['card_only']==card_only and runtime['visible'] is True and runtime['view_mode']==mode
+        if not card_only:assert runtime['capsule_gap']==8,'Frozen capsule does not follow the visible portrait'
+        assert (root/('preview-'+suffix+'.png')).is_file()
     print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
-                      'three_views':True,"captures": str(root)}, indent=2))
+                      'three_views':True,'visible_docking':True,"captures": str(root)}, indent=2))
 
 
 if __name__ == "__main__":

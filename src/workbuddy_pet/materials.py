@@ -15,6 +15,12 @@ from PIL import Image, UnidentifiedImageError
 STATES = ('idle', 'thinking', 'working', 'waiting', 'review', 'done', 'failed')
 MAX_BYTES = 128 * 1024 * 1024
 MAX_PIXELS = 64_000_000
+_VISIBLE_ALPHA = [0]*17+[255]*239
+
+
+def alpha_bounds(image):
+    """Ignore hidden RGB and nearly invisible edge noise; right/bottom are exclusive."""
+    return image.getchannel('A').point(_VISIBLE_ALPHA).getbbox()
 
 
 class MaterialError(ValueError):
@@ -51,6 +57,7 @@ class Frame:
     size: tuple[int, int]
     rgba: bytes
     duration: int
+    bounds: tuple[int,int,int,int] | None = None
 
 
 def decode_animation(path: Path) -> tuple[Frame, ...]:
@@ -70,7 +77,7 @@ def decode_animation(path: Path) -> tuple[Frame, ...]:
                     delay = image.info.get('duration', 100)
                     if not isinstance(delay, (int, float)):
                         delay = 100
-                    frames.append(Frame(rgba.size, rgba.tobytes(), max(20, min(10000, int(delay)))))
+                    frames.append(Frame(rgba.size, rgba.tobytes(), max(20, min(10000, int(delay))),alpha_bounds(rgba)))
     except (OSError, ValueError, EOFError, Image.DecompressionBombWarning, Image.DecompressionBombError) as error:
         if isinstance(error, MaterialError):
             raise

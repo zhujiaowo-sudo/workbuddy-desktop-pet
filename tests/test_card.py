@@ -1,5 +1,6 @@
 from dataclasses import replace
 import time
+import pytest
 
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
@@ -63,9 +64,11 @@ def test_material_player_pause_and_state_fallback(tmp_path,qt_app):
     player.clear();assert not player.frames and not player.timer.isActive()
 
 
-def test_collapse_reanchors_above_pet_without_moving_it(tmp_path,qt_app,monkeypatch):
+@pytest.mark.parametrize('size',[100,224,240])
+def test_collapse_reanchors_above_pet_without_moving_it(tmp_path,qt_app,monkeypatch,size):
     from workbuddy_pet.app import Controller
     from workbuddy_pet.settings import Rect
+    save_settings(tmp_path,Settings(size=size,notifications=False))
     controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
     monkeypatch.setattr(controller,'screens',lambda:[Rect(0,0,1920,1040)])
     controller.demo_timer.stop()
@@ -74,8 +77,10 @@ def test_collapse_reanchors_above_pet_without_moving_it(tmp_path,qt_app,monkeypa
     for _ in range(4):
         controller.bubble.set_compact(True);qt_app.processEvents()
         assert controller.pet.pos()==position
-        assert abs(controller.bubble.geometry().center().x()-controller.pet.geometry().center().x())<=1
-        assert controller.bubble.y()+controller.bubble.height()==controller.pet.y()-8
+        visible=controller.pet.content_rect()
+        assert abs(controller.bubble.x()+controller.bubble.width()/2-(controller.pet.x()+visible.x()+visible.width()/2))<=1
+        assert controller.bubble.y()+controller.bubble.height()==controller.pet.y()+visible.y()-8
+        assert controller.pet.width()==size+24
         controller.bubble.set_compact(False);qt_app.processEvents()
         assert controller.pet.pos()==position
         assert controller.bubble.mode=='summary'

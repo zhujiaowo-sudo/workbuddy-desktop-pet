@@ -11,7 +11,7 @@ python -m venv .venv
 .venv\Scripts\python tools/build_windows.py --work C:/wb-pet-build
 ```
 
-产物为 `dist/workbuddy-desktop-pet-0.3.1-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。
+产物为 `dist/workbuddy-desktop-pet-0.3.2-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。
 
 程序包提供薄荷星伴静态形象，不捆绑7状态人物动画。`仅卡片启动.vbs` 使用同一核心程序，仅隐藏人物；之后可在素材页启用角色。默认动画使用作者提供的原ZIP独立上传Release，附件与catalog.json的字节数及SHA-256必须一致。`python tools/create_pet_template.py` 只导出旧CC0机器人示例；其 `--catalog` 参数会显式切回旧示例清单，不用于发布薄荷星伴。
 

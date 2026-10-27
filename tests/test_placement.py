@@ -39,3 +39,23 @@ def test_capsule_and_pet_move_together_at_edges():
         assert abs(cx+136-(fitted.x+62))<=1
         assert cy+32==fitted.y-8
         assert cx>=0 and cx+272<=1920 and cy>=0
+
+
+def test_visible_anchor_skips_window_and_canvas_padding():
+    pet=Rect(900,650,248,297);anchor=Rect(970,730,110,190)
+    x,y=card_position(pet,(272,32),[Rect(0,0,1920,1040)],compact=True,anchor=anchor)
+    assert y+32==anchor.y-8 and abs(x+136-(anchor.x+55))<=1
+    assert y>pet.y
+
+
+def test_visible_anchor_and_full_window_both_stay_on_screen():
+    for screen in (Rect(0,0,1920,1040),Rect(-1920,0,1920,1040)):
+        for x,y in ((screen.x,0),(screen.x+1672,743),(screen.x+900,0)):
+            pet=Rect(x,y,248,297);anchor=Rect(x+31,y+118,97,110)
+            fitted=fit_capsule_pet(pet,(272,32),[screen],anchor=anchor)
+            window=Rect(*fitted,248,297)
+            visible=Rect(fitted[0]+31,fitted[1]+118,97,110)
+            cx,cy=card_position(window,(272,32),[screen],compact=True,anchor=visible)
+            assert window.x>=screen.x and window.x+248<=screen.x+screen.width and 0<=window.y<=743
+            assert cx>=screen.x and cx+272<=screen.x+screen.width and cy>=screen.y
+            assert cy+32==visible.y-8 and abs(cx+136-(visible.x+visible.width/2))<=1

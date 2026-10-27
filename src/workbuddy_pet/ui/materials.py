@@ -1,5 +1,6 @@
 from pathlib import Path
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QPushButton,QFileDialog
 
 from ..background import Task
@@ -53,8 +54,10 @@ class MaterialPanel(QWidget):
         self.player.clear()
         self.remove.setEnabled(key not in (None,'builtin') and self.job is None)
         if key in (None,'builtin'):
-            from .pet import mascot_icon
-            self.preview.setPixmap(mascot_icon().pixmap(110,110))
+            from .pet import DEFAULT_PORTRAIT,mascot_icon
+            portrait=QPixmap(str(DEFAULT_PORTRAIT))
+            self.preview.setPixmap(portrait.scaled(125,125,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
+                                   if not portrait.isNull() else mascot_icon().pixmap(110,110))
             self.description.setText('作者：Buddy娘 / CC-BY-4.0\n默认静态形象随程序提供，7状态动画可独立下载。')
             return
         try:

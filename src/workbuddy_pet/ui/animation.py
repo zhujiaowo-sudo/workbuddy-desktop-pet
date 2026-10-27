@@ -7,6 +7,7 @@ from ..materials import decode_animation
 
 class AnimationPlayer(QObject):
     changed = Signal()
+    bounds_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -18,6 +19,7 @@ class AnimationPlayer(QObject):
         self.loop = True
         self.visible = True
         self.identity = None
+        self.content_bounds = None
 
     @property
     def pixmap(self):
@@ -35,14 +37,21 @@ class AnimationPlayer(QObject):
         for frame in frames:
             image = QImage(frame.rgba, *frame.size, QImage.Format.Format_RGBA8888).copy()
             prepared.append((QPixmap.fromImage(image), frame.duration))
-        self.clear()
+        self.clear(notify=False)
         self.frames, self.identity, self.loop = tuple(prepared), identity, action.loop
+        boxes=[f.bounds for f in frames if f.bounds is not None]
+        self.content_bounds=(min(b[0] for b in boxes),min(b[1] for b in boxes),
+                             max(b[2] for b in boxes),max(b[3] for b in boxes)) if boxes else None
+        self.bounds_changed.emit()
         self.changed.emit()
         self.schedule()
 
-    def clear(self):
+    def clear(self,*,notify=True):
+        had_frames=bool(self.frames)
         self.timer.stop()
         self.frames, self.identity, self.index = (), None, 0
+        self.content_bounds=None
+        if notify and had_frames:self.bounds_changed.emit();self.changed.emit()
 
     def set_visible(self, value):
         self.visible = value
