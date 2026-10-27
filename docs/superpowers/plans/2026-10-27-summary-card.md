@@ -47,4 +47,6 @@ Files: README.md, docs/releases/v0.3.0.md, pyproject.toml, src/workbuddy_pet/__i
 
 - [x] 合成数据截图核对胶囊/summary/看板/设置及1.5倍DPI；运行全套测试。
 - [x] 构建冻结程序并验证，保存用户设置后重启当前桌宠，确认真实余额可用。
-- [ ] 提交推送，检查CI并发布v0.3.0程序包和校验文件。
+- [x] 提交推送，检查CI并发布v0.3.0程序包和校验文件。
+
+交付：代码82d005d；[Windows构建与测试通过](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40494544400)；[v0.3.0公开下载](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.0)。本机版本、连接与余额可用状态均已核对，未输出个人积分或票据。
