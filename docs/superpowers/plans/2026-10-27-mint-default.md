@@ -44,4 +44,6 @@ Files: catalog.json, material_download.py, tests/test_material_download.py, docs
 
 - [x] 本机导入高清包并保存为当前默认角色；仅更改character和必要的显示开关。
 - [x] 全套测试、合成界面及冻结程序验证，构建后重启本机，确认新动画已加载。
-- [ ] 推送代码，CI通过后公开核心和原素材ZIP，核验匿名下载及摘要。
+- [x] 推送代码，CI通过后公开核心和原素材ZIP，核验匿名下载及摘要。
+
+交付：代码1150bfc；[Windows CI通过](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40508229515)；[v0.3.1公开发布](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1)。两档素材均已通过程序的真实匿名下载、SHA-256校验和7状态导入；高清内容标识与本机启用角色一致。75项测试及冻结程序验证通过，本机非演示模式动画已加载，其他设置保留。
