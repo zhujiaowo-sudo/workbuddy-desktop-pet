@@ -20,7 +20,7 @@
 
 ## 本项目新增内容
 
-已独立实现 WorkBuddy 适配与 Windows 桌宠界面。首版角色为程序绘制的基础形象；额外人物素材的本地导入为后续扩展方向，不随仓库默认提交。
+已独立实现 WorkBuddy 适配、Windows 卡片、统计和角色包系统。默认“小搭子”为独立程序绘制的原创形象，其导出角色图像与示例包以 CC0-1.0 提供，许可文本见 https://creativecommons.org/publicdomain/zero/1.0/legalcode 。此声明仅覆盖该原创形象及导出图像，不覆盖整个程序代码、白龙人物或其他用户素材。导入的角色各自遵循作者声明的许可。
 
 本项目原创代码的正式开源发行许可尚未指定；当前未对未引入的第三方代码或素材授予任何许可。
 
@@ -29,3 +29,5 @@
 PySide6 Essentials 与 Shiboken 采用其发行包声明的 LGPL/GPL/商业许可选项；本包保留动态库和许可说明，公共许可文本见 `licenses/`，Qt 源码见 https://code.qt.io/ 与 https://download.qt.io/official_releases/QtForPython/ 。正式源代码版本号和依赖锁定见 `requirements-dev.lock`。
 
 Python 采用 PSF 许可；PyInstaller 使用带引导程序例外条款的 GPL 许可。程序包中的 Microsoft C/C++ 运行时源自 Qt 的 Windows 发行包，保留其原有运行时文件，不修改系统版本。
+
+Pillow 按其发行包中的 HPND 及各附属图像库许可分发，打包时保留对应许可文本。

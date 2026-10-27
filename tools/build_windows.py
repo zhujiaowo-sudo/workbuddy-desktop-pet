@@ -57,11 +57,15 @@ def main():
         raise RuntimeError("Could not write application icon")
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--windowed",
                     "--name", "WorkBuddyDesktopPet", "--icon", str(icon), "--paths", str(project / "src"),
+                    '--add-data',str(project/'src/workbuddy_pet/catalog.json')+';workbuddy_pet',
                     "--distpath", str(project / "dist"), "--workpath", str(work / "pyinstaller"),
                     "--specpath", str(work), str(project / "launch.py")], cwd=project, check=True)
     dist = project / "dist/WorkBuddyDesktopPet"
     fix_native_icu(dist)
-    for source in (project / "README.md", project / "NOTICE.md", project / "docs/releasing.md"):
+    (dist/'仅卡片启动.vbs').write_text('Set shell = CreateObject("WScript.Shell")\nSet fso = CreateObject("Scripting.FileSystemObject")\n'
+        'exe = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "WorkBuddyDesktopPet.exe")\n'
+        'shell.Run Chr(34) & exe & Chr(34) & " --card-only", 0, False\n',encoding='ascii')
+    for source in (project / "README.md", project / "NOTICE.md", project / "docs/releasing.md",project/'docs/materials.md',project/'docs/pet-pack.schema.json'):
         if source.exists():
             shutil.copy2(source, dist / source.name)
     shutil.copytree(project / "licenses", dist / "licenses/public-licenses", dirs_exist_ok=True)
@@ -70,10 +74,11 @@ def main():
                         "https://doc.qt.io/qtforpython-6/licenses.html\n"
                         "Python: PSF license, https://docs.python.org/3/license.html\n"
                         "PyInstaller: GPL-2.0-or-later with bootloader exception, https://pyinstaller.org/\n"
+                        'Pillow: HPND and bundled component licenses, https://python-pillow.org/\n'
                         "This package uses dynamically linked Qt libraries in _internal; source is in the project repository.\n", encoding="utf-8")
     # Include the actual license texts shipped by the Qt wheels, when present.
     import importlib.metadata
-    for package in ("PySide6_Essentials", "shiboken6"):
+    for package in ("PySide6_Essentials", "shiboken6",'Pillow'):
         metadata = importlib.metadata.distribution(package)
         for entry in metadata.files or []:
             if "license" in str(entry).lower() and str(entry).endswith((".txt", ".md", "LICENSE", "COPYING")):

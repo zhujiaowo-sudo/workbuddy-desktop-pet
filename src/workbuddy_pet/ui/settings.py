@@ -15,8 +15,11 @@ class SettingsDialog(QDialog):
     uninstall_requested = Signal()
     reset_requested = Signal()
 
-    def __init__(self, settings: Settings, diagnostic: dict, parent=None):
+    def __init__(self, settings: Settings, diagnostic: dict, parent=None, embedded=False):
         super().__init__(parent)
+        if embedded:
+            from PySide6.QtCore import Qt
+            self.setWindowFlags(Qt.WindowType.Widget)
         self.settings = settings
         self.setWindowTitle("WorkBuddy 桌宠设置")
         self.resize(490, 500)
@@ -44,6 +47,17 @@ class SettingsDialog(QDialog):
         self.startup = QCheckBox("登录 Windows 后启动桌宠")
         self.startup.setChecked(settings.startup)
         form.addRow("自动启动", self.startup)
+        self.card_only = QCheckBox('仅显示卡片，隐藏人物')
+        self.card_only.setChecked(settings.card_only)
+        form.addRow('人物显示', self.card_only)
+        self.auto_collapse = QCheckBox('闲置时自动缩成胶囊')
+        self.auto_collapse.setChecked(settings.auto_collapse)
+        form.addRow('自动收起', self.auto_collapse)
+        self.collapse_seconds = QSpinBox()
+        self.collapse_seconds.setRange(10,600)
+        self.collapse_seconds.setSuffix(' 秒')
+        self.collapse_seconds.setValue(settings.collapse_seconds)
+        form.addRow('闲置时间', self.collapse_seconds)
         layout.addLayout(form)
         self.hint = QLabel("首次连接将安装本地状态插件。请保存后连接，再在 WorkBuddy 新建一个任务。")
         self.hint.setWordWrap(True)
@@ -75,7 +89,9 @@ class SettingsDialog(QDialog):
 
     def save(self):
         self.saved.emit(replace(self.settings, workbuddy_path=self.path.text().strip(), size=self.size.value(),
-                                notifications=self.notify.isChecked(), startup=self.startup.isChecked()))
+                                notifications=self.notify.isChecked(), startup=self.startup.isChecked(),
+                                card_only=self.card_only.isChecked(), auto_collapse=self.auto_collapse.isChecked(),
+                                collapse_seconds=self.collapse_seconds.value()))
 
     def set_diagnostic(self, report: dict):
         labels = {"plugin_not_configured": "尚未连接", "waiting_for_event": "已配置，等待 WorkBuddy 新任务",

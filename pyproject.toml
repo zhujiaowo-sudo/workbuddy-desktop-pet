@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "workbuddy-desktop-pet"
-version = "0.1.0"
+version = "0.2.0"
 description = "A local Windows desktop companion for WorkBuddy"
 requires-python = ">=3.12"
-dependencies = ["PySide6-Essentials>=6.8,<7"]
+dependencies = ["PySide6-Essentials>=6.8,<7", "Pillow>=11,<13"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "pyinstaller>=6,<7"]
@@ -17,6 +17,9 @@ workbuddy-pet = "workbuddy_pet.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+workbuddy_pet = ["catalog.json"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

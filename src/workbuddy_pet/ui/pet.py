@@ -50,6 +50,7 @@ class PetWindow(QWidget):
         self.tick = 0
         self.press_position = None
         self.dragging = False
+        self.player = None
         self.set_pet_size(size)
         self.timer = QTimer(self)
         self.timer.setInterval(40)
@@ -65,6 +66,9 @@ class PetWindow(QWidget):
         self.update()
 
     def animate(self):
+        if self.player and self.player.frames:
+            self.timer.stop()
+            return
         if self.isVisible():
             self.tick += 1
             self.update()
@@ -72,6 +76,13 @@ class PetWindow(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self.player and self.player.pixmap:
+            p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            pixmap = self.player.pixmap
+            target = pixmap.size().scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio)
+            p.drawPixmap((self.width()-target.width())//2, self.height()-target.height(), pixmap.scaled(target, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            p.end()
+            return
         p.scale(self.width() / 184, self.height() / 219)
         t = self.tick / 15
         bob = math.sin(t) * 2.2
@@ -167,6 +178,18 @@ class PetWindow(QWidget):
 
     def contextMenuEvent(self, event):
         self.settings_requested.emit()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.timer.start()
+        if self.player:
+            self.player.set_visible(True)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.timer.stop()
+        if self.player:
+            self.player.set_visible(False)
 
 
 class StatusBubble(QWidget):

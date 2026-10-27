@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "packs": {
+    "light": {
+      "name": "xiaodazi-1.0.0-light.zip",
+      "bytes": 1670591,
+      "sha256": "0cd02b2556a33bd277209634a30f2cacc740a4e28e761629d9be9842b996da49",
+      "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.2.0/xiaodazi-1.0.0-light.zip"
+    },
+    "hd": {
+      "name": "xiaodazi-1.0.0-hd.zip",
+      "bytes": 3386787,
+      "sha256": "60e40eb916972081a190b63934088f0b6b502e1a52b6e715624f656109b3dd4a",
+      "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.2.0/xiaodazi-1.0.0-hd.zip"
+    }
+  }
+}

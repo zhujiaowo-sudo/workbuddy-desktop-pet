@@ -87,10 +87,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--uninstall-integration", action="store_true")
     parser.add_argument("--workbuddy-home", type=Path, default=Path.home() / ".workbuddy")
     parser.add_argument("--demo", action="store_true")
+    parser.add_argument('--card-only',action='store_true',help='仅显示卡片，不加载人物动画')
+    parser.add_argument('--import-pet',type=Path,help='将本地角色 ZIP 或文件夹导入角色库')
+    parser.add_argument('--list-pets',action='store_true',help='列出已导入的本地角色')
     parser.add_argument("--quit", action="store_true")
     parser.add_argument("--settings", action="store_true")
     parser.add_argument("--smoke-seconds", type=float, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--capture", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument('--capture-page',choices=('details','data','chat','materials','settings','capsule'),default='details',help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.hook:
         try:
@@ -109,6 +113,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.diagnose:
         output(diagnose(args.root))
         return 0
+    if args.import_pet or args.list_pets:
+        from .materials import MaterialLibrary
+        library=MaterialLibrary(args.root/'characters')
+        try:
+            if args.import_pet:
+                pack=library.import_pack(args.import_pet)
+                output({'key':pack.key,'name':pack.name,'quality':pack.quality})
+            else:output([{'key':p.key,'name':p.name,'quality':p.quality} for p in library.list_packs()])
+            return 0
+        except (OSError,ValueError) as error:
+            output({'error':str(error)})
+            return 1
     from .app import run_app
     return run_app(args.root, args.demo, quit_requested=args.quit, show_settings=args.settings,
-                   smoke_seconds=args.smoke_seconds, capture=args.capture)
+                   smoke_seconds=args.smoke_seconds, capture=args.capture,
+                   workbuddy_home=args.workbuddy_home,card_only=args.card_only,capture_page=args.capture_page)

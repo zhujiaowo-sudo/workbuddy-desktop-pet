@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WorkBuddy Desktop Pet character pack v1",
+  "type": "object",
+  "required": ["schema", "id", "name", "author", "version", "license", "actions"],
+  "properties": {
+    "schema": {"const": 1},
+    "id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "name": {"type": "string", "minLength": 1, "maxLength": 200},
+    "author": {"type": "string", "minLength": 1, "maxLength": 200},
+    "version": {"type": "string", "minLength": 1, "maxLength": 200},
+    "license": {"type": "string", "minLength": 1, "maxLength": 200},
+    "quality": {"enum": ["light", "hd"], "default": "light"},
+    "actions": {
+      "type": "object", "required": ["idle"], "maxProperties": 7,
+      "propertyNames": {"enum": ["idle", "thinking", "working", "waiting", "review", "done", "failed"]},
+      "additionalProperties": {
+        "type": "object", "required": ["file"],
+        "properties": {
+          "file": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "\\.(png|gif|webp)$"},
+          "loop": {"type": "boolean", "default": true}
+        }
+      }
+    },
+    "files": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+  }
+}

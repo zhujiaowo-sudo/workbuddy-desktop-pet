@@ -30,15 +30,21 @@ def main():
     result = subprocess.run(command.split(), input=payload, capture_output=True, timeout=15)
     assert result.returncode == 0 and not result.stdout
     assert list((shell_root / "events").glob("*.jsonl")), "PowerShell lost stdin or literal arguments"
+    result=subprocess.run([str(exe),'--root',str(root/'materials'),'--import-pet',str(project/'examples/starter-pet')],capture_output=True,timeout=20)
+    assert result.returncode==0 and list((root/'materials/characters').glob('*/manifest.json')), 'Frozen material decoder/import failed'
+    assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Optional material catalog missing'
     gui_root = root / "gui"
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
     result = subprocess.run([str(exe), "--root", str(gui_root), "--demo", "--smoke-seconds", "2",
+                             '--workbuddy-home',str(root/'absent-workbuddy'),'--card-only',
                              "--capture", str(root / "preview.png")], env=env, capture_output=True, timeout=20)
     assert result.returncode == 0, f"Frozen GUI failed: exit={result.returncode}, stderr={result.stderr[-2000:]!r}"
     runtime = json.loads((gui_root / "runtime.json").read_text(encoding="utf-8"))
-    assert runtime["demo"] is True and runtime["version"] == "0.1.0"
+    from workbuddy_pet import __version__
+    assert runtime["demo"] is True and runtime["version"] == __version__
+    assert runtime['card_only'] is True and runtime['visible'] is True
     assert (root / "preview.png").is_file()
-    print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,
+    print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
                       "capture": str(root / "preview.png")}, indent=2))
 
 

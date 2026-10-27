@@ -21,6 +21,11 @@ class Settings:
     notifications: bool = True
     position: tuple[int, int] | None = None
     startup: bool = False
+    card_only: bool = False
+    auto_collapse: bool = True
+    collapse_seconds: int = 30
+    character: str = 'builtin'
+    compact: bool = False
 
 
 def clamp_position(position: tuple[int, int], size: tuple[int, int], screens: Sequence[Rect]) -> tuple[int, int]:
@@ -47,8 +52,16 @@ def load_settings(root: Path) -> Settings:
         path = value.get("workbuddy_path", "")
         if not isinstance(path, str) or len(path) > 1024 or any(c in path for c in "\r\n\x00"):
             path = ""
+        character = value.get('character', 'builtin')
+        import re
+        if character != 'builtin' and not (isinstance(character, str) and re.fullmatch('[0-9a-f]{32}', character)):
+            character = 'builtin'
+        seconds = value.get('collapse_seconds', 30)
         return Settings(path, size, value.get("notifications") if type(value.get("notifications")) is bool else True,
-                        tuple(position) if position else None, value.get("startup") is True)
+                        tuple(position) if position else None, value.get("startup") is True,
+                        value.get('card_only') is True, value.get('auto_collapse', True) is True,
+                        seconds if type(seconds) is int and 10 <= seconds <= 600 else 30,
+                        character, value.get('compact') is True)
     except (OSError, ValueError, TypeError):
         return Settings()
 

@@ -2,6 +2,21 @@
 import os
 import subprocess
 from pathlib import Path
+import re
+from urllib.parse import quote
+
+
+def conversation_url(session_id: str) -> str:
+    if not isinstance(session_id, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_:\-]{0,255}', session_id):
+        raise ValueError('会话标识无效')
+    return 'workbuddy://chat/' + quote(session_id, safe='')
+
+
+def open_conversation(session_id: str):
+    url = conversation_url(session_id)
+    if os.name != 'nt':
+        raise OSError('会话跳转需要 Windows 协议处理程序')
+    os.startfile(url)
 
 
 def validate_workbuddy_path(path: Path) -> Path:
