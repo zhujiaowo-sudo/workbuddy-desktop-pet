@@ -1,0 +1,88 @@
+import json
+from dataclasses import replace
+from pathlib import Path
+
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (QCheckBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
+                              QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout)
+
+from ..settings import Settings
+
+
+class SettingsDialog(QDialog):
+    saved = Signal(object)
+    install_requested = Signal()
+    uninstall_requested = Signal()
+    reset_requested = Signal()
+
+    def __init__(self, settings: Settings, diagnostic: dict, parent=None):
+        super().__init__(parent)
+        self.settings = settings
+        self.setWindowTitle("WorkBuddy 桌宠设置")
+        self.resize(490, 500)
+        self.setStyleSheet("QDialog{background:#f5f9fc;} QLabel{color:#36516b;} QPushButton{padding:8px;border-radius:7px;background:#e4f1fb;color:#246b9e;} QLineEdit,QSpinBox,QTextEdit{padding:7px;border:1px solid #d4e2ed;border-radius:6px;background:white;}")
+        layout = QVBoxLayout(self)
+        heading = QLabel("小搭子的设置")
+        heading.setStyleSheet("font-size:21px;font-weight:600;padding:8px 0;")
+        layout.addWidget(heading)
+        form = QFormLayout()
+        line = QHBoxLayout()
+        self.path = QLineEdit(settings.workbuddy_path)
+        self.path.setPlaceholderText("选择 WorkBuddy.exe")
+        browse = QPushButton("选择")
+        browse.clicked.connect(self.choose_path)
+        line.addWidget(self.path)
+        line.addWidget(browse)
+        form.addRow("WorkBuddy 位置", line)
+        self.size = QSpinBox()
+        self.size.setRange(100, 240)
+        self.size.setValue(settings.size)
+        form.addRow("角色大小", self.size)
+        self.notify = QCheckBox("完成或需要确认时通知我")
+        self.notify.setChecked(settings.notifications)
+        form.addRow("消息提醒", self.notify)
+        self.startup = QCheckBox("登录 Windows 后启动桌宠")
+        self.startup.setChecked(settings.startup)
+        form.addRow("自动启动", self.startup)
+        layout.addLayout(form)
+        self.hint = QLabel("首次连接将安装本地状态插件。请保存后连接，再在 WorkBuddy 新建一个任务。")
+        self.hint.setWordWrap(True)
+        layout.addWidget(self.hint)
+        actions = QHBoxLayout()
+        connect = QPushButton("连接 WorkBuddy")
+        connect.clicked.connect(self.install_requested)
+        disconnect = QPushButton("移除接入")
+        disconnect.clicked.connect(self.uninstall_requested)
+        reset = QPushButton("重置位置")
+        reset.clicked.connect(self.reset_requested)
+        for button in (connect, disconnect, reset):
+            actions.addWidget(button)
+        layout.addLayout(actions)
+        self.report = QTextEdit()
+        self.report.setReadOnly(True)
+        self.report.setMaximumHeight(160)
+        self.set_diagnostic(diagnostic)
+        layout.addWidget(self.report)
+        save = QPushButton("保存设置")
+        save.setStyleSheet("background:#388fd1;color:white;font-weight:600;padding:11px;")
+        save.clicked.connect(self.save)
+        layout.addWidget(save)
+
+    def choose_path(self):
+        name, _ = QFileDialog.getOpenFileName(self, "选择 WorkBuddy", self.path.text(), "WorkBuddy (WorkBuddy.exe)")
+        if name:
+            self.path.setText(name)
+
+    def save(self):
+        self.saved.emit(replace(self.settings, workbuddy_path=self.path.text().strip(), size=self.size.value(),
+                                notifications=self.notify.isChecked(), startup=self.startup.isChecked()))
+
+    def set_diagnostic(self, report: dict):
+        labels = {"plugin_not_configured": "尚未连接", "waiting_for_event": "已配置，等待 WorkBuddy 新任务",
+                  "events_received": "已收到 WorkBuddy 事件"}
+        lines = ["连接状态：" + labels.get(report.get("state"), "正在检查"),
+                 "程序位置：" + ("有效" if report.get("application_found") else "需要选择 WorkBuddy.exe"),
+                 "版本：" + report.get("version", "未知")]
+        if report.get("event_counts"):
+            lines += ["", "最近收到的事件："] + [f"  {key}：{value}" for key, value in report["event_counts"].items()]
+        self.report.setPlainText("\n".join(lines))
