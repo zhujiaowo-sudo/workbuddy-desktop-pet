@@ -34,5 +34,7 @@
 
 ### Task 3：交付
 
-- [ ] 完整回归、原生预览、冻结验证和本机更新，保留原设置与快捷方式。
-- [ ] 推送与Windows CI成功，发布v0.5.1并核验公开附件。
+- [x] 完整回归、原生预览、冻结验证和本机更新，保留原设置与快捷方式。
+- [x] 推送与Windows CI成功，发布v0.5.1并核验公开附件。
+
+交付（2026-10-28）：代码d3717e6，原生118项回归与冻结程序验证通过；[Windows CI成功](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40625627058/job/122609714031)。[v0.5.1公开发布](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.5.1)，6个附件的大小/SHA-256核对，匿名下载校验文件及默认轻量包成功并确认15动作。本机启用坐姿高清包并以chat_behavior=open-workbuddy运行，--chat跳转命令已发送，未发送消息；保留当前大小、关闭自启和原桌面快捷方式。
