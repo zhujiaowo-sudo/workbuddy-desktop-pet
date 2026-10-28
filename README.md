@@ -4,6 +4,18 @@
 
 让桌面角色跟随 WorkBuddy 的工作状态变化，在任务完成或需要你确认时提醒你，并支持点击唤起 WorkBuddy。
 
+[下载 Windows 最新版](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest) · [自制素材与模板](docs/materials.md) · [项目上下文](docs/project-context.md)
+
+## DEMO
+
+![DEMO 动图占位：待补充真实桌面录屏](docs/assets/demo-placeholder.svg)
+
+真实操作动图待补充，计划展示任务状态联动、胶囊与数据卡切换、积分查询、人物互动和素材切换。
+
+<!-- 录制后将上面的占位图替换为：![WorkBuddy 桌宠操作演示](docs/assets/demo.gif)。
+     请使用合成会话与演示数据，避免录入真实对话、账户数据及本地路径；
+     如使用 --demo 模式，保留“演示”标识，不将模拟事件表述为真实接入。 -->
+
 > 当前版本：**v0.6.2 Windows 版**。修复叠帧重影和腿部拼接，右键单一人物开关，小卡“−”只缩卡片；保留独立胶囊、积分、签到、素材和自动更新。[更新说明](docs/updating.md)；[兼容性记录](docs/compatibility.md)。
 
 ## 已实现功能

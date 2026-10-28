@@ -1,5 +1,6 @@
 # Project instructions
 
+- Read `docs/project-context.md` for the current feature baseline and confirmed user decisions; check the linked release and compatibility records for evidence.
 - This is a Windows x64 desktop pet for WorkBuddy only. Do not add Codex integration.
 - Read the design and implementation plan under `docs/` before changing application behavior.
 - Keep application code, hook integration, and the pure state reducer separate.
