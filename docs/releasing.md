@@ -11,7 +11,7 @@ python -m venv .venv
 .venv\Scripts\python tools/build_windows.py --work C:/wb-pet-build
 ```
 
-产物为 `dist/workbuddy-desktop-pet-0.6.1-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。必须包含`update_install.ps1`；自动更新的发布顺序及恢复说明见[软件更新](updating.md)。所有附件及校验文件先上传草稿，确认 CI 后发布为正式版本（非 prerelease）并设为 latest。
+产物为 `dist/workbuddy-desktop-pet-0.6.2-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。必须包含`update_install.ps1`；自动更新的发布顺序及恢复说明见[软件更新](updating.md)。所有附件及校验文件先上传草稿，确认 CI 后发布为正式版本（非 prerelease）并设为 latest。
 
 程序包提供薄荷星伴静态形象，不捆绑15动作人物动画。`仅卡片启动.vbs` 使用同一核心程序，仅隐藏人物；之后可在素材页启用角色。默认互动派生包与两档CC0模板独立上传Release，附件与catalog.json的字节数及SHA-256必须一致。原始素材保留v0.3.1下载。`python tools/create_interactive_pack.py` 导出15动作CC0模板；指定原薄荷ZIP与`--catalog`用于生成并登记带BY署名的默认派生包。`create_pet_template.py` 保留旧7状态示例，不用于新版默认下载。
 

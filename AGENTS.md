@@ -11,3 +11,4 @@
 - Keep public documentation in clear Chinese, with English identifiers for code.
 - Keep unrelated local applications and existing desktop pets unchanged.
 - For every feature change, check interactions with existing features and record the result. Present concrete conflicts or unreasonable behavior, their impact and a recommendation to the user for a decision before implementing a tradeoff. Continue independent work while awaiting that decision; do not invent hypothetical approval gates.
+- Review animation changes as complete loops and action transitions, including native rendered frames and shared anatomy. Static keyframes or metadata-only checks are insufficient. Do not present unvalidated draft art as a completed fix.

@@ -1,18 +1,18 @@
 {
   "schema": 1,
-  "release": "v0.6.1",
+  "release": "v0.6.2",
   "packs": {
     "light": {
-      "name": "mint-orbit-interactive-light-v1.3.0.zip",
-      "bytes": 5476854,
-      "sha256": "623c99e9c70e1cf042865bbb1f1d9cb23709b1b24348d8a76370449fc2cf245c",
-      "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.1/mint-orbit-interactive-light-v1.3.0.zip"
+      "name": "mint-orbit-interactive-light-v1.4.0.zip",
+      "bytes": 5835392,
+      "sha256": "5aa0085e796e984f2c2a0889c529c9307e01b0dad9d0cdebd46018d93895ca8e",
+      "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.2/mint-orbit-interactive-light-v1.4.0.zip"
     },
     "hd": {
-      "name": "mint-orbit-interactive-hd-v1.3.0.zip",
-      "bytes": 16285594,
-      "sha256": "20f7a4669bee97df95d33b05ddf90987272e01c7907cb707d2c006b723027382",
-      "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.1/mint-orbit-interactive-hd-v1.3.0.zip"
+      "name": "mint-orbit-interactive-hd-v1.4.0.zip",
+      "bytes": 17492734,
+      "sha256": "08cbc3aded045b4564e7b2e53cf26e9705df5aad786534fc481497e833d2c1df",
+      "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.2/mint-orbit-interactive-hd-v1.4.0.zip"
     }
   }
 }

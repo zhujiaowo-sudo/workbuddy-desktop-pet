@@ -38,6 +38,8 @@ v0.6.0的薄荷互动版1.2.0新增坐姿玩手机、吃零食：内置imagegen�
 
 v0.6.1的薄荷互动版1.3.0新增正常待机眨眼与可选idle_scratch挠头，使用内置imagegen以薄荷首帧为参考生成，按固定身体/脚底合成局部表情及手臂动画；保留Buddy娘/CC-BY-4.0。[两张源图、提示词与处理说明](art/mint-orbit/idle-v1.3.0.md)。
 
+v0.6.2的薄荷1.4.0修复旧版叠帧重影/腿部拼接：使用内置imagegen生成同一基础身体与独立眼睛/手臂部件，再由固定关节旋转合成；保留Buddy娘/CC-BY-4.0。草稿部件不一致的问题经修订及配准后才使用。[源图、完整提示词与动态验收说明](art/mint-orbit/rig-v1.4.0.md)。
+
 ## 动态运行时依赖
 
 PySide6 Essentials 与 Shiboken 采用其发行包声明的 LGPL/GPL/商业许可选项；本包保留动态库和许可说明，公共许可文本见 `licenses/`，Qt 源码见 https://code.qt.io/ 与 https://download.qt.io/official_releases/QtForPython/ 。正式源代码版本号和依赖锁定见 `requirements-dev.lock`。

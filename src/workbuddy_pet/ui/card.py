@@ -82,7 +82,6 @@ class CardWindow(QWidget):
         self.quick_action='checkin';self.last_checkin=None
         from .menu import module_menu
         self.context_menu,self.show_avatar_action=module_menu(self,self.page_requested,self.quit_requested,self.avatar_requested)
-        self.show_avatar_action.setVisible(False)
         self.root_layout=QVBoxLayout(self);self.root_layout.setContentsMargins(0,0,0,0);self.root_layout.setSpacing(0)
         self.compact_bar=QWidget();compact=QHBoxLayout(self.compact_bar);compact.setContentsMargins(0,0,0,0);compact.setSpacing(6)
         self.signin_button=QPushButton();self.signin_button.setFixedSize(36,36);self.signin_button.setIconSize(QSize(20,20))
@@ -117,7 +116,7 @@ class CardWindow(QWidget):
         self.data_button=action_button('data','展开数据看板');self.data_button.clicked.connect(self.open_data)
         self.chat_button=action_button('chat','在 WorkBuddy 中聊天 ↗');self.chat_button.clicked.connect(self.chat_requested)
         self.settings_button=action_button('settings','设置与连接');self.settings_button.clicked.connect(lambda:self.open_page('settings'))
-        self.collapse_button=action_button('collapse','收成胶囊')
+        self.collapse_button=action_button('collapse','收起小卡，保留桌宠')
         self.collapse_button.clicked.connect(lambda:self.set_compact(True,manual=True))
         header.addWidget(self.brand);header.addStretch()
         for button in (self.refresh_button,self.details_button,self.data_button,self.chat_button,self.settings_button,self.collapse_button):header.addWidget(button)
@@ -376,5 +375,7 @@ class CardWindow(QWidget):
     def resizeEvent(self,event):super().resizeEvent(event);self.resized.emit()
 
     def set_avatar_hidden(self,hidden,card_only=False):
-        self.show_avatar_action.setVisible(hidden)
-        self.show_avatar_action.setText('显示桌宠（退出仅卡片模式）' if card_only else '显示桌宠')
+        self.show_avatar_action.setVisible(True)
+        self.show_avatar_action.setText('显示桌宠' if hidden else '收成胶囊')
+        self.show_avatar_action.setToolTip('显示人物并退出仅卡片模式，不自动下载素材' if card_only else
+                                         '显示人物，必要时整组上移' if hidden else '隐藏人物，仅保留胶囊')

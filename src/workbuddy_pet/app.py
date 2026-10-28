@@ -126,7 +126,7 @@ class Controller(QObject):
         self.bubble.refresh_requested.connect(self.refresh_data)
         self.bubble.quick_requested.connect(self.quick_clicked)
         self.bubble.page_requested.connect(self.open_page)
-        self.bubble.avatar_requested.connect(self.show_avatar)
+        self.bubble.avatar_requested.connect(self.toggle_avatar)
         self.bubble.quit_requested.connect(app.quit)
         self.bubble.set_avatar_hidden(self.avatar_collapsed or self.settings.card_only,self.settings.card_only)
         self.bubble.set_quick_action(self.settings.quick_action,self.settings.quick_url)
@@ -246,17 +246,25 @@ class Controller(QObject):
 
     def save_compact(self,value):
         if not value and self.avatar_collapsed:self.restore_avatar(persist=False)
-        self.avatar_collapsed=value
-        self.pet.setVisible(self.user_visible and not self.settings.card_only and not value)
-        if value:
-            self._capsule_anchor=Rect(self.bubble.x(),self.bubble.y(),self.bubble.width(),self.bubble.height())
-            self.idle_director.cancel();self.finish_interaction(refresh=False)
-            self.ambient_director.cancel()
-        self.bubble.set_avatar_hidden(value or self.settings.card_only,self.settings.card_only)
-        self.settings=replace(self.settings,compact=value,avatar_collapsed=value,
-                              card_position=(self.bubble.x(),self.bubble.y()) if value else self.settings.card_position)
+        if not value and self.settings.card_only:self.avatar_collapsed=False
+        self.bubble.set_avatar_hidden(self.avatar_collapsed or self.settings.card_only,self.settings.card_only)
+        self.settings=replace(self.settings,compact=value,avatar_collapsed=self.avatar_collapsed,
+                              card_position=(self.bubble.x(),self.bubble.y()) if self.avatar_collapsed else self.settings.card_position)
         save_settings(self.root,self.settings)
         self.dialog.settings=self.settings
+
+    def collapse_avatar(self):
+        self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
+        self.avatar_collapsed=True;self.pet.hide()
+        self.idle_director.cancel();self.ambient_director.cancel();self.finish_interaction(refresh=False)
+        self._capsule_anchor=Rect(self.bubble.x(),self.bubble.y(),self.bubble.width(),self.bubble.height())
+        self.settings=replace(self.settings,compact=True,avatar_collapsed=True,card_position=self.bubble.pos().toTuple())
+        self.bubble.set_avatar_hidden(True,self.settings.card_only)
+        self.dialog.settings=self.settings;save_settings(self.root,self.settings);self.position_bubble()
+
+    def toggle_avatar(self):
+        if self.avatar_collapsed or self.settings.card_only:self.show_avatar()
+        else:self.collapse_avatar()
 
     def restore_avatar(self,*,exit_card_only=False,persist=True):
         if self.settings.card_only and not exit_card_only:return
@@ -294,8 +302,7 @@ class Controller(QObject):
         if key=='summary':self.open_card();return
         self.finish_interaction()
         if key=='capsule':
-            self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
-            self.position_bubble()
+            self.collapse_avatar()
         else:
             self.restore_avatar()
             self.user_visible=True;self.pet.setVisible(not self.settings.card_only);self.bubble.show()

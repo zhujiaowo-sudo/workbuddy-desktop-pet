@@ -1,0 +1,171 @@
+{
+  "version": "0.6.2",
+  "pack": "1.4.0",
+  "player_audit": {
+    "sampling": "controlled_monotonic_timestamps",
+    "actions": [
+      {
+        "action": "idle",
+        "frames": 16,
+        "ms": 2840,
+        "samples_without_blending": 80,
+        "loop": true
+      },
+      {
+        "action": "thinking",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": true
+      },
+      {
+        "action": "working",
+        "frames": 8,
+        "ms": 1280,
+        "samples_without_blending": 40,
+        "loop": true
+      },
+      {
+        "action": "waiting",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": true
+      },
+      {
+        "action": "review",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": true
+      },
+      {
+        "action": "done",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": false
+      },
+      {
+        "action": "failed",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": false
+      },
+      {
+        "action": "click_wave",
+        "frames": 16,
+        "ms": 2560,
+        "samples_without_blending": 80,
+        "loop": false
+      },
+      {
+        "action": "click_heart",
+        "frames": 16,
+        "ms": 2560,
+        "samples_without_blending": 80,
+        "loop": false
+      },
+      {
+        "action": "click_shy",
+        "frames": 16,
+        "ms": 2560,
+        "samples_without_blending": 80,
+        "loop": false
+      },
+      {
+        "action": "click_surprised",
+        "frames": 16,
+        "ms": 2560,
+        "samples_without_blending": 80,
+        "loop": false
+      },
+      {
+        "action": "leisure_snack",
+        "frames": 8,
+        "ms": 1600,
+        "samples_without_blending": 40,
+        "loop": true
+      },
+      {
+        "action": "leisure_phone",
+        "frames": 8,
+        "ms": 1600,
+        "samples_without_blending": 40,
+        "loop": true
+      },
+      {
+        "action": "leisure_stretch",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": true
+      },
+      {
+        "action": "leisure_music",
+        "frames": 16,
+        "ms": 1280,
+        "samples_without_blending": 80,
+        "loop": true
+      },
+      {
+        "action": "idle_scratch",
+        "frames": 16,
+        "ms": 1600,
+        "samples_without_blending": 80,
+        "loop": false
+      }
+    ],
+    "source_sha256": "08cbc3aded045b4564e7b2e53cf26e9705df5aad786534fc481497e833d2c1df",
+    "canonical_rig_roundtrip": true
+  },
+  "native_replay": [
+    {
+      "action": "idle",
+      "observed_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "milliseconds": 5937
+    },
+    {
+      "action": "idle_scratch",
+      "observed_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "milliseconds": 3469
+    }
+  ],
+  "pixel_invariants_test": "tests/test_rig_integrity.py",
+  "visual_review": "all idle/scratch native frames; representative overview for all 16 actions"
+}

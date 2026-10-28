@@ -26,20 +26,20 @@ def main():
     app=QApplication.instance() or QApplication(sys.argv[:1])
     entries={}
     for quality in ('light','hd'):
-        name=f'mint-orbit-interactive-{quality}-v1.3.0.zip' if args.source else f'workbuddy-pet-template-{quality}-v2.0.1.zip'
+        name=f'mint-orbit-interactive-{quality}-v1.4.0.zip' if args.source else f'workbuddy-pet-template-{quality}-v2.0.1.zip'
         leisure={f'leisure_{key}':project/f'art/mint-orbit/{key}-sheet-v1.2.0.png' for key in ('phone','snack')} if args.source else None
-        idle={'idle':project/'art/mint-orbit/idle-sheet-v1.3.0.png','idle_scratch':project/'art/mint-orbit/scratch-sheet-v1.3.0.png'} if args.source else None
-        path=export_interactive(args.output/name,quality,args.source,args.typing_sheet,leisure,idle)
+        rig=project/'art/mint-orbit/rig-kit-v1.4.0.png' if args.source else None
+        path=export_interactive(args.output/name,quality,args.source,args.typing_sheet,leisure,rig)
         import tempfile
         with tempfile.TemporaryDirectory() as temporary:
             pack=MaterialLibrary(Path(temporary)/'library').import_pack(path)
             assert pack.schema==2 and len(pack.actions)==(16 if args.source else 15)
         entries[quality]={'name':path.name,'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
-            'url':f'https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.1/{name}'}
+            'url':f'https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.2/{name}'}
         print(json.dumps({quality:entries[quality]},ensure_ascii=True),flush=True)
     if args.catalog:
         if not args.source:raise ValueError('默认清单只可由明确指定的薄荷源包更新')
-        (project/'src/workbuddy_pet/catalog.json').write_text(json.dumps({'schema':1,'release':'v0.6.1','packs':entries},indent=2)+'\n',encoding='utf-8')
+        (project/'src/workbuddy_pet/catalog.json').write_text(json.dumps({'schema':1,'release':'v0.6.2','packs':entries},indent=2)+'\n',encoding='utf-8')
 
 
 if __name__=='__main__':main()

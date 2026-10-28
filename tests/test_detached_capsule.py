@@ -67,7 +67,7 @@ def test_restart_keeps_detached_capsule_at_bottom_and_card_only_needs_explicit_s
         assert other.bubble.y()+other.bubble.height()<=available.bottom()+1
         other.apply_settings(replace(other.settings,card_only=True));other.open_card()
         assert other.settings.card_only and not other.pet.isVisible()
-        other.open_page('capsule');assert '仅卡片' in other.bubble.show_avatar_action.text()
+        other.open_page('capsule');assert '仅卡片' in other.bubble.show_avatar_action.toolTip()
         other.show_avatar();assert not other.settings.card_only and other.pet.isVisible()
     finally:other.shutdown()
 
