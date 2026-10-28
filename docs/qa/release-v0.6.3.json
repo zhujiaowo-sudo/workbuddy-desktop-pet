@@ -72,7 +72,7 @@
     },
     "SHA256SUMS.txt": {
       "bytes": 626,
-      "sha256": "8b082d9d66e8b812bdbd9be64ba44c332d1e013489f7e422c4a8e07c74df8b49"
+      "sha256": "46942404e9ff20e7f0e5c710fc1bea705945f0a15bc733a34933fb16abc77bb7"
     },
     "workbuddy-desktop-pet-0.6.3-windows-x64.zip": {
       "bytes": 62156984,
@@ -86,7 +86,7 @@
       "bytes": 5035279,
       "sha256": "1c789e8fd43fbe93e7e15157a8d9bfdbd39c5ea4844c9687a690cff915878020"
     },
-    "安装与素材说明.txt": {
+    "INSTALL-AND-MATERIALS.txt": {
       "bytes": 1070,
       "sha256": "c583611bb44ec644cbb2f77cc8acbd280510fba9df23aafbd5aac20d2a76d4de"
     }
