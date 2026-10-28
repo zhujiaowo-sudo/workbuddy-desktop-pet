@@ -32,7 +32,7 @@ def main():
     result = subprocess.run(command.split(), input=payload, capture_output=True, timeout=15)
     assert result.returncode == 0 and not result.stdout
     assert list((shell_root / "events").glob("*.jsonl")), "PowerShell lost stdin or literal arguments"
-    result=subprocess.run([str(exe),'--root',str(root/'materials'),'--import-pet',str(project/'examples/starter-pet')],capture_output=True,timeout=20)
+    result=subprocess.run([str(exe),'--root',str(root/'materials'),'--import-pet',str(project/'src/workbuddy_pet/assets/default_pet')],capture_output=True,timeout=60)
     assert result.returncode==0 and list((root/'materials/characters').glob('*/manifest.json')), 'Frozen material decoder/import failed'
     if args.interactive_pack:
         full_root=root/'interactive'
@@ -48,7 +48,8 @@ def main():
         runtime=json.loads((full_root/'runtime.json').read_text(encoding='utf-8'))
         assert runtime['animation_loaded'] and runtime['visual_action']=='click_wave' and runtime['capsule_gap']==8
         assert runtime['checkin_state']=='disabled'
-    assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Optional material catalog missing'
+    assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Compatibility catalog missing'
+    assert len(list((exe.parent/'_internal/workbuddy_pet/assets/default_pet/actions').glob('*.gif')))==16,'Complete bundled set missing'
     assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
     assert (exe.parent/'_internal/workbuddy_pet/update_install.ps1').is_file(),'Update installer missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")

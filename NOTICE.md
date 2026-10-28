@@ -22,7 +22,11 @@
 
 已独立实现 WorkBuddy 适配、Windows 卡片、统计和角色包系统。原“小搭子”机器人为独立程序绘制的原创形象，保留为资源缺失时的回退和创作模板；其导出图像与示例包以 CC0-1.0 提供，许可文本见 https://creativecommons.org/publicdomain/zero/1.0/legalcode 。此声明不覆盖新默认形象、整个程序代码、白龙人物或其他用户素材。
 
-## 默认形象：薄荷星伴
+## 当前唯一素材：薄荷星伴2.0.0
+
+程序v0.6.4内置用户制作提供的16段720×720透明GIF（新待机及15段动作），原角色Buddy娘，继续保留CC-BY-4.0署名。文件仅按动作规范重命名，GIF原字节、透明度、帧顺序及时长均保留。静态兜底图来自新待机第一帧。旧图像资源和模板已从当前源码及安装包移除；以下旧版记录只供历史追溯，原蓝色应用图标独立保留。
+
+## 历史默认形象记录：薄荷星伴
 
 作者：**Buddy娘**。版本：1.0.1。许可：**CC-BY-4.0**，见 https://creativecommons.org/licenses/by/4.0/ 。素材来自用户提供的高清ZIP及配套轻量ZIP，公开原包见[发布页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1)。
 

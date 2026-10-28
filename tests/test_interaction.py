@@ -63,10 +63,9 @@ def test_idle_animation_yields_to_tasks_and_preserves_real_card(tmp_path,qt_app)
     now=time.time()
     controller.consume([Event('task',now,'task','UserPromptSubmit'),Event('tool',now+.01,'task','PreToolUse')])
     assert controller.visual_action=='working' and controller.idle_director.active is None
-    assert controller.pet.effect_action=='working' and controller.pet.timer.isActive()
-    controller.pet.tick=0;first=controller.pet.grab().toImage()
-    controller.pet.tick=5;second=controller.pet.grab().toImage()
-    assert first!=second
+    # The default now supplies authored working frames, so synthetic props stay off.
+    assert controller.pet.effect_action=='' and not controller.pet.timer.isActive()
+    assert controller.active_pack.key=='builtin' and controller.player.stream_path is not None
     controller.interact();assert controller.active_interaction
     controller.consume([Event('confirm',now+.02,'task','PermissionRequest')])
     assert controller.visual_action=='review' and controller.active_interaction is None

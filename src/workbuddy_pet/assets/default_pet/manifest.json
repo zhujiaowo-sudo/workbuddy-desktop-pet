@@ -1,0 +1,104 @@
+{
+  "schema": 3,
+  "id": "mint-orbit-user-gifs",
+  "name": "薄荷星伴",
+  "version": "2.0.0",
+  "author": "Buddy娘；动作由用户制作提供",
+  "license": "CC-BY-4.0",
+  "quality": "hd",
+  "anchor": [
+    116,
+    29,
+    583,
+    698
+  ],
+  "source": {
+    "character_author": "Buddy娘",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "用户提供完整16段透明GIF；原文件字节、帧顺序及时长未改动。"
+  },
+  "actions": {
+    "idle": {
+      "file": "actions/idle.gif",
+      "loop": true
+    },
+    "thinking": {
+      "file": "actions/thinking.gif",
+      "loop": true
+    },
+    "working": {
+      "file": "actions/working.gif",
+      "loop": true
+    },
+    "waiting": {
+      "file": "actions/waiting.gif",
+      "loop": true
+    },
+    "review": {
+      "file": "actions/review.gif",
+      "loop": true
+    },
+    "done": {
+      "file": "actions/done.gif",
+      "loop": false
+    },
+    "failed": {
+      "file": "actions/failed.gif",
+      "loop": false
+    },
+    "click_wave": {
+      "file": "actions/click_wave.gif",
+      "loop": false
+    },
+    "click_heart": {
+      "file": "actions/click_heart.gif",
+      "loop": false
+    },
+    "click_shy": {
+      "file": "actions/click_shy.gif",
+      "loop": false
+    },
+    "click_surprised": {
+      "file": "actions/click_surprised.gif",
+      "loop": false
+    },
+    "leisure_snack": {
+      "file": "actions/leisure_snack.gif",
+      "loop": true
+    },
+    "leisure_phone": {
+      "file": "actions/leisure_phone.gif",
+      "loop": true
+    },
+    "leisure_stretch": {
+      "file": "actions/leisure_stretch.gif",
+      "loop": true
+    },
+    "leisure_music": {
+      "file": "actions/leisure_music.gif",
+      "loop": true
+    },
+    "idle_scratch": {
+      "file": "actions/idle_scratch.gif",
+      "loop": false
+    }
+  },
+  "files": {
+    "actions/idle.gif": "ec46ca32ad38aba5785d6c42779d4970f85a370917fb383f7828570ec1d589f2",
+    "actions/thinking.gif": "2e7723a3c7fe62ddbde8964773acc2ef85a00166a8b824ac7f1c3159461228c1",
+    "actions/working.gif": "856f9193de28f53eb26325bbec144add6d6e965d01aa138c56c66bb531178e8e",
+    "actions/waiting.gif": "626f64ae69f97e6affdcb57f69e738c7aa2adbf1a0f7c78aee4ee7c048d6ed30",
+    "actions/review.gif": "616afe707d4915bc845721433c1c0f0ddacc32603f55a6bfb8496af13d6229c5",
+    "actions/done.gif": "c9f160206a3210a06d8f94c804bbc3f26215024f8daeac756683007df7d677fe",
+    "actions/failed.gif": "380b1644c911c33dce75090bc6547866162b42ef7a2c43896c96619bf906202e",
+    "actions/click_wave.gif": "861a71c52496ed08e43d3764ac8df792154d8a9f110a82b8a0d477eee6a627b4",
+    "actions/click_heart.gif": "c47fc804bb6a7e3035ad5180ca637dd3476471c9bc2135394acf84c11cb8f4f6",
+    "actions/click_shy.gif": "d56bacbd2c544bf8a6d8cef7097eb6377ec7782ce940fed8d49e8442d93f2f4d",
+    "actions/click_surprised.gif": "af54d00e60fbdb7456f4ff552117d773081da7aadb1d9444fe31c85d324356c0",
+    "actions/leisure_snack.gif": "1b16baf1198f1703d17934a34a73df45953f5a7da5b9409e7faa57c59fac5f96",
+    "actions/leisure_phone.gif": "f24c12ab11835f19faf3c734edd500301a28ea21a13f7c4499de1ca1fee47f7b",
+    "actions/leisure_stretch.gif": "8d038cba3fbd2a09871c6143860cf8bf24399fcef586e61bb793ff590fef0725",
+    "actions/leisure_music.gif": "eeabba4c834e6a43abe38f28d6a1e5e5c36d151f1936157b6527103afc72ac35",
+    "actions/idle_scratch.gif": "5cc0e50f09fbee906e6289211dbb5025c1066676eb70249e9491d1eb9ca0eb0e"
+  }
+}

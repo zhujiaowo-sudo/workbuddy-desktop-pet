@@ -21,7 +21,7 @@ class MaterialPanel(QWidget):
         note.setWordWrap(True);layout.addWidget(note)
         self.choices=QComboBox();layout.addWidget(self.choices)
         self.description=QLabel();self.description.setTextFormat(Qt.TextFormat.PlainText);self.description.setWordWrap(True);layout.addWidget(self.description)
-        self.preview=QLabel('薄荷星伴静态形象无需下载');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(130);layout.addWidget(self.preview)
+        self.preview=QLabel('内置16段动作无需下载');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(130);layout.addWidget(self.preview)
         self.player=AnimationPlayer(self);self.player.changed.connect(self.update_preview)
         self.preview_pack=None
         self.action_choice=QComboBox()
@@ -39,17 +39,14 @@ class MaterialPanel(QWidget):
         row=QHBoxLayout()
         self.import_zip=QPushButton('导入 ZIP');self.import_zip.clicked.connect(self.choose_zip);row.addWidget(self.import_zip)
         self.import_folder=QPushButton('导入文件夹');self.import_folder.clicked.connect(self.choose_folder);row.addWidget(self.import_folder)
-        self.template=QPushButton('导出15动作模板');self.template.clicked.connect(self.export_template);row.addWidget(self.template);layout.addLayout(row)
-        row=QHBoxLayout()
-        self.light=QPushButton('下载默认轻量包 · 512px');self.light.clicked.connect(lambda:self.download('light'));row.addWidget(self.light)
-        self.hd=QPushButton('下载默认高清包 · 720画布');self.hd.setToolTip('待机使用720像素母版；其余旧动作由512画布统一放大，不增加原始细节');self.hd.clicked.connect(lambda:self.download('hd'));row.addWidget(self.hd);layout.addLayout(row)
+        self.template=QPushButton('导出当前内置套装');self.template.clicked.connect(self.export_template);row.addWidget(self.template);layout.addLayout(row)
         self.status=QLabel('本地导入不上传文件；分享角色可直接分享素材 ZIP。');self.status.setWordWrap(True);layout.addWidget(self.status)
         layout.addStretch()
         self.reload()
 
     def reload(self,selected=None):
         selected=selected or self.choices.currentData()
-        self.choices.blockSignals(True);self.choices.clear();self.choices.addItem('薄荷星伴 · 内置静态形象','builtin')
+        self.choices.blockSignals(True);self.choices.clear();self.choices.addItem('薄荷星伴 · 内置完整动作','builtin')
         try:
             for pack in self.library.list_packs():
                 self.choices.addItem(pack.name+' · '+('高清' if pack.quality=='hd' else '轻量'),pack.key)
@@ -61,17 +58,13 @@ class MaterialPanel(QWidget):
         key=self.choices.currentData()
         self.preview_pack=None
         self.player.clear()
-        self.action_choice.setEnabled(key not in (None,'builtin'))
+        self.action_choice.setEnabled(key is not None)
         self.remove.setEnabled(key not in (None,'builtin') and self.job is None)
-        if key in (None,'builtin'):
-            from .pet import DEFAULT_PORTRAIT,mascot_icon
-            portrait=QPixmap(str(DEFAULT_PORTRAIT))
-            self.preview.setPixmap(portrait.scaled(125,125,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
-                                   if not portrait.isNull() else mascot_icon().pixmap(110,110))
-            self.description.setText('作者：Buddy娘 / CC-BY-4.0\n默认静态形象随程序提供，15动作互动包可独立下载。')
-            return
         try:
-            pack=self.library.load(key)
+            if key in (None,'builtin'):
+                from ..builtin import builtin_pack
+                pack=builtin_pack()
+            else:pack=self.library.load(key)
             self.preview_pack=pack
             for action in OPTIONAL_IDLE_ACTIONS:
                 index=self.action_choice.findData(action)
@@ -108,10 +101,6 @@ class MaterialPanel(QWidget):
 
     def import_path(self,path):self.start_job(lambda:self.library.import_pack(path),'正在检查并导入素材…')
 
-    def download(self,quality):
-        from ..material_download import download_default
-        self.start_job(lambda:download_default(quality,self.library,lambda:self.job is None or self.job.cancel.is_set()),'正在下载并校验默认素材…')
-
     def start_job(self,function,message,done=None):
         if self.job:return
         self.status.setText(message)
@@ -119,7 +108,7 @@ class MaterialPanel(QWidget):
         self.job.done.connect(done or self.imported)
         self.job.failed.connect(self.status.setText)
         self.job.finished.connect(self.finished)
-        for button in (self.import_zip,self.import_folder,self.light,self.hd,self.activate,self.remove,self.template):button.setEnabled(False)
+        for button in (self.import_zip,self.import_folder,self.activate,self.remove,self.template):button.setEnabled(False)
         self.job.start()
 
     def imported(self,pack):self.reload(pack.key);self.status.setText('素材已导入并可预览，点击“启用所选角色”应用。')
@@ -127,17 +116,17 @@ class MaterialPanel(QWidget):
     def finished(self):
         job=self.job;self.job=None
         if job:job.deleteLater()
-        for button in (self.import_zip,self.import_folder,self.light,self.hd,self.activate,self.template):button.setEnabled(True)
+        for button in (self.import_zip,self.import_folder,self.activate,self.template):button.setEnabled(True)
         self.remove.setEnabled(self.choices.currentData() not in (None,'builtin'))
 
     def export_template(self):
-        path,_=QFileDialog.getSaveFileName(self,'导出可直接导入的创作模板','my-pet-template.zip','角色包 (*.zip)')
+        path,_=QFileDialog.getSaveFileName(self,'导出内置完整套装','mint-orbit-user-gifs-v2.0.0.zip','角色包 (*.zip)')
         if not path:return
-        # Qt drawing must remain on the GUI thread; export's small frames are bounded.
+        # Copy the original GIFs and their manifest without rendering new artwork.
         if self.job:return
         try:
             from ..templates import export_starter
-            export_starter(Path(path));self.status.setText('15动作模板已导出：替换 actions 下同名动画，修改作者、许可与校验摘要后导入。')
+            export_starter(Path(path));self.status.setText('完整16段素材已导出，保留原GIF及署名，可直接导入。')
         except (OSError,ValueError):self.status.setText('模板导出失败，请检查保存位置。')
 
     def shutdown(self):

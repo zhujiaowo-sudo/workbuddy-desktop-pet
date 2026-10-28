@@ -162,6 +162,9 @@ class Controller(QObject):
         if self.settings.card_only:self.pet.timer.stop()
         self.bubble.show()
         self.restore_character()
+        if self.avatar_collapsed and not self.settings.card_position:
+            self._card_placed=False
+            self.reset_position(self.settings.position)
         self.position_bubble()
         self.worker = None
         if not demo:
@@ -352,12 +355,16 @@ class Controller(QObject):
         self.active_pack=None
         self.player.clear()
         if self.settings.card_only:return
-        if self.settings.character!='builtin':
+        from .builtin import builtin_pack
+        if self.settings.character=='builtin':
+            self.active_pack=builtin_pack()
+            self.player.load(self.active_pack,'idle')
+        else:
             try:
                 self.active_pack=self.library.load(self.settings.character)
                 self.player.load(self.active_pack,'idle')
             except MaterialError:
-                self.active_pack=None;self.player.clear()
+                self.active_pack=builtin_pack();self.player.load(self.active_pack,'idle')
                 self.settings=replace(self.settings,character='builtin')
                 save_settings(self.root,self.settings)
                 self.bubble.materials.status.setText('所选素材不可用，已恢复内置角色。')
@@ -372,7 +379,9 @@ class Controller(QObject):
                 candidate=self.library.load(key)
                 self.player.load(candidate,derive_display(self.sessions,time.time()).state)
                 self.active_pack=candidate
-            else:self.active_pack=None;self.player.clear()
+            else:
+                from .builtin import builtin_pack
+                self.active_pack=builtin_pack();self.player.load(self.active_pack,'idle')
             self.apply_settings(replace(previous,character=key,card_only=False))
             self.bubble.materials.status.setText('所选角色已启用。')
         except MaterialError as error:self.bubble.materials.status.setText(str(error))

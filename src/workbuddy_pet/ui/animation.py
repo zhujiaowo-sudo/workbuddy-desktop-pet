@@ -17,7 +17,7 @@ class AnimationPlayer(QObject):
         super().__init__(parent)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.timeout.connect(self._timeout);self.timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.frames=();self.index=0;self.loop=True;self.visible=True
-        self.identity=None;self.content_bounds=None;self.frame_started=0
+        self.identity=None;self.content_bounds=None;self.canvas_size=None;self.frame_started=0
         self.stream=None;self.stream_path=None;self.deadline=0;self.error=None;self.pending=None;self.loop_range=None;self.ended=False
 
     @property
@@ -39,6 +39,7 @@ class AnimationPlayer(QObject):
         if getattr(pack, 'schema', 1) == 3:
             self.clear(notify=False)
             self.identity=identity;self.loop=action.loop;self.content_bounds=pack.anchor
+            self.canvas_size=(720,720) if pack.quality=='hd' else (512,512)
             self.stream_path=pack.root/action.file;self.loop_range=getattr(action,'loop_range',None)
             if self.visible:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range);self.timer.start(1)
             self.bounds_changed.emit();self.changed.emit()
@@ -60,7 +61,7 @@ class AnimationPlayer(QObject):
         had_frames=bool(self.frames or self.stream_path);self.timer.stop()
         if self.stream:self.stream.close()
         self.stream=None;self.stream_path=None;self.deadline=0;self.error=None;self.pending=None;self.loop_range=None;self.ended=False
-        self.frames=();self.index=0;self.identity=None;self.content_bounds=None
+        self.frames=();self.index=0;self.identity=None;self.content_bounds=None;self.canvas_size=None
         if notify and had_frames:self.bounds_changed.emit();self.changed.emit()
 
     def set_visible(self,value):

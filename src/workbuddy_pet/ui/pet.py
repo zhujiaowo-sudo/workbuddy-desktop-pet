@@ -2,7 +2,7 @@
 import math
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal,QVariantAnimation,QEasingCurve
+from PySide6.QtCore import QPoint, QPointF,QSize, QRect, QRectF, Qt, QTimer, Signal,QVariantAnimation,QEasingCurve
 from PySide6.QtGui import QColor, QFont, QIcon, QImage, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QMenu
 
@@ -119,9 +119,16 @@ class PetWindow(QWidget):
         animated=self.player is not None and self.player.pixmap is not None
         pixmap=self.player.pixmap if animated else self.default_pixmap
         bounds=self.player.content_bounds if animated else self.default_bounds
-        if pixmap.isNull() or bounds is None:return self.rect()
-        target=self.image_target_rect(pixmap)
-        sx,sy=target.width()/pixmap.width(),target.height()/pixmap.height()
+        canvas=getattr(self.player,'canvas_size',None)
+        if canvas and self.player.content_bounds:
+            bounds=self.player.content_bounds
+            extent=QSize(*canvas).scaled(self.size(),Qt.AspectRatioMode.KeepAspectRatio)
+            target=QRect((self.width()-extent.width())//2,self.height()-extent.height(),extent.width(),extent.height())
+            sx,sy=target.width()/canvas[0],target.height()/canvas[1]
+        else:
+            if pixmap.isNull() or bounds is None:return self.rect()
+            target=self.image_target_rect(pixmap)
+            sx,sy=target.width()/pixmap.width(),target.height()/pixmap.height()
         left=target.x()+math.floor(bounds[0]*sx);top=target.y()+math.floor(bounds[1]*sy)
         right=target.x()+math.ceil(bounds[2]*sx);bottom=target.y()+math.ceil(bounds[3]*sy)
         return QRect(left,top,right-left,bottom-top)

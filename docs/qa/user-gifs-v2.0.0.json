@@ -1,0 +1,319 @@
+{
+  "automated_tests": 171,
+  "frozen_hook_and_powershell": true,
+  "frozen_gui_import_interaction_and_card": true,
+  "only_new_16_gifs": true,
+  "source_bytes_and_timing_preserved": true,
+  "native": [
+    {
+      "platform": "windows",
+      "scale": "1",
+      "actions": [
+        {
+          "action": "idle",
+          "frames": 16,
+          "cycle_ms": 4610,
+          "native_callbacks": 50,
+          "seconds": 14.330000000000002,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "thinking",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 74,
+          "seconds": 14.330000000000002,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "working",
+          "frames": 16,
+          "cycle_ms": 2620,
+          "native_callbacks": 63,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "waiting",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 53,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "review",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "done",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 53,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "failed",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_wave",
+          "frames": 16,
+          "cycle_ms": 2250,
+          "native_callbacks": 73,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_heart",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_shy",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_surprised",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_snack",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 53,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_phone",
+          "frames": 16,
+          "cycle_ms": 2620,
+          "native_callbacks": 63,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_stretch",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 53,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_music",
+          "frames": 16,
+          "cycle_ms": 2250,
+          "native_callbacks": 52,
+          "seconds": 7.25,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "idle_scratch",
+          "frames": 16,
+          "cycle_ms": 2250,
+          "native_callbacks": 53,
+          "seconds": 7.25,
+          "three_loops": true,
+          "hide_resume": true
+        }
+      ],
+      "transitions": {
+        "idle_to_working": true,
+        "urgent_review_interrupts_click": true,
+        "click_finishes_authored_timing": true
+      }
+    },
+    {
+      "platform": "windows",
+      "scale": "1.5",
+      "actions": [
+        {
+          "action": "idle",
+          "frames": 16,
+          "cycle_ms": 4610,
+          "native_callbacks": 50,
+          "seconds": 14.330000000000002,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "thinking",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 75,
+          "seconds": 14.330000000000002,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "working",
+          "frames": 16,
+          "cycle_ms": 2620,
+          "native_callbacks": 63,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "waiting",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "review",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "done",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "failed",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_wave",
+          "frames": 16,
+          "cycle_ms": 2250,
+          "native_callbacks": 73,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_heart",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_shy",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 53,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_surprised",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_snack",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_phone",
+          "frames": 16,
+          "cycle_ms": 2620,
+          "native_callbacks": 63,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_stretch",
+          "frames": 16,
+          "cycle_ms": 3160,
+          "native_callbacks": 52,
+          "seconds": 9.98,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_music",
+          "frames": 16,
+          "cycle_ms": 2250,
+          "native_callbacks": 52,
+          "seconds": 7.25,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "idle_scratch",
+          "frames": 16,
+          "cycle_ms": 2250,
+          "native_callbacks": 53,
+          "seconds": 7.25,
+          "three_loops": true,
+          "hide_resume": true
+        }
+      ],
+      "transitions": {
+        "idle_to_working": true,
+        "urgent_review_interrupts_click": true,
+        "click_finishes_authored_timing": true
+      }
+    }
+  ]
+}

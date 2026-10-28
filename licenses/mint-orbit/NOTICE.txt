@@ -1,27 +1,7 @@
-薄荷星伴 / Mint Orbit Companion
-作者：Buddy娘
-素材版本：1.0.1
-许可：Creative Commons Attribution 4.0 International (CC-BY-4.0)
-许可链接：https://creativecommons.org/licenses/by/4.0/
-
-来源：用户提供的 mint-orbit-hd-v1.0.1.zip 和同目录配套轻量包。
-公开原包：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1
-
-两份ZIP保持原始字节及清单不变。
-初始v0.3.1程序内 assets/mint-orbit-idle.png 是高清包 idle.webp 第一帧的透明PNG格式导出；该历史版本未改绘角色。当前版本的派生改动见下方记录。
-使用与再分发请保留作者、许可链接及改动说明。该素材不属于本项目旧CC0机器人素材。
-
-互动派生版1.1.0（v0.5.0）：继续CC-BY-4.0，原作者Buddy娘。
-各段重采样16帧；新增程序绘制电脑、零食、手机、爱心、音符与运动关键帧，扩展4点击、4休闲动作。
-并非原作者重新绘制的15段动作。原1.0.1 ZIP不变，派生包清单记录来源和改动。
-公开派生包：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.5.0
-
-坐姿互动派生版1.1.1（v0.5.1）：原角色Buddy娘 / CC-BY-4.0。
-工作姿势由内置imagegen参考原形象生成；4×2透明源图经杂点清理、网格提取和桌椅/脚底注册，合成8帧局部眨眼、打字动作。
-去除点击动作上下弹跳，放慢节奏；当时程序提供帧间插值和姿态过渡；v0.6.2起已取消整图插值与淡化。原1.0.1包不变。
-源图及提示词：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/tree/main/art/mint-orbit
-
-视频待机派生版1.5.0（v0.6.3）：原角色Buddy娘 / CC-BY-4.0。
-当前静态待机头像和idle动画来自用户提供的AI视频，经头盔特征尺度稳定、脚底注册、白底透明处理及正向选段导出。源视频SHA-256：26a26138036bd836d1c5fe8bb265a31e020b6643be0d36a6a413da593a9e5bcf。
-待机80帧/3333ms，首尾仍有嘴型与细节差异；其他15段沿用1.4.0，未宣称全套重制。512档旧动作文件不变；720档旧动作统一放大，不增加原始细节。
-制作说明：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/blob/main/art/mint-orbit/video-idle-v1.5.0.md
+薄荷星伴 2.0.0（WorkBuddy Desktop Pet v0.6.4）
+原角色作者：Buddy娘
+许可：CC-BY-4.0 https://creativecommons.org/licenses/by/4.0/
+本版16段动画由用户制作并提供，包括待机及15段动作。
+导入时仅重命名为规范路径；GIF文件字节、透明度、帧顺序和时长均未改变。
+内置静态PNG为本套待机GIF第一帧导出，未改绘角色。
+本许可不覆盖程序代码、其他角色或白龙素材。

@@ -51,17 +51,6 @@ def test_complete_pack_rejects_incomplete_or_wrong_animation(tmp_path,problem):
     with pytest.raises(MaterialError):validate_pack(tmp_path)
 
 
-def test_exported_template_is_complete_and_uses_original_art(tmp_path,qt_app):
-    from workbuddy_pet.interactive_export import export_interactive
-    from workbuddy_pet.materials import MaterialLibrary, decode_animation
-    result=export_interactive(tmp_path/'template.zip')
-    pack=MaterialLibrary(tmp_path/'library').import_pack(result)
-    assert pack.schema==2 and len(pack.actions)==15 and pack.license=='CC0-1.0'
-    for action in ('working','click_heart','leisure_phone','leisure_snack'):
-        frames=decode_animation(pack.root/pack.action(action).file)
-        assert len(frames)==16 and frames[0].rgba!=frames[5].rgba
-
-
 def test_complete_pack_anchor_stays_fixed_across_actions(tmp_path,qt_app):
     from workbuddy_pet.ui.animation import AnimationPlayer
     full_source(tmp_path)

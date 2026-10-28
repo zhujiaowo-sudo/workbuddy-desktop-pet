@@ -31,29 +31,6 @@ def test_mid_frame_samples_never_create_unpainted_intermediate_anatomy(qt_app):
     player.clear()
 
 
-def test_generated_seated_typing_keeps_furniture_and_outline_fixed():
-    from workbuddy_pet.sprite_sheet import typing_frames
-    path=Path(__file__).resolve().parents[1]/'art/mint-orbit/typing-sheet-v1.1.1.png'
-    frames=typing_frames(path,256)
-    assert len(frames)==8 and all(f.size==(256,256) for f in frames)
-    base=frames[0]
-    assert all(alpha_bounds(frame)==alpha_bounds(base) for frame in frames)
-    assert all(frame.crop((0,180,256,256)).tobytes()==base.crop((0,180,256,256)).tobytes() for frame in frames)
-    assert all(frame.crop((190,0,256,256)).tobytes()==base.crop((190,0,256,256)).tobytes() for frame in frames)
-    assert any(frame.tobytes()!=base.tobytes() for frame in frames[1:])
-
-
-def test_seated_leisure_has_fixed_chair_feet_and_distinct_hand_frames():
-    from workbuddy_pet.sprite_sheet import leisure_frames
-    for action in ('phone','snack'):
-        path=Path(__file__).resolve().parents[1]/f'art/mint-orbit/{action}-sheet-v1.2.0.png'
-        frames=leisure_frames(path,256);base=frames[0]
-        assert len(frames)==8 and all(f.size==(256,256) for f in frames)
-        assert all(alpha_bounds(f)==alpha_bounds(base) for f in frames)
-        assert all(f.crop((0,193,256,256)).tobytes()==base.crop((0,193,256,256)).tobytes() for f in frames)
-        assert len({f.tobytes() for f in frames})==8
-
-
 def test_action_switch_has_no_previous_pose_overlay(tmp_path,qt_app):
     from types import SimpleNamespace
     from PIL import Image

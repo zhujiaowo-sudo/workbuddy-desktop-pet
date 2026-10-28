@@ -87,8 +87,8 @@ def iter_animation(path: Path, *, long=False):
                         raise MaterialError('单段动画解码体积过大，请减少帧数或尺寸')
                     rgba = image.convert('RGBA')
                     delay = image.info.get('duration', 100)
-                    if long and (type(delay) not in (int, float) or not math.isfinite(delay) or not 20 <= delay <= 200):
-                        raise MaterialError('长动画每帧时长须为20–200ms')
+                    if long and (type(delay) not in (int, float) or not math.isfinite(delay) or not 20 <= delay <= 500):
+                        raise MaterialError('长动画每帧时长须为20–500ms')
                     if not isinstance(delay, (int, float)):
                         delay = 100
                     yield Frame(rgba.size, rgba.tobytes(), max(20, min(10000, int(delay))),alpha_bounds(rgba))
@@ -189,7 +189,7 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
                         resolution = (512 if quality == 'light' else 720) if schema == 3 else (256 if quality == 'light' else 512)
                         if frame.size != (resolution, resolution):
                             raise MaterialError(f'完整互动包所有帧须为{resolution}×{resolution}：' + state)
-                        if not (20 if schema == 3 else 40) <= frame.duration <= 200:
+                        if not (20 if schema == 3 else 40) <= frame.duration <= (500 if schema == 3 else 200):
                             raise MaterialError('完整互动包每帧时长超出规范：' + state)
                         if frame.bounds is None or min(frame.rgba[3::4]) == 255:
                             raise MaterialError('完整互动包每帧须有可见角色及透明背景：' + state)
