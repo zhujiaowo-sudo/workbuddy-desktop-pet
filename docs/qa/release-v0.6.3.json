@@ -72,11 +72,11 @@
     },
     "SHA256SUMS.txt": {
       "bytes": 626,
-      "sha256": "34ca0690ec8c7f6ab629ef5538cc9fd8ad11df7e6db9b21e72b2420e25fb7df3"
+      "sha256": "8b082d9d66e8b812bdbd9be64ba44c332d1e013489f7e422c4a8e07c74df8b49"
     },
     "workbuddy-desktop-pet-0.6.3-windows-x64.zip": {
-      "bytes": 62156573,
-      "sha256": "b3f0c8d35f9f5177dbcddcecc5785f001cb30116abc01bf267bae7c93ca30fff"
+      "bytes": 62156984,
+      "sha256": "10a52d4e2747b23f5a93e1968e8f645ca2f04d92eca40876ee857c2e59f83084"
     },
     "workbuddy-pet-template-hd-v2.0.1.zip": {
       "bytes": 10626370,
@@ -101,5 +101,6 @@
     "other 15 actions not redrawn",
     "720 legacy actions are uniformly enlarged from512",
     "synthetic UI verification does not imply full live WorkBuddy event integration"
-  ]
+  ],
+  "packaged_attribution_matches_source": true
 }

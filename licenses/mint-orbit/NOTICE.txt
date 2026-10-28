@@ -8,7 +8,7 @@
 公开原包：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1
 
 两份ZIP保持原始字节及清单不变。
-程序内 assets/mint-orbit-idle.png 是高清包 idle.webp 第一帧的透明PNG格式导出；未改绘角色。
+初始v0.3.1程序内 assets/mint-orbit-idle.png 是高清包 idle.webp 第一帧的透明PNG格式导出；该历史版本未改绘角色。当前版本的派生改动见下方记录。
 使用与再分发请保留作者、许可链接及改动说明。该素材不属于本项目旧CC0机器人素材。
 
 互动派生版1.1.0（v0.5.0）：继续CC-BY-4.0，原作者Buddy娘。
@@ -18,5 +18,10 @@
 
 坐姿互动派生版1.1.1（v0.5.1）：原角色Buddy娘 / CC-BY-4.0。
 工作姿势由内置imagegen参考原形象生成；4×2透明源图经杂点清理、网格提取和桌椅/脚底注册，合成8帧局部眨眼、打字动作。
-去除点击动作上下弹跳，放慢节奏；程序提供帧间插值和姿态过渡。原1.0.1包不变。
+去除点击动作上下弹跳，放慢节奏；当时程序提供帧间插值和姿态过渡；v0.6.2起已取消整图插值与淡化。原1.0.1包不变。
 源图及提示词：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/tree/main/art/mint-orbit
+
+视频待机派生版1.5.0（v0.6.3）：原角色Buddy娘 / CC-BY-4.0。
+当前静态待机头像和idle动画来自用户提供的AI视频，经头盔特征尺度稳定、脚底注册、白底透明处理及正向选段导出。源视频SHA-256：26a26138036bd836d1c5fe8bb265a31e020b6643be0d36a6a413da593a9e5bcf。
+待机80帧/3333ms，首尾仍有嘴型与细节差异；其他15段沿用1.4.0，未宣称全套重制。512档旧动作文件不变；720档旧动作统一放大，不增加原始细节。
+制作说明：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/blob/main/art/mint-orbit/video-idle-v1.5.0.md
