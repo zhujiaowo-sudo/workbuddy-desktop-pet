@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -24,6 +25,8 @@ FALLBACKS = dict(zip(CLICK_ACTIONS + LEISURE_ACTIONS,
 MAX_BYTES = 128 * 1024 * 1024
 MAX_PIXELS = 64_000_000
 MAX_HD_PACK_PIXELS = 72_000_000
+MAX_LONG_BYTES = 512 * 1024 * 1024
+MAX_LONG_PIXELS = 2_000_000_000
 _VISIBLE_ALPHA = [0]*17+[255]*239
 
 
@@ -69,8 +72,8 @@ class Frame:
     bounds: tuple[int,int,int,int] | None = None
 
 
-def decode_animation(path: Path) -> tuple[Frame, ...]:
-    frames, pixels = [], 0
+def iter_animation(path: Path, *, long=False):
+    pixels = 0
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('error', Image.DecompressionBombWarning)
@@ -80,18 +83,21 @@ def decode_animation(path: Path) -> tuple[Frame, ...]:
                 for index in range(image.n_frames):
                     image.seek(index)
                     pixels += image.width * image.height
-                    if pixels > MAX_PIXELS:
+                    if pixels > (125_000_000 if long else MAX_PIXELS):
                         raise MaterialError('单段动画解码体积过大，请减少帧数或尺寸')
                     rgba = image.convert('RGBA')
                     delay = image.info.get('duration', 100)
+                    if long and (type(delay) not in (int, float) or not math.isfinite(delay) or not 20 <= delay <= 200):
+                        raise MaterialError('长动画每帧时长须为20–200ms')
                     if not isinstance(delay, (int, float)):
                         delay = 100
-                    frames.append(Frame(rgba.size, rgba.tobytes(), max(20, min(10000, int(delay))),alpha_bounds(rgba)))
+                    yield Frame(rgba.size, rgba.tobytes(), max(20, min(10000, int(delay))),alpha_bounds(rgba))
     except (OSError, ValueError, EOFError, Image.DecompressionBombWarning, Image.DecompressionBombError) as error:
         if isinstance(error, MaterialError):
             raise
         raise MaterialError('素材不能完整解码：' + path.name) from None
-    return tuple(frames)
+def decode_animation(path: Path) -> tuple[Frame, ...]:
+    return tuple(iter_animation(path))
 
 
 @dataclass(frozen=True)
@@ -122,10 +128,10 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         if manifest_path.stat().st_size > 65536:
             raise MaterialError('角色清单超过 64 KiB')
         data = json.loads(manifest_path.read_text(encoding='utf-8-sig'))
-        if not isinstance(data, dict) or type(data.get('schema')) is not int or data.get('schema') not in (1, 2):
-            raise MaterialError('不支持的素材包版本，需要 schema=1 或 2')
+        if not isinstance(data, dict) or type(data.get('schema')) is not int or data.get('schema') not in (1, 2, 3):
+            raise MaterialError('不支持的素材包版本，需要 schema=1、2 或 3')
         schema = data['schema']
-        if schema == 2 and 'quality' not in data:
+        if schema >= 2 and 'quality' not in data:
             raise MaterialError('完整互动包须明确指定 quality=light 或 hd')
         for field in ('id', 'name', 'author', 'version', 'license'):
             if not isinstance(data.get(field), str) or not 1 <= len(data[field]) <= 200:
@@ -134,11 +140,13 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         actions = data.get('actions')
         if quality not in ('light', 'hd') or not isinstance(actions, dict) or 'idle' not in actions:
             raise MaterialError('角色包需要 idle 待机动作，以及 light/hd 画质')
-        if schema == 2 and (not set(ALL_ACTIONS)<=set(actions) or not set(actions)<=set(ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS)):
+        if schema >= 2 and (not set(ALL_ACTIONS)<=set(actions) or not set(actions)<=set(ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS)):
             raise MaterialError('完整互动包需要15个规定动作，只可额外提供可选idle_scratch')
-        anchor = data.get('anchor') if schema == 2 else None
+        anchor = data.get('anchor') if schema >= 2 else None
+        if schema == 3 and anchor is None:
+            raise MaterialError('长动画包需要统一可见包络 anchor')
         if anchor is not None:
-            resolution = 256 if quality == 'light' else 512
+            resolution = (512 if quality == 'light' else 720) if schema == 3 else (256 if quality == 'light' else 512)
             if (not isinstance(anchor, list) or len(anchor) != 4 or any(type(n) is not int for n in anchor)
                 or not 0 <= anchor[0] < anchor[2] <= resolution or not 0 <= anchor[1] < anchor[3] <= resolution):
                 raise MaterialError('统一可见包络 anchor 无效')
@@ -148,13 +156,13 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
             raise MaterialError('文件校验清单无效')
         parsed, seen, pixel_count = {}, set(), 0
         for state, item in actions.items():
-            if state not in (ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS if schema == 2 else STATES) or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
+            if state not in (ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS if schema >= 2 else STATES) or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
                 raise MaterialError('动作名称或循环设置无效')
             name = item.get('file')
             path = checked(root, name)
             if path.suffix.lower() not in ('.png', '.gif', '.webp'):
                 raise MaterialError('动作需要 PNG、GIF 或 WebP')
-            if schema == 2:
+            if schema >= 2:
                 if name not in tuple(f'actions/{state}{ext}' for ext in ('.webp', '.png', '.gif')):
                     raise MaterialError('完整互动包文件须命名为 actions/<动作标识>.webp、.png 或 .gif')
                 if item.get('loop') is not (state in LOOP_ACTIONS):
@@ -163,24 +171,32 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
                 with path.open('rb') as stream:
                     if hashlib.file_digest(stream, 'sha256').hexdigest() != hashes[name]:
                         raise MaterialError('素材 SHA-256 校验失败')
+            if schema == 3 and path.stat().st_size > 64 * 1024 * 1024:
+                raise MaterialError('长动画单文件不得超过64MiB')
             if decode and name not in seen:
-                frames = decode_animation(path)
-                if schema == 2:
-                    resolution = 256 if quality == 'light' else 512
-                    if not 8 <= len(frames) <= 16:
-                        raise MaterialError('完整互动包每段需要8–16帧，不能使用静态图：' + state)
-                    if any(f.size != (resolution, resolution) for f in frames):
-                        raise MaterialError(f'完整互动包所有帧须为{resolution}×{resolution}：' + state)
-                    if any(not 40 <= f.duration <= 200 for f in frames):
-                        raise MaterialError('完整互动包每帧时长须为40–200ms：' + state)
-                    if any(f.bounds is None or min(f.rgba[3::4]) == 255 for f in frames):
-                        raise MaterialError('完整互动包每帧须有可见角色及透明背景：' + state)
-                    if anchor and any(f.bounds[0] < anchor[0] or f.bounds[1] < anchor[1] or
-                                      f.bounds[2] > anchor[2] or f.bounds[3] > anchor[3] for f in frames):
-                        raise MaterialError('统一可见包络 anchor 未包含全部动作：' + state)
-                pixel_count += sum(f.size[0] * f.size[1] for f in frames)
-                if pixel_count > (MAX_HD_PACK_PIXELS if schema==2 and quality=='hd' else MAX_PIXELS):
-                    raise MaterialError('整套角色的解码体积超过上限，请拆分画质或减少帧数')
+                count = elapsed = 0
+                for frame in iter_animation(path, long=schema == 3):
+                    count += 1
+                    elapsed += frame.duration
+                    if schema >= 2:
+                        resolution = (512 if quality == 'light' else 720) if schema == 3 else (256 if quality == 'light' else 512)
+                        if frame.size != (resolution, resolution):
+                            raise MaterialError(f'完整互动包所有帧须为{resolution}×{resolution}：' + state)
+                        if not (20 if schema == 3 else 40) <= frame.duration <= 200:
+                            raise MaterialError('完整互动包每帧时长超出规范：' + state)
+                        if frame.bounds is None or min(frame.rgba[3::4]) == 255:
+                            raise MaterialError('完整互动包每帧须有可见角色及透明背景：' + state)
+                        if anchor and (frame.bounds[0] < anchor[0] or frame.bounds[1] < anchor[1] or
+                                       frame.bounds[2] > anchor[2] or frame.bounds[3] > anchor[3]):
+                            raise MaterialError('统一可见包络 anchor 未包含全部动作：' + state)
+                    pixel_count += frame.size[0] * frame.size[1]
+                    limit = MAX_LONG_PIXELS if schema == 3 else (MAX_HD_PACK_PIXELS if schema == 2 and quality == 'hd' else MAX_PIXELS)
+                    if pixel_count > limit:
+                        raise MaterialError('整套角色的解码体积超过上限，请拆分画质或减少帧数')
+                if schema >= 2 and not 8 <= count <= (240 if schema == 3 else 16):
+                    raise MaterialError('完整互动包每段需要8–240帧' if schema == 3 else '完整互动包每段需要8–16帧')
+                if schema == 3 and elapsed > 12000:
+                    raise MaterialError('长动画每段不得超过12秒')
                 seen.add(name)
             parsed[state] = Action(name, item.get('loop', True))
         return CharacterPack(key, root, data['name'], data['author'], quality, data['license'], parsed, schema, anchor)
@@ -231,8 +247,8 @@ class MaterialLibrary:
                 path = checked(stage, name)
                 folded = name.casefold()
                 total += size
-                if folded in names or len(names) >= 64 or size < 0 or total > MAX_BYTES:
-                    raise MaterialError('角色包重复文件、数量过多或超过 128 MiB')
+                if folded in names or len(names) >= 64 or size < 0 or total > MAX_LONG_BYTES:
+                    raise MaterialError('角色包重复文件、数量过多或超过 512 MiB')
                 names.add(folded)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 count = 0
@@ -254,8 +270,8 @@ class MaterialLibrary:
                             with path.open('rb') as stream:
                                 write(path.relative_to(source).as_posix(), path.stat().st_size, stream)
                 else:
-                    if source.stat().st_size > MAX_BYTES:
-                        raise MaterialError('ZIP 超过 128 MiB')
+                    if source.stat().st_size > MAX_LONG_BYTES:
+                        raise MaterialError('ZIP 超过 512 MiB')
                     with zipfile.ZipFile(source) as archive:
                         if len(archive.infolist()) > 128:
                             raise MaterialError('ZIP 条目过多')
@@ -267,7 +283,9 @@ class MaterialLibrary:
                                 continue
                             with archive.open(info) as stream:
                                 write(info.filename, info.file_size, stream)
-                validate_pack(stage)
+                staged = validate_pack(stage)
+                if staged.schema < 3 and total > MAX_BYTES:
+                    raise MaterialError('旧格式角色包超过 128 MiB')
                 digest = hashlib.sha256()
                 for name in sorted(names):
                     digest.update(name.encode('utf-8'))

@@ -6,7 +6,7 @@ import sys
 import tempfile
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
-from workbuddy_pet.materials import MaterialError, MaterialLibrary, decode_animation
+from workbuddy_pet.materials import MaterialError, MaterialLibrary, iter_animation
 
 
 def main():
@@ -16,8 +16,12 @@ def main():
     try:
         with tempfile.TemporaryDirectory(prefix='wb-pet-validate-') as temporary:
             pack=MaterialLibrary(Path(temporary)/'library').import_pack(args.source)
-            result={action:{'frames':len(frames),'size':list(frames[0].size),'loop':item.loop}
-                for action,item in pack.actions.items() for frames in [decode_animation(pack.root/item.file)]}
+            result={}
+            for action,item in pack.actions.items():
+                count=0;size=None;duration=0
+                for frame in iter_animation(pack.root/item.file,long=pack.schema==3):
+                    count+=1;size=frame.size;duration+=frame.duration
+                result[action]={'frames':count,'size':list(size),'loop':item.loop,'duration_ms':duration}
             print(json.dumps({'valid':True,'schema':pack.schema,'quality':pack.quality,'action_count':len(result),
                 'actions':result},ensure_ascii=False,indent=2))
             return 0

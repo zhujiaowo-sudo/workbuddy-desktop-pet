@@ -1,0 +1,36 @@
+{
+  "status": "development-stage-not-released",
+  "reference_commit": "8d86342dc46cc7315a4b62d1772554de23cd5f9c",
+  "automated_regression": {
+    "passed": 167,
+    "failed": 0
+  },
+  "windows_native": {
+    "100_percent": {
+      "passed": 15
+    },
+    "150_percent": {
+      "passed": 6
+    }
+  },
+  "limits": {
+    "schema3_canvas": [
+      512,
+      720
+    ],
+    "frames_max": 240,
+    "duration_ms_max": 12000,
+    "queue_frames": 6,
+    "active_decoders_max": 2,
+    "encoded_action_mib_max": 64
+  },
+  "validation_scope": "Synthetic input, Qt event-loop playback, cancellation, fixed-frame output, positioning and compatibility. No real WorkBuddy account interaction.",
+  "remaining": [
+    "Full reference-document review beyond explicitly reviewed inventory entries",
+    "Entry/body/exit segment protocol and state scheduling",
+    "New Mint Orbit character animation production and visual approval",
+    "Full character loops/transitions, light/dark/checker backgrounds and mirror visual inspection",
+    "Measured total process memory with representative detailed HD720 assets",
+    "Freeze/package/release validation"
+  ]
+}

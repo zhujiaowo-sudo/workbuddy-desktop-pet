@@ -77,7 +77,7 @@ class MaterialPanel(QWidget):
                 index=self.action_choice.findData(action)
                 self.action_choice.model().item(index).setEnabled(action in pack.actions)
                 if self.action_choice.currentData()==action and action not in pack.actions:self.action_choice.setCurrentIndex(0)
-            coverage='完整互动 · 15/15动作' if pack.schema==2 else f'兼容包 · {len(pack.actions)}/15动作，缺项由内置道具与近似表情补充'
+            coverage='完整互动 · 15/15动作' if pack.schema>=2 else f'兼容包 · {len(pack.actions)}/15动作，缺项由内置道具与近似表情补充'
             if 'idle_scratch' in pack.actions:coverage+=' + 待机挠头'
             self.description.setText(f'作者：{pack.author}  /  许可：{pack.license}\n{coverage}')
             self.preview_action();self.player.set_visible(self.isVisible())

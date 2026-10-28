@@ -106,6 +106,7 @@ class Controller(QObject):
         self.pet = PetWindow(self.settings.size, demo)
         self.bubble = CardWindow(demo)
         self.player = AnimationPlayer(self)
+        self.player.finished.connect(self.finish_long_interaction)
         self.player.changed.connect(self.pet.update)
         self.player.bounds_changed.connect(self.position_bubble)
         self.pet.player = self.player
@@ -319,11 +320,16 @@ class Controller(QObject):
     def respond(self,response):
         if not self.user_visible or self.settings.card_only or self.shutting_down:return
         self.idle_director.cancel()
-        self.active_interaction=response;self.interaction_deadline=time.monotonic()+response.seconds
+        seconds=13 if self.active_pack and self.active_pack.schema==3 else response.seconds
+        self.active_interaction=response;self.interaction_deadline=time.monotonic()+seconds
         self.bubble.show_interaction(response.text,response.seconds)
         # Authored animation already contains its gesture; never stack a window hop.
         if not self.active_pack or response.action not in self.active_pack.actions:self.pet.play_interaction_motion()
-        self.interaction_timer.start(round(response.seconds*1000));self.refresh()
+        self.interaction_timer.start(round(seconds*1000));self.refresh()
+
+    def finish_long_interaction(self):
+        if self.active_interaction and self.active_pack and self.active_pack.schema==3:
+            self.finish_interaction()
 
     def finish_interaction(self,refresh=True):
         was_active=self.active_interaction is not None
