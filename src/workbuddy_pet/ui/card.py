@@ -11,7 +11,7 @@ from ..state import DisplayState
 from .pet import LABELS,SUBTITLES,mascot_icon
 from .icons import action_button,action_icon
 
-PAGE_KEYS=('details','data','chat','materials','settings')
+PAGE_KEYS=('details','data','materials','settings')
 MODE_SIZES={'capsule':(342,36),'summary':(320,202),'expanded':(360,540)}
 
 
@@ -63,6 +63,7 @@ class CardWindow(QWidget):
     balance_requested=Signal()
     refresh_requested=Signal()
     checkin_requested=Signal()
+    chat_requested=Signal()
 
     def __init__(self,demo=False):
         super().__init__(None,Qt.WindowType.Tool|Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -106,7 +107,7 @@ class CardWindow(QWidget):
         self.refresh_button=action_button('refresh','刷新积分和本机统计');self.refresh_button.clicked.connect(self.refresh_requested)
         self.details_button=action_button('details','任务详情');self.details_button.clicked.connect(lambda:self.open_page('details'))
         self.data_button=action_button('data','展开数据看板');self.data_button.clicked.connect(self.open_data)
-        self.chat_button=action_button('chat','聊天');self.chat_button.clicked.connect(lambda:self.open_page('chat'))
+        self.chat_button=action_button('chat','在 WorkBuddy 中聊天 ↗');self.chat_button.clicked.connect(self.chat_requested)
         self.settings_button=action_button('settings','设置与连接');self.settings_button.clicked.connect(lambda:self.open_page('settings'))
         self.collapse_button=action_button('collapse','收成胶囊')
         self.collapse_button.clicked.connect(lambda:self.set_compact(True,manual=True))
@@ -172,7 +173,7 @@ class CardWindow(QWidget):
         return number,foot
 
     def update_page_title(self,index):
-        names=('任务详情','数据看板','聊天','角色与素材','设置与连接')
+        names=('任务详情','数据看板','角色与素材','设置与连接')
         if 0<=index<len(names):self.page_title.setText(names[index])
 
     def add_page(self,widget,name):self.tabs.addTab(widget,name);self.observe_activity()
@@ -196,6 +197,7 @@ class CardWindow(QWidget):
         return super().eventFilter(watched,event)
 
     def open_page(self,key):
+        if key=='chat':self.chat_requested.emit();return
         if key not in PAGE_KEYS:return
         index=PAGE_KEYS.index(key)
         if index<self.tabs.count():self.tabs.setCurrentIndex(index)
@@ -249,7 +251,7 @@ class CardWindow(QWidget):
     def maybe_collapse(self,settings,now=None):
         now=time.monotonic() if now is None else now;focus=QApplication.focusWidget()
         editing=isinstance(focus,(QLineEdit,QTextEdit)) and not focus.isReadOnly() and self.isAncestorOf(focus)
-        busy=getattr(getattr(self,'chat',None),'job',None) or getattr(getattr(self,'materials',None),'job',None)
+        busy=getattr(getattr(self,'materials',None),'job',None)
         if settings.auto_collapse and not self.compact and self.display.state=='idle' and not self.display.reminders and not editing and not busy and not self.underMouse() and now-self.last_interaction>=settings.collapse_seconds:self.set_compact(True)
 
     def set_display(self,display):

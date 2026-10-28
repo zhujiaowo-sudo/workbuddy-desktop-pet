@@ -32,6 +32,8 @@ v0.5.0另外提供**薄荷星伴互动版1.1.0**，为原1.0.1的派生包，继
 
 本项目原创代码的正式开源发行许可尚未指定；当前未对未引入的第三方代码或素材授予任何许可。
 
+v0.5.1的薄荷互动版1.1.1新增坐姿电脑工作姿势，为内置imagegen基于薄荷原形象生成的派生素材；按4×2网格提取8关键帧，去除孤立杂点、固定家具与外轮廓，局部合成眨眼及手部，点击动作去除上下弹跳。继续保留原作者Buddy娘和CC-BY-4.0；源图及完整提示词见[素材生成记录](art/mint-orbit/README.md)。用户坐姿参考图及其中的其他角色不随项目分发。
+
 ## 动态运行时依赖
 
 PySide6 Essentials 与 Shiboken 采用其发行包声明的 LGPL/GPL/商业许可选项；本包保留动态库和许可说明，公共许可文本见 `licenses/`，Qt 源码见 https://code.qt.io/ 与 https://download.qt.io/official_releases/QtForPython/ 。正式源代码版本号和依赖锁定见 `requirements-dev.lock`。

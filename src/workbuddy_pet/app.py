@@ -19,10 +19,9 @@ from .spool import SpoolReader
 from .state import acknowledge, derive_display, reduce_event
 from .storage import atomic_json, plain
 from .ui.pet import PetWindow, mascot_icon
-from .ui.card import CardWindow
+from .ui.card import CardWindow,PAGE_KEYS
 from .ui.animation import AnimationPlayer
 from .ui.materials import MaterialPanel
-from .ui.chat import ChatPanel
 from .materials import MaterialLibrary, MaterialError
 from .local_data import LocalDataReader
 from .placement import card_position,fit_capsule_pet,panel_height_limit
@@ -124,9 +123,7 @@ class Controller(QObject):
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
         self.bubble.resized.connect(self.position_bubble)
-        self.bubble.chat = ChatPanel(self.root,lambda:self.settings.workbuddy_path,self.workbuddy_home)
-        self.bubble.chat.open_requested.connect(self.open_current_conversation)
-        self.bubble.add_page(self.bubble.chat,'聊天')
+        self.bubble.chat_requested.connect(self.open_current_conversation)
         self.bubble.materials = MaterialPanel(self.library)
         self.bubble.materials.activate_requested.connect(self.activate_character)
         self.bubble.materials.remove_requested.connect(self.remove_character)
@@ -229,6 +226,7 @@ class Controller(QObject):
         self.bubble.raise_();self.bubble.activateWindow()
 
     def open_page(self,key):
+        if key=='chat':self.open_current_conversation();return
         if key=='summary':self.open_card();return
         self.finish_interaction()
         if key=='capsule':
@@ -250,7 +248,9 @@ class Controller(QObject):
         if not self.user_visible or self.settings.card_only or self.shutting_down:return
         self.idle_director.cancel()
         self.active_interaction=response;self.interaction_deadline=time.monotonic()+response.seconds
-        self.bubble.show_interaction(response.text,response.seconds);self.pet.play_interaction_motion()
+        self.bubble.show_interaction(response.text,response.seconds)
+        # Authored animation already contains its gesture; never stack a window hop.
+        if not self.active_pack or response.action not in self.active_pack.actions:self.pet.play_interaction_motion()
         self.interaction_timer.start(round(response.seconds*1000));self.refresh()
 
     def finish_interaction(self,refresh=True):
@@ -364,7 +364,7 @@ class Controller(QObject):
 
     def focus_checkin_setting(self):
         if not self.shutting_down:
-            self.bubble.tabs.pages.widget(4).ensureWidgetVisible(self.dialog.checkin_enabled,8,16)
+            self.bubble.tabs.pages.widget(PAGE_KEYS.index('settings')).ensureWidgetVisible(self.dialog.checkin_enabled,8,16)
 
     def _start_checkin(self,claim):
         self.next_checkin=time.monotonic()+300;started_day=local_day()
@@ -506,6 +506,7 @@ class Controller(QObject):
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
                 "compact":self.bubble.compact,"view_mode":self.bubble.mode,"balance_available":self.bubble.balance is not None,
                 "animation_loaded":bool(self.player.frames),
+                "chat_behavior":"open-workbuddy",
                 "visual_action":self.visual_action,"leisure":self.idle_director.active is not None,
                 "interacting":self.active_interaction is not None and time.monotonic()<self.interaction_deadline,
                 "checkin_state":self.checkin_snapshot.state,
@@ -634,7 +635,6 @@ class Controller(QObject):
         if self.stats_job:self.stats_job.cancel.set()
         if self.balance_job:self.balance_job.cancel.set()
         if self.checkin_job:self.checkin_job.cancel.set()
-        self.bubble.chat.shutdown()
         self.bubble.materials.shutdown()
         self.player.clear()
         if self.worker:
@@ -648,7 +648,7 @@ class Controller(QObject):
 
 def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False,
             smoke_seconds=0, capture: Path | None = None, workbuddy_home: Path | None = None, card_only=False,
-            capture_page='summary') -> int:
+            capture_page='summary',open_chat=False) -> int:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setApplicationName("WorkBuddyDesktopPet")
     app.setOrganizationName("WorkBuddyDesktopPet")
@@ -662,7 +662,7 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
     socket = QLocalSocket()
     socket.connectToServer(server_name)
     if socket.waitForConnected(250):
-        socket.write(b"quit" if quit_requested else b"card-only" if card_only else b"settings" if show_settings else b"show")
+        socket.write(b"quit" if quit_requested else b"card-only" if card_only else b"chat" if open_chat else b"settings" if show_settings else b"show")
         socket.flush()
         socket.waitForBytesWritten(250)
         return 0
@@ -690,6 +690,8 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
                 controller.open_settings()
             elif command == b'card-only':
                 controller.enable_card_only();controller.open_card()
+            elif command == b'chat':
+                controller.open_current_conversation()
             else:
                 controller.user_visible = True
                 controller.pet.setVisible(not controller.settings.card_only)
@@ -704,6 +706,7 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
     server.newConnection.connect(incoming)
     if show_settings:
         controller.open_settings()
+    if open_chat:QTimer.singleShot(0,controller.open_current_conversation)
     if capture:
         def capture_view():
             if capture_page=='interaction':controller.bubble.set_compact(True);controller.interact()

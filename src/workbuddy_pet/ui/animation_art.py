@@ -7,13 +7,14 @@ from PySide6.QtGui import QColor, QPainterPath, QPen
 
 def pose(action, phase):
     wave = math.sin(phase * math.tau)
-    if action == 'click_wave': return (0, -abs(wave) * .018, wave * 5)
-    if action == 'click_heart': return (0, -abs(wave) * .012, wave * 2)
-    if action == 'click_shy': return (0, .006, wave * 4)
-    if action == 'click_surprised': return (0, -abs(wave) * .035, 0)
+    if action == 'click_wave': return (0, 0, wave * .8)
+    if action == 'click_heart': return (0, 0, wave * .4)
+    if action == 'click_shy': return (0, 0, wave * .6)
+    if action == 'click_surprised': return (0, 0, 0)
     if action == 'leisure_stretch': return (0, -abs(wave) * .025, wave * 6)
     if action == 'leisure_music': return (wave * .015, -abs(wave) * .008, wave * 3)
-    if action in ('working', 'leisure_snack', 'leisure_phone'): return (0, -abs(wave) * .003, wave * .6)
+    if action == 'working':return (0, 0, 0)
+    if action in ('leisure_snack', 'leisure_phone'): return (0, 0, wave * .3)
     return (0, 0, 0)
 
 
@@ -40,18 +41,19 @@ def draw_props(p, rect, action, phase):
         p.drawLine(QPointF(x, y), QPointF(xx, yy))
 
     if action == 'working':
-        # A readable laptop, changing screen rows and alternating typing fingers.
-        rounded(22, 57, 56, 22, '#c8e8ee', 3)
-        rounded(25, 60, 50, 15, '#163e57', 1.7)
-        for i in range(3):
-            length = 13 + ((int(phase * 16) + i * 7) % 25)
-            line(29, 64 + i * 3.1, 29 + length, 64 + i * 3.1, '#81e4c6', .9)
-        rounded(18, 79, 64, 5, '#9ac8da', 2)
+        # The monitor's back faces us; its screen faces the character, behind it.
+        rounded(12, 72, 5, 24, '#d9c7ac', 1)
+        rounded(80, 72, 5, 24, '#d9c7ac', 1)
+        rounded(8, 68, 82, 7, '#eddbc0', 2)
+        rounded(58, 43, 31, 27, '#bccbdc', 3)
+        rounded(70, 61, 5, 13, '#dce6ed', 1)
+        rounded(65, 73, 17, 2.5, '#cad8e5', 1)
+        rounded(23, 66, 33, 5, '#d5e6ed', 1)
         for row in range(2):
-            for col in range(8):
-                rounded(25 + col * 6, 79 + row * 1.4, 4, .6, '#e9f9ff', .2)
-        for x, offset in ((32, 0), (63, math.pi)):
-            rounded(x, 76 + math.sin(phase * math.tau * 4 + offset) * 1.4, 7, 3.5, '#f7e6d9', 1.5)
+            for col in range(6):
+                rounded(26 + col * 4.4, 67 + row * 1.4, 3, .6, '#f4fbff', .2)
+        for x, offset in ((28, 0), (43, math.pi)):
+            rounded(x, 63 + math.sin(phase * math.tau * 2 + offset) * .6, 8, 4, '#f7e6d9', 1.5)
     elif action == 'leisure_phone':
         p.save();p.translate(64, 65);p.rotate(-9 + wave * 3)
         rounded(-8, -13, 16, 27, '#254c65', 3)

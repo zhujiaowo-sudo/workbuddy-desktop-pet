@@ -92,9 +92,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--list-pets',action='store_true',help='列出已导入的本地角色')
     parser.add_argument("--quit", action="store_true")
     parser.add_argument("--settings", action="store_true")
+    parser.add_argument('--chat',action='store_true',help='在 WorkBuddy 中打开当前对话')
     parser.add_argument("--smoke-seconds", type=float, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--capture", type=Path, help=argparse.SUPPRESS)
-    parser.add_argument('--capture-page',choices=('summary','details','data','chat','materials','settings','capsule','interaction'),default='summary',help=argparse.SUPPRESS)
+    parser.add_argument('--capture-page',choices=('summary','details','data','materials','settings','capsule','interaction'),default='summary',help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.hook:
         try:
@@ -126,6 +127,6 @@ def main(argv: list[str] | None = None) -> int:
             output({'error':str(error)})
             return 1
     from .app import run_app
-    return run_app(args.root, args.demo, quit_requested=args.quit, show_settings=args.settings,
+    return run_app(args.root, args.demo, quit_requested=args.quit, show_settings=args.settings,open_chat=args.chat,
                    smoke_seconds=args.smoke_seconds, capture=args.capture,
                    workbuddy_home=args.workbuddy_home,card_only=args.card_only,capture_page=args.capture_page)

@@ -2,7 +2,7 @@
 import math
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal,QVariantAnimation
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt, QTimer, Signal,QVariantAnimation,QEasingCurve
 from PySide6.QtGui import QColor, QFont, QIcon, QImage, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QMenu
 
@@ -63,7 +63,8 @@ class PetWindow(QWidget):
         self.visual_action = 'idle'
         self.effect_action = ''
         self.motion=0.0
-        self.motion_animation=QVariantAnimation(self);self.motion_animation.setDuration(650)
+        self.motion_animation=QVariantAnimation(self);self.motion_animation.setDuration(900)
+        self.motion_animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
         self.motion_animation.setStartValue(0.0);self.motion_animation.setEndValue(1.0)
         self.motion_animation.valueChanged.connect(self._set_motion)
         self.motion_animation.finished.connect(lambda:self._set_motion(0.0))
@@ -75,7 +76,7 @@ class PetWindow(QWidget):
             self.default_bounds=alpha_bounds(Image.frombytes('RGBA',(image.width(),image.height()),bytes(image.bits())))
         self.context_menu = QMenu(self)
         self.context_menu.setStyleSheet('QMenu{background:#fbfeff;border:1px solid #d9e7f1;padding:5px;} QMenu::item{padding:7px 18px;color:#2b506d;} QMenu::item:selected{background:#e7f2fb;border-radius:5px;}')
-        for label,key in (('数据小卡','summary'),('任务详情','details'),('积分与模型','data'),('聊天','chat'),('角色与素材','materials'),('设置与连接','settings')):
+        for label,key in (('数据小卡','summary'),('任务详情','details'),('积分与模型','data'),('在 WorkBuddy 中聊天 ↗','chat'),('角色与素材','materials'),('设置与连接','settings')):
             action=self.context_menu.addAction(label)
             action.setData(key)
             action.triggered.connect(lambda checked=False,page=key:self.page_requested.emit(page))
@@ -144,8 +145,8 @@ class PetWindow(QWidget):
         if self.effect_action:transform_character(p, visual_rect, self.effect_action, phase)
         if self.motion:
             cx,cy=self.width()/2,self.height()
-            p.translate(cx,cy-3*math.sin(math.pi*self.motion))
-            p.rotate(2*math.sin(2*math.pi*self.motion));p.translate(-cx,-cy)
+            p.translate(cx,cy)
+            p.rotate(.6*math.sin(2*math.pi*self.motion));p.translate(-cx,-cy)
         pixmap=self.player.pixmap if self.player and self.player.pixmap else self.default_pixmap
         if not pixmap.isNull():
             p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)

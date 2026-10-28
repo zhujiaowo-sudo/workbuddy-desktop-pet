@@ -72,3 +72,18 @@ def test_complete_pack_anchor_stays_fixed_across_actions(tmp_path,qt_app):
         assert player.content_bounds==pack.anchor
         player.advance();assert player.content_bounds==pack.anchor
     player.clear()
+
+
+def test_authored_click_does_not_stack_window_bounce(tmp_path,qt_app):
+    from workbuddy_pet.app import Controller
+    from workbuddy_pet.materials import MaterialLibrary
+    from workbuddy_pet.settings import Settings,save_settings
+    from PySide6.QtCore import QAbstractAnimation
+    full_source(tmp_path/'source')
+    pack=MaterialLibrary(tmp_path/'characters').import_pack(tmp_path/'source')
+    save_settings(tmp_path,Settings(character=pack.key,notifications=False))
+    controller=Controller(qt_app,tmp_path,True,tmp_path/'absent')
+    controller.demo_timer.stop();controller.timer.stop();controller.interact()
+    assert controller.active_interaction and controller.player.identity[1]=='actions/click_wave.webp'
+    assert controller.pet.motion_animation.state()==QAbstractAnimation.State.Stopped
+    controller.shutdown()

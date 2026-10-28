@@ -88,24 +88,28 @@ def test_collapse_reanchors_above_pet_without_moving_it(tmp_path,qt_app,monkeypa
     controller.shutdown()
 
 
-def test_context_menu_selects_page_before_expansion(tmp_path,qt_app):
+def test_context_menu_selects_page_before_expansion(tmp_path,qt_app,monkeypatch):
     from PySide6.QtCore import QPoint
     from PySide6.QtGui import QContextMenuEvent
     from workbuddy_pet.app import Controller
     controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
+    chat_calls=[];monkeypatch.setattr(controller,'open_current_conversation',lambda:chat_calls.append('open'))
     controller.demo_timer.stop();controller.bubble.set_compact(True)
     event=QContextMenuEvent(QContextMenuEvent.Reason.Mouse,QPoint(20,20),controller.pet.mapToGlobal(QPoint(20,20)))
     qt_app.sendEvent(controller.pet,event)
     assert controller.bubble.compact
     for action in controller.pet.context_menu.actions():
         if not action.data():continue
+        previous=(controller.bubble.mode,controller.bubble.tabs.currentIndex())
         action.trigger();qt_app.processEvents()
         key=action.data()
         if key=='capsule':assert controller.bubble.compact
         elif key=='summary':assert controller.bubble.mode=='summary'
+        elif key=='chat':
+            assert chat_calls==['open'] and (controller.bubble.mode,controller.bubble.tabs.currentIndex())==previous
         else:
             assert not controller.bubble.compact
-            assert controller.bubble.tabs.currentIndex()==('details','data','chat','materials','settings').index(key)
+            assert controller.bubble.tabs.currentIndex()==('details','data','materials','settings').index(key)
     controller.pet.context_menu.hide();controller.shutdown()
 
 
@@ -188,7 +192,7 @@ def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
     QTest.mouseClick(card.back_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
     assert card.mode=='summary'
     controller.open_page('settings');qt_app.processEvents()
-    assert card.mode=='expanded' and card.tabs.currentIndex()==4
+    assert card.mode=='expanded' and card.tabs.currentIndex()==3
     controller.open_card();qt_app.processEvents()
     assert card.mode=='summary'
     QTest.mouseClick(card.collapse_button,Qt.MouseButton.LeftButton);qt_app.processEvents()

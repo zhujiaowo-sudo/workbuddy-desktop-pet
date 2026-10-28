@@ -11,7 +11,7 @@ python -m venv .venv
 .venv\Scripts\python tools/build_windows.py --work C:/wb-pet-build
 ```
 
-产物为 `dist/workbuddy-desktop-pet-0.5.0-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。
+产物为 `dist/workbuddy-desktop-pet-0.5.1-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。
 
 程序包提供薄荷星伴静态形象，不捆绑15动作人物动画。`仅卡片启动.vbs` 使用同一核心程序，仅隐藏人物；之后可在素材页启用角色。默认互动派生包与两档CC0模板独立上传Release，附件与catalog.json的字节数及SHA-256必须一致。原始素材保留v0.3.1下载。`python tools/create_interactive_pack.py` 导出15动作CC0模板；指定原薄荷ZIP与`--catalog`用于生成并登记带BY署名的默认派生包。`create_pet_template.py` 保留旧7状态示例，不用于新版默认下载。
 
@@ -22,7 +22,7 @@ python -m venv .venv
 3. 选择本机已经安装的 `WorkBuddy.exe`，保存设置。
 4. 点击“连接 WorkBuddy”，它只添加本项目拥有的本地插件市场和启用条目，原有设置先备份。
 5. 在 WorkBuddy 新建一个任务。如果始终没有收到事件，保存工作后重新打开 WorkBuddy，再发起新任务。
-6. 点击会话胶囊进入数据模式，顶栏统计图标展开看板，两者均位于人物上方。左键人物互动，右键选择模块。点击会话名称进入对应任务，“打开 WorkBuddy”唤起主程序。审批仍在 WorkBuddy 内完成。
+6. 点击会话胶囊进入数据模式，顶栏统计图标展开看板，两者均位于人物上方。左键人物互动，右键选择模块。点击会话名称或聊天图标进入对应任务，“打开 WorkBuddy”唤起主程序；聊天不再在桌宠内进行。审批仍在 WorkBuddy 内完成。
 7. 如需签到，在设置中单独授权；左侧圆钮仅在点击时领取，不会自动签到。
 
 “演示”模式仅展示合成事件，不表示已连接。用户数据保存在 `%LOCALAPPDATA%/WorkBuddyDesktopPet`；源代码目录不保存 WorkBuddy 对话或登录凭据。
@@ -34,6 +34,7 @@ python -m venv .venv
 ```powershell
 .\WorkBuddyDesktopPet.exe --demo
 .\WorkBuddyDesktopPet.exe --settings
+.\WorkBuddyDesktopPet.exe --chat
 .\WorkBuddyDesktopPet.exe --card-only
 .\WorkBuddyDesktopPet.exe --install-integration
 .\WorkBuddyDesktopPet.exe --uninstall-integration

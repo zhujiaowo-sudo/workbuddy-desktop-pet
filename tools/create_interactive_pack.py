@@ -17,24 +17,27 @@ from workbuddy_pet.materials import MaterialLibrary
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--source',type=Path,help='用户原始素材包；省略时导出CC0机器人模板')
+    parser.add_argument('--typing-sheet',type=Path,help='4列2行坐姿打字透明精灵图')
     parser.add_argument('--output',type=Path,default=project/'dist/materials')
     parser.add_argument('--catalog',action='store_true')
     args=parser.parse_args()
+    if args.source and args.typing_sheet is None:
+        args.typing_sheet=project/'art/mint-orbit/typing-sheet-v1.1.1.png'
     app=QApplication.instance() or QApplication(sys.argv[:1])
     entries={}
     for quality in ('light','hd'):
-        name=f'mint-orbit-interactive-{quality}-v1.1.0.zip' if args.source else f'workbuddy-pet-template-{quality}-v2.0.0.zip'
-        path=export_interactive(args.output/name,quality,args.source)
+        name=f'mint-orbit-interactive-{quality}-v1.1.1.zip' if args.source else f'workbuddy-pet-template-{quality}-v2.0.1.zip'
+        path=export_interactive(args.output/name,quality,args.source,args.typing_sheet)
         import tempfile
         with tempfile.TemporaryDirectory() as temporary:
             pack=MaterialLibrary(Path(temporary)/'library').import_pack(path)
             assert pack.schema==2 and len(pack.actions)==15
         entries[quality]={'name':path.name,'bytes':path.stat().st_size,'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),
-            'url':f'https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.5.0/{name}'}
+            'url':f'https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.5.1/{name}'}
         print(json.dumps({quality:entries[quality]},ensure_ascii=True),flush=True)
     if args.catalog:
         if not args.source:raise ValueError('默认清单只可由明确指定的薄荷源包更新')
-        (project/'src/workbuddy_pet/catalog.json').write_text(json.dumps({'schema':1,'release':'v0.5.0','packs':entries},indent=2)+'\n',encoding='utf-8')
+        (project/'src/workbuddy_pet/catalog.json').write_text(json.dumps({'schema':1,'release':'v0.5.1','packs':entries},indent=2)+'\n',encoding='utf-8')
 
 
 if __name__=='__main__':main()

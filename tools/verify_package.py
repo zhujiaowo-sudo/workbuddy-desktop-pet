@@ -63,9 +63,10 @@ def main():
         runtime = json.loads((gui_root / "runtime.json").read_text(encoding="utf-8"))
         assert runtime["demo"] is True and runtime["version"] == __version__
         assert runtime['card_only']==card_only and runtime['visible'] is True and runtime['view_mode']==mode
-        if not card_only:assert runtime['capsule_gap']==8,'Frozen capsule does not follow the visible portrait'
+        if not card_only:assert runtime['panel_gap']==8,'Frozen panel does not follow the visible portrait'
         if page=='interaction':assert runtime['interacting'] is True,'Frozen interaction was not activated'
         assert runtime['checkin_state']=='disabled','Packaged demo must never query or claim check-in'
+        assert runtime['chat_behavior']=='open-workbuddy','Chat must only open WorkBuddy'
         assert (root/('preview-'+suffix+'.png')).is_file()
     print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
                       'three_views':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))

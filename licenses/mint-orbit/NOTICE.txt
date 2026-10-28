@@ -15,3 +15,8 @@
 各段重采样16帧；新增程序绘制电脑、零食、手机、爱心、音符与运动关键帧，扩展4点击、4休闲动作。
 并非原作者重新绘制的15段动作。原1.0.1 ZIP不变，派生包清单记录来源和改动。
 公开派生包：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.5.0
+
+坐姿互动派生版1.1.1（v0.5.1）：原角色Buddy娘 / CC-BY-4.0。
+工作姿势由内置imagegen参考原形象生成；4×2透明源图经杂点清理、网格提取和桌椅/脚底注册，合成8帧局部眨眼、打字动作。
+去除点击动作上下弹跳，放慢节奏；程序提供帧间插值和姿态过渡。原1.0.1包不变。
+源图及提示词：https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/tree/main/art/mint-orbit
