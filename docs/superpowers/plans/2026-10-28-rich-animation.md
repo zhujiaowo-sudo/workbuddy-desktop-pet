@@ -55,4 +55,6 @@ Files: templates.py, tools/create_interactive_pack.py, examples/, docs/materials
 
 - [x] CC0原机器人15动作模板与薄荷BY派生轻量/高清包，16帧×80ms，记录改动/来源，验证可导入。
 - [x] 全套测试与可视化检查；构建并验证冻结包，更新本机保留设置、快捷方式有效。
-- [ ] 推送、Windows CI、发布v0.5.0，核验附件摘要和公开模板。
+- [x] 推送、Windows CI、发布v0.5.0，核验附件摘要和公开模板。
+
+交付记录（2026-10-28）：代码57a463d；原生113项回归及最终冻结验证通过；[Windows CI全部步骤成功](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40618627862/job/122586937247)；[v0.5.0已公开发布](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.5.0)。6个附件的公开元数据、大小和SHA-256逐项核对，匿名下载校验文件及默认轻量包成功，下载后导入确认schema2/15动作。本机已启用高清互动包，保留现有用户设置、关闭自启和有效桌面快捷方式。原素材包未修改，没有代用户领取签到积分。
