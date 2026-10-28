@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWi
 
 from ..state import DisplayState
 from ..materials import alpha_bounds
+from .animation_art import draw_props, transform_character
 
 DEFAULT_PORTRAIT=Path(__file__).resolve().parents[1]/'assets/mint-orbit-idle.png'
 
@@ -45,6 +46,7 @@ class PetWindow(QWidget):
     acknowledged = Signal()
     page_requested = Signal(str)
     interact_requested = Signal()
+    manual_activity = Signal()
 
     def __init__(self, size: int = 160, demo: bool = False, *, use_builtin_image=True):
         super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -58,6 +60,8 @@ class PetWindow(QWidget):
         self.press_position = None
         self.dragging = False
         self.player = None
+        self.visual_action = 'idle'
+        self.effect_action = ''
         self.motion=0.0
         self.motion_animation=QVariantAnimation(self);self.motion_animation.setDuration(650)
         self.motion_animation.setStartValue(0.0);self.motion_animation.setEndValue(1.0)
@@ -93,12 +97,23 @@ class PetWindow(QWidget):
         self.update()
 
     def animate(self):
-        if self.player and self.player.frames or not self.default_pixmap.isNull():
+        if not self.effect_action and (self.player and self.player.frames or not self.default_pixmap.isNull()):
             self.timer.stop()
             return
         if self.isVisible():
             self.tick += 1
             self.update()
+
+    def set_visual(self, action, fallback=False):
+        self.visual_action = action
+        effect = action if fallback and (action == 'working' or action.startswith(('click_', 'leisure_'))) else ''
+        if effect != self.effect_action:
+            self.effect_action = effect
+            self.tick = 0
+        if self.isVisible() and (effect or self.default_pixmap.isNull() and not (self.player and self.player.frames)):
+            self.timer.setInterval(80 if effect else 40);self.timer.start()
+        else:self.timer.stop()
+        self.update()
 
     def image_target_rect(self,pixmap):
         target=pixmap.size().scaled(self.size(),Qt.AspectRatioMode.KeepAspectRatio)
@@ -124,6 +139,9 @@ class PetWindow(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        visual_rect = QRectF(self.content_rect())
+        phase = (self.tick % 16) / 16
+        if self.effect_action:transform_character(p, visual_rect, self.effect_action, phase)
         if self.motion:
             cx,cy=self.width()/2,self.height()
             p.translate(cx,cy-3*math.sin(math.pi*self.motion))
@@ -133,9 +151,10 @@ class PetWindow(QWidget):
             p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
             target=self.image_target_rect(pixmap)
             p.drawPixmap(target.topLeft(),pixmap.scaled(target.size(),Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
+            if self.effect_action:draw_props(p, visual_rect, self.effect_action, phase)
             p.end()
             return
-        p.scale(self.width() / 184, self.height() / 219)
+        p.save();p.scale(self.width() / 184, self.height() / 219)
         t = self.tick / 15
         bob = math.sin(t) * 2.2
         color = QColor(COLORS[self.display.state])
@@ -206,10 +225,13 @@ class PetWindow(QWidget):
                 angle = t + i * math.pi * 2 / 3
                 p.setBrush(QColor(color.red(), color.green(), color.blue(), 180))
                 p.drawEllipse(QRectF(90 + math.cos(angle) * 63, 105 + math.sin(angle) * 67, 6, 6))
+        p.restore()
+        if self.effect_action:draw_props(p, visual_rect, self.effect_action, phase)
         p.end()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+            self.manual_activity.emit()
             self.press_position = event.globalPosition().toPoint()
             self.origin = self.pos()
             self.dragging = False
@@ -229,6 +251,7 @@ class PetWindow(QWidget):
             self.press_position = None
 
     def contextMenuEvent(self, event):
+        self.manual_activity.emit()
         self.press_position=None;self.dragging=False
         self.context_menu.popup(event.globalPos())
         event.accept()

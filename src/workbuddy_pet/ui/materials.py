@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QPushButton,QFileDialog
 
 from ..background import Task
-from ..materials import MaterialError
+from ..materials import MaterialError, ALL_ACTIONS
 from .animation import AnimationPlayer
 
 
@@ -17,12 +17,19 @@ class MaterialPanel(QWidget):
         super().__init__(parent)
         self.library,self.job=library,None
         layout=QVBoxLayout(self)
-        note=QLabel('素材包保存在本机角色库。至少需要待机动作；其他动作缺失时回退待机。')
+        note=QLabel('支持旧版角色包及15动作完整互动包。导入在本机校验；点击、任务和休闲动作可分别预览。')
         note.setWordWrap(True);layout.addWidget(note)
         self.choices=QComboBox();layout.addWidget(self.choices)
         self.description=QLabel();self.description.setTextFormat(Qt.TextFormat.PlainText);self.description.setWordWrap(True);layout.addWidget(self.description)
         self.preview=QLabel('薄荷星伴静态形象无需下载');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(130);layout.addWidget(self.preview)
         self.player=AnimationPlayer(self);self.player.changed.connect(self.update_preview)
+        self.preview_pack=None
+        self.action_choice=QComboBox()
+        labels=('待机','思考','玩电脑 / 执行','等待回复','等待确认','完成','失败','点击 · 招手','点击 · 比心',
+                '点击 · 害羞','点击 · 惊讶','休闲 · 吃零食','休闲 · 玩手机','休闲 · 伸懒腰','休闲 · 听音乐')
+        for action,label in zip(ALL_ACTIONS,labels):self.action_choice.addItem(label,action)
+        self.action_choice.currentIndexChanged.connect(self.preview_action)
+        layout.addWidget(self.action_choice)
         self.choices.currentIndexChanged.connect(self.preview_selected)
         row=QHBoxLayout()
         self.activate=QPushButton('启用所选角色');self.activate.clicked.connect(lambda:self.activate_requested.emit(self.choices.currentData() or 'builtin'));row.addWidget(self.activate)
@@ -31,7 +38,7 @@ class MaterialPanel(QWidget):
         row=QHBoxLayout()
         self.import_zip=QPushButton('导入 ZIP');self.import_zip.clicked.connect(self.choose_zip);row.addWidget(self.import_zip)
         self.import_folder=QPushButton('导入文件夹');self.import_folder.clicked.connect(self.choose_folder);row.addWidget(self.import_folder)
-        template=QPushButton('导出创作模板');template.clicked.connect(self.export_template);row.addWidget(template);layout.addLayout(row)
+        self.template=QPushButton('导出15动作模板');self.template.clicked.connect(self.export_template);row.addWidget(self.template);layout.addLayout(row)
         row=QHBoxLayout()
         self.light=QPushButton('下载默认轻量包 · 256px');self.light.clicked.connect(lambda:self.download('light'));row.addWidget(self.light)
         self.hd=QPushButton('下载默认高清包 · 512px');self.hd.clicked.connect(lambda:self.download('hd'));row.addWidget(self.hd);layout.addLayout(row)
@@ -51,21 +58,32 @@ class MaterialPanel(QWidget):
 
     def preview_selected(self):
         key=self.choices.currentData()
+        self.preview_pack=None
         self.player.clear()
+        self.action_choice.setEnabled(key not in (None,'builtin'))
         self.remove.setEnabled(key not in (None,'builtin') and self.job is None)
         if key in (None,'builtin'):
             from .pet import DEFAULT_PORTRAIT,mascot_icon
             portrait=QPixmap(str(DEFAULT_PORTRAIT))
             self.preview.setPixmap(portrait.scaled(125,125,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
                                    if not portrait.isNull() else mascot_icon().pixmap(110,110))
-            self.description.setText('作者：Buddy娘 / CC-BY-4.0\n默认静态形象随程序提供，7状态动画可独立下载。')
+            self.description.setText('作者：Buddy娘 / CC-BY-4.0\n默认静态形象随程序提供，15动作互动包可独立下载。')
             return
         try:
             pack=self.library.load(key)
-            self.description.setText(f'作者：{pack.author}  /  许可：{pack.license}')
-            self.player.load(pack,'idle');self.player.set_visible(self.isVisible())
+            self.preview_pack=pack
+            coverage='完整互动 · 15/15动作' if pack.schema==2 else f'兼容包 · {len(pack.actions)}/15动作，缺项由内置道具与近似表情补充'
+            self.description.setText(f'作者：{pack.author}  /  许可：{pack.license}\n{coverage}')
+            self.preview_action();self.player.set_visible(self.isVisible())
             self.update_preview()
         except MaterialError as error:self.status.setText(str(error));self.preview.setText('素材不可用')
+
+    def preview_action(self):
+        if not self.preview_pack:return
+        try:
+            self.player.load(self.preview_pack,self.action_choice.currentData() or 'idle')
+            self.update_preview()
+        except MaterialError as error:self.status.setText(str(error))
 
     def update_preview(self):
         if self.player.pixmap:
@@ -88,14 +106,14 @@ class MaterialPanel(QWidget):
         from ..material_download import download_default
         self.start_job(lambda:download_default(quality,self.library,lambda:self.job is None or self.job.cancel.is_set()),'正在下载并校验默认素材…')
 
-    def start_job(self,function,message):
+    def start_job(self,function,message,done=None):
         if self.job:return
         self.status.setText(message)
         self.job=Task(function,self)
-        self.job.done.connect(self.imported)
+        self.job.done.connect(done or self.imported)
         self.job.failed.connect(self.status.setText)
         self.job.finished.connect(self.finished)
-        for button in (self.import_zip,self.import_folder,self.light,self.hd,self.activate,self.remove):button.setEnabled(False)
+        for button in (self.import_zip,self.import_folder,self.light,self.hd,self.activate,self.remove,self.template):button.setEnabled(False)
         self.job.start()
 
     def imported(self,pack):self.reload(pack.key);self.status.setText('素材已导入并可预览，点击“启用所选角色”应用。')
@@ -103,15 +121,17 @@ class MaterialPanel(QWidget):
     def finished(self):
         job=self.job;self.job=None
         if job:job.deleteLater()
-        for button in (self.import_zip,self.import_folder,self.light,self.hd,self.activate):button.setEnabled(True)
+        for button in (self.import_zip,self.import_folder,self.light,self.hd,self.activate,self.template):button.setEnabled(True)
         self.remove.setEnabled(self.choices.currentData() not in (None,'builtin'))
 
     def export_template(self):
         path,_=QFileDialog.getSaveFileName(self,'导出可直接导入的创作模板','my-pet-template.zip','角色包 (*.zip)')
         if not path:return
+        # Qt drawing must remain on the GUI thread; export's small frames are bounded.
+        if self.job:return
         try:
             from ..templates import export_starter
-            export_starter(Path(path));self.status.setText('模板已导出：替换 idle.png、修改清单后即可导入。')
+            export_starter(Path(path));self.status.setText('15动作模板已导出：替换 actions 下同名动画，修改作者、许可与校验摘要后导入。')
         except (OSError,ValueError):self.status.setText('模板导出失败，请检查保存位置。')
 
     def shutdown(self):

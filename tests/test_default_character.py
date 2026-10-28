@@ -22,7 +22,7 @@ def test_template_does_not_redistribute_default_portrait_as_original(qt_app,tmp_
     monkeypatch.setattr(pets,'DEFAULT_PORTRAIT',path)
     result=export_starter(tmp_path/'template.zip')
     with zipfile.ZipFile(result) as archive:
-        image=Image.open(io.BytesIO(archive.read('idle.png'))).convert('RGBA')
+        image=Image.open(io.BytesIO(archive.read('actions/idle.webp'))).convert('RGBA')
         assert image.getpixel((image.width//2,image.height//2))!=(0,255,0,255)
 
 

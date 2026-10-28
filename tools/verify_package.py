@@ -12,6 +12,7 @@ import uuid
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scratch", type=Path, required=True)
+    parser.add_argument('--interactive-pack',type=Path,help='额外验证完整15动作素材的冻结导入和播放')
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(project / "src"))
@@ -32,6 +33,20 @@ def main():
     assert list((shell_root / "events").glob("*.jsonl")), "PowerShell lost stdin or literal arguments"
     result=subprocess.run([str(exe),'--root',str(root/'materials'),'--import-pet',str(project/'examples/starter-pet')],capture_output=True,timeout=20)
     assert result.returncode==0 and list((root/'materials/characters').glob('*/manifest.json')), 'Frozen material decoder/import failed'
+    if args.interactive_pack:
+        full_root=root/'interactive'
+        result=subprocess.run([str(exe),'--root',str(full_root),'--import-pet',str(args.interactive_pack.absolute())],capture_output=True,timeout=45)
+        assert result.returncode==0,'Frozen complete pack import failed'
+        pack_root=next((full_root/'characters').glob('*/manifest.json')).parent
+        from workbuddy_pet.settings import Settings,save_settings
+        save_settings(full_root,Settings(character=pack_root.name,size=224,compact=True,notifications=False))
+        result=subprocess.run([str(exe),'--root',str(full_root),'--demo','--smoke-seconds','2',
+            '--workbuddy-home',str(root/'absent-workbuddy'),'--capture-page','interaction',
+            '--capture',str(root/'preview-interactive.png')],env=dict(os.environ,QT_QPA_PLATFORM='offscreen'),capture_output=True,timeout=25)
+        assert result.returncode==0,'Frozen complete animation startup failed'
+        runtime=json.loads((full_root/'runtime.json').read_text(encoding='utf-8'))
+        assert runtime['animation_loaded'] and runtime['visual_action']=='click_wave' and runtime['capsule_gap']==8
+        assert runtime['checkin_state']=='disabled'
     assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Optional material catalog missing'
     assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")

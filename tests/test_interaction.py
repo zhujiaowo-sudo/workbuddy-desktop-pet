@@ -18,6 +18,7 @@ def test_click_response_restores_real_task_animation_without_changing_events(tmp
     pack=MaterialLibrary(tmp_path/'characters').import_pack(source)
     save_settings(tmp_path,Settings(character=pack.key,notifications=False,compact=True))
     controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
+    assert controller.bubble.materials.choices.currentData()==pack.key
     controller.demo_timer.stop();controller.timer.stop()
     now=time.time();controller.consume([Event('a',now,'s','UserPromptSubmit'),Event('b',now+.01,'s','PreToolUse')])
     before=dict(controller.sessions)
@@ -47,6 +48,35 @@ def test_disabled_checkin_never_reads_or_claims(tmp_path,qt_app,monkeypatch):
     controller.load_checkin();controller.checkin_clicked();qt_app.processEvents()
     assert not calls and controller.bubble.mode=='expanded'
     assert controller.bubble.signin_button.property('checkinState')=='disabled'
+    controller.shutdown()
+
+
+def test_idle_animation_yields_to_tasks_and_preserves_real_card(tmp_path,qt_app):
+    from workbuddy_pet.app import Controller
+    controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
+    controller.demo_timer.stop();controller.timer.stop();controller.sessions={}
+    controller.bubble.set_compact(True);controller.refresh()
+    text=controller.bubble.capsule.text()
+    controller.idle_director.next_due=0;controller.refresh()
+    assert controller.idle_director.active and controller.visual_action.startswith('leisure_')
+    assert controller.bubble.capsule.text()==text and not controller.active_interaction
+    now=time.time()
+    controller.consume([Event('task',now,'task','UserPromptSubmit'),Event('tool',now+.01,'task','PreToolUse')])
+    assert controller.visual_action=='working' and controller.idle_director.active is None
+    assert controller.pet.effect_action=='working' and controller.pet.timer.isActive()
+    controller.pet.tick=0;first=controller.pet.grab().toImage()
+    controller.pet.tick=5;second=controller.pet.grab().toImage()
+    assert first!=second
+    controller.interact();assert controller.active_interaction
+    controller.consume([Event('confirm',now+.02,'task','PermissionRequest')])
+    assert controller.visual_action=='review' and controller.active_interaction is None
+    controller.sessions={};controller.refresh();controller.idle_director.next_due=0;controller.refresh()
+    assert controller.idle_director.active
+    controller.pet.press_position=QPoint(1,1);controller.refresh()
+    assert controller.idle_director.active is None
+    controller.pet.press_position=None;controller.idle_director.next_due=0
+    controller.toggle_visible();controller.refresh()
+    assert controller.idle_director.active is None and not controller.pet.timer.isActive()
     controller.shutdown()
 
 

@@ -13,6 +13,13 @@ import zipfile
 from PIL import Image, UnidentifiedImageError
 
 STATES = ('idle', 'thinking', 'working', 'waiting', 'review', 'done', 'failed')
+TASK_ACTIONS = STATES
+CLICK_ACTIONS = ('click_wave', 'click_heart', 'click_shy', 'click_surprised')
+LEISURE_ACTIONS = ('leisure_snack', 'leisure_phone', 'leisure_stretch', 'leisure_music')
+ALL_ACTIONS = STATES + CLICK_ACTIONS + LEISURE_ACTIONS
+LOOP_ACTIONS = frozenset(STATES[:5] + LEISURE_ACTIONS)
+FALLBACKS = dict(zip(CLICK_ACTIONS + LEISURE_ACTIONS,
+                     ('done', 'waiting', 'waiting', 'review', 'idle', 'thinking', 'done', 'idle')))
 MAX_BYTES = 128 * 1024 * 1024
 MAX_PIXELS = 64_000_000
 _VISIBLE_ALPHA = [0]*17+[255]*239
@@ -100,9 +107,11 @@ class CharacterPack:
     quality: str
     license: str
     actions: dict[str, Action]
+    schema: int = 1
+    anchor: tuple[int, int, int, int] | None = None
 
     def action(self, state: str) -> Action:
-        return self.actions.get(state, self.actions['idle'])
+        return self.actions.get(state, self.actions.get(FALLBACKS.get(state, ''), self.actions['idle']))
 
 
 def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
@@ -111,8 +120,11 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         if manifest_path.stat().st_size > 65536:
             raise MaterialError('角色清单超过 64 KiB')
         data = json.loads(manifest_path.read_text(encoding='utf-8-sig'))
-        if not isinstance(data, dict) or type(data.get('schema')) is not int or data.get('schema') != 1:
-            raise MaterialError('不支持的素材包版本，需要 schema=1')
+        if not isinstance(data, dict) or type(data.get('schema')) is not int or data.get('schema') not in (1, 2):
+            raise MaterialError('不支持的素材包版本，需要 schema=1 或 2')
+        schema = data['schema']
+        if schema == 2 and 'quality' not in data:
+            raise MaterialError('完整互动包须明确指定 quality=light 或 hd')
         for field in ('id', 'name', 'author', 'version', 'license'):
             if not isinstance(data.get(field), str) or not 1 <= len(data[field]) <= 200:
                 raise MaterialError('角色清单缺少有效字段：' + field)
@@ -120,29 +132,56 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         actions = data.get('actions')
         if quality not in ('light', 'hd') or not isinstance(actions, dict) or 'idle' not in actions:
             raise MaterialError('角色包需要 idle 待机动作，以及 light/hd 画质')
+        if schema == 2 and set(actions) != set(ALL_ACTIONS):
+            raise MaterialError('完整互动包需要全部15个规定动作，不能缺少或增加标识')
+        anchor = data.get('anchor') if schema == 2 else None
+        if anchor is not None:
+            resolution = 256 if quality == 'light' else 512
+            if (not isinstance(anchor, list) or len(anchor) != 4 or any(type(n) is not int for n in anchor)
+                or not 0 <= anchor[0] < anchor[2] <= resolution or not 0 <= anchor[1] < anchor[3] <= resolution):
+                raise MaterialError('统一可见包络 anchor 无效')
+            anchor = tuple(anchor)
         hashes = data.get('files', {})
         if not isinstance(hashes, dict):
             raise MaterialError('文件校验清单无效')
         parsed, seen, pixel_count = {}, set(), 0
         for state, item in actions.items():
-            if state not in STATES or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
+            if state not in (ALL_ACTIONS if schema == 2 else STATES) or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
                 raise MaterialError('动作名称或循环设置无效')
             name = item.get('file')
             path = checked(root, name)
             if path.suffix.lower() not in ('.png', '.gif', '.webp'):
                 raise MaterialError('动作需要 PNG、GIF 或 WebP')
+            if schema == 2:
+                if name not in tuple(f'actions/{state}{ext}' for ext in ('.webp', '.png', '.gif')):
+                    raise MaterialError('完整互动包文件须命名为 actions/<动作标识>.webp、.png 或 .gif')
+                if item.get('loop') is not (state in LOOP_ACTIONS):
+                    raise MaterialError('完整互动包循环设置不符合动作规范：' + state)
             if name in hashes:
                 with path.open('rb') as stream:
                     if hashlib.file_digest(stream, 'sha256').hexdigest() != hashes[name]:
                         raise MaterialError('素材 SHA-256 校验失败')
             if decode and name not in seen:
                 frames = decode_animation(path)
+                if schema == 2:
+                    resolution = 256 if quality == 'light' else 512
+                    if not 8 <= len(frames) <= 16:
+                        raise MaterialError('完整互动包每段需要8–16帧，不能使用静态图：' + state)
+                    if any(f.size != (resolution, resolution) for f in frames):
+                        raise MaterialError(f'完整互动包所有帧须为{resolution}×{resolution}：' + state)
+                    if any(not 40 <= f.duration <= 200 for f in frames):
+                        raise MaterialError('完整互动包每帧时长须为40–200ms：' + state)
+                    if any(f.bounds is None or min(f.rgba[3::4]) == 255 for f in frames):
+                        raise MaterialError('完整互动包每帧须有可见角色及透明背景：' + state)
+                    if anchor and any(f.bounds[0] < anchor[0] or f.bounds[1] < anchor[1] or
+                                      f.bounds[2] > anchor[2] or f.bounds[3] > anchor[3] for f in frames):
+                        raise MaterialError('统一可见包络 anchor 未包含全部动作：' + state)
                 pixel_count += sum(f.size[0] * f.size[1] for f in frames)
                 if pixel_count > MAX_PIXELS:
                     raise MaterialError('整套角色的解码体积超过上限，请拆分画质或减少帧数')
                 seen.add(name)
             parsed[state] = Action(name, item.get('loop', True))
-        return CharacterPack(key, root, data['name'], data['author'], quality, data['license'], parsed)
+        return CharacterPack(key, root, data['name'], data['author'], quality, data['license'], parsed, schema, anchor)
     except (OSError, ValueError, TypeError, KeyError) as error:
         if isinstance(error, MaterialError):
             raise

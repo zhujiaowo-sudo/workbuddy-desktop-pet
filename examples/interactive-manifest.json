@@ -1,0 +1,71 @@
+{
+  "schema": 2,
+  "id": "my-pet",
+  "name": "我的桌宠",
+  "author": "请填写作者",
+  "version": "1.0.0",
+  "license": "请填写实际许可",
+  "quality": "hd",
+  "actions": {
+    "idle": {
+      "file": "actions/idle.webp",
+      "loop": true
+    },
+    "thinking": {
+      "file": "actions/thinking.webp",
+      "loop": true
+    },
+    "working": {
+      "file": "actions/working.webp",
+      "loop": true
+    },
+    "waiting": {
+      "file": "actions/waiting.webp",
+      "loop": true
+    },
+    "review": {
+      "file": "actions/review.webp",
+      "loop": true
+    },
+    "done": {
+      "file": "actions/done.webp",
+      "loop": false
+    },
+    "failed": {
+      "file": "actions/failed.webp",
+      "loop": false
+    },
+    "click_wave": {
+      "file": "actions/click_wave.webp",
+      "loop": false
+    },
+    "click_heart": {
+      "file": "actions/click_heart.webp",
+      "loop": false
+    },
+    "click_shy": {
+      "file": "actions/click_shy.webp",
+      "loop": false
+    },
+    "click_surprised": {
+      "file": "actions/click_surprised.webp",
+      "loop": false
+    },
+    "leisure_snack": {
+      "file": "actions/leisure_snack.webp",
+      "loop": true
+    },
+    "leisure_phone": {
+      "file": "actions/leisure_phone.webp",
+      "loop": true
+    },
+    "leisure_stretch": {
+      "file": "actions/leisure_stretch.webp",
+      "loop": true
+    },
+    "leisure_music": {
+      "file": "actions/leisure_music.webp",
+      "loop": true
+    }
+  }
+}

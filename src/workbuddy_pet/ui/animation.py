@@ -40,8 +40,9 @@ class AnimationPlayer(QObject):
         self.clear(notify=False)
         self.frames, self.identity, self.loop = tuple(prepared), identity, action.loop
         boxes=[f.bounds for f in frames if f.bounds is not None]
-        self.content_bounds=(min(b[0] for b in boxes),min(b[1] for b in boxes),
+        self.content_bounds=pack.anchor or ((min(b[0] for b in boxes),min(b[1] for b in boxes),
                              max(b[2] for b in boxes),max(b[3] for b in boxes)) if boxes else None
+                             )
         self.bounds_changed.emit()
         self.changed.emit()
         self.schedule()

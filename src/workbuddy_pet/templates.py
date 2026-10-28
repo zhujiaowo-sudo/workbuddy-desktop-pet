@@ -12,21 +12,8 @@ from .state import DisplayState
 
 
 def export_starter(destination: Path):
-    from .ui.pet import PetWindow
-    from PySide6.QtCore import QBuffer, QIODevice
-    pet=PetWindow(size=256,use_builtin_image=False)
-    try:
-        buffer=QBuffer();buffer.open(QIODevice.OpenModeFlag.WriteOnly)
-        pet.grab().save(buffer,'PNG')
-        image=bytes(buffer.data())
-    finally:
-        pet.timer.stop();pet.close();pet.deleteLater()
-    manifest={'schema':1,'id':'my-pet','name':'我的桌宠','author':'请填写作者','version':'1.0.0',
-        'license':'请填写素材许可','quality':'light','actions':{'idle':{'file':'idle.png','loop':True}}}
-    with zipfile.ZipFile(destination,'w',zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2))
-        archive.writestr('idle.png',image)
-    return destination
+    from .interactive_export import export_interactive
+    return export_interactive(destination)
 
 
 def export_default(destination: Path, quality='light'):

@@ -29,7 +29,7 @@ from .placement import card_position,fit_capsule_pet,panel_height_limit
 from .background import Task
 from .balance import read_balance
 from .checkin import CheckinSnapshot,read_checkin,perform_checkin,local_day
-from .interaction import Interaction,response_for_click
+from .interaction import Interaction,response_for_click,IdleDirector,idle_allowed
 from .ui.settings import SettingsDialog
 from .ui.tray import PetTray
 from .windows import configure_startup, discover_workbuddy, open_workbuddy, open_conversation, validate_workbuddy_path
@@ -88,6 +88,8 @@ class Controller(QObject):
         self.last_balance_query=0
         self.checkin_job=None;self.next_checkin=0;self.checkin_snapshot=CheckinSnapshot();self.checkin_day=local_day()
         self.active_interaction=None;self.interaction_deadline=0;self.interaction_index=0;self.last_pet_click=-1
+        self.idle_director=IdleDirector()
+        self.visual_action='idle'
         self.interaction_timer=QTimer(self);self.interaction_timer.setSingleShot(True)
         self.interaction_timer.timeout.connect(self.finish_interaction)
         self._positioning=False
@@ -106,6 +108,7 @@ class Controller(QObject):
         self.pet.player = self.player
         self.pet.open_requested.connect(self.open_card)
         self.pet.interact_requested.connect(self.interact)
+        self.pet.manual_activity.connect(self.pet_activity)
         self.pet.settings_requested.connect(self.open_settings)
         self.pet.page_requested.connect(self.open_page)
         self.pet.moved.connect(self.position_bubble)
@@ -244,21 +247,28 @@ class Controller(QObject):
         self.respond(response)
 
     def respond(self,response):
-        if not self.user_visible or self.shutting_down:return
+        if not self.user_visible or self.settings.card_only or self.shutting_down:return
+        self.idle_director.cancel()
         self.active_interaction=response;self.interaction_deadline=time.monotonic()+response.seconds
         self.bubble.show_interaction(response.text,response.seconds);self.pet.play_interaction_motion()
         self.interaction_timer.start(round(response.seconds*1000));self.refresh()
 
-    def finish_interaction(self):
+    def finish_interaction(self,refresh=True):
         was_active=self.active_interaction is not None
         self.interaction_timer.stop();self.active_interaction=None;self.interaction_deadline=0
         self.bubble.clear_interaction()
-        if was_active and not self.shutting_down:self.refresh()
+        if was_active and refresh and not self.shutting_down:self.refresh()
+
+    def pet_activity(self):
+        self.idle_director.cancel()
+        self.finish_interaction(refresh=False)
+        self.refresh()
 
     def enable_card_only(self):
         self.apply_settings(replace(self.settings,card_only=True))
 
     def restore_character(self):
+        self.idle_director.cancel()
         self.active_pack=None
         self.player.clear()
         if self.settings.card_only:return
@@ -272,6 +282,7 @@ class Controller(QObject):
                 save_settings(self.root,self.settings)
                 self.bubble.materials.status.setText('所选素材不可用，已恢复内置角色。')
         self.player.set_visible(self.pet.isVisible())
+        self.bubble.materials.reload(self.settings.character)
         if not self.active_pack and self.pet.isVisible():self.pet.timer.start()
 
     def activate_character(self,key):
@@ -455,15 +466,26 @@ class Controller(QObject):
 
     def refresh(self):
         display = derive_display(self.sessions, time.time())
+        now=time.monotonic()
+        if self.active_interaction and (now>=self.interaction_deadline or display.state in ('review','waiting','failed')
+                                       or not self.pet.isVisible()):
+            self.finish_interaction(refresh=False)
+        eligible=(self.pet.isVisible() and not self.settings.card_only and not self.active_interaction
+                  and self.bubble.mode in ('capsule','summary') and self.pet.press_position is None
+                  and not self.pet.context_menu.isVisible() and idle_allowed(self.sessions,display,time.time()))
+        leisure=self.idle_director.step(now,eligible)
+        action=self.active_interaction.action if self.active_interaction else leisure.action if leisure else display.state
+        self.visual_action=action
         self.pet.set_display(display)
         self.bubble.set_display(display)
         if self.active_pack and self.pet.isVisible():
-            action=self.active_interaction.action if self.active_interaction and time.monotonic()<self.interaction_deadline else display.state
             try:self.player.load(self.active_pack,action)
             except MaterialError:
                 self.player.clear();self.active_pack=None
                 self.pet.timer.start()
                 self.bubble.materials.status.setText('动画读取失败，已暂时使用内置角色。')
+        self.pet.set_visual(action,fallback=not self.active_pack or action not in self.active_pack.actions
+                            or action=='working' and self.active_pack.schema==1)
         self.bubble.maybe_collapse(self.settings)
         if time.monotonic()>=self.next_data:self.load_data(self.bubble.range.currentData())
         if time.monotonic()>=self.next_balance:self.load_balance()
@@ -484,6 +506,7 @@ class Controller(QObject):
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
                 "compact":self.bubble.compact,"view_mode":self.bubble.mode,"balance_available":self.bubble.balance is not None,
                 "animation_loaded":bool(self.player.frames),
+                "visual_action":self.visual_action,"leisure":self.idle_director.active is not None,
                 "interacting":self.active_interaction is not None and time.monotonic()<self.interaction_deadline,
                 "checkin_state":self.checkin_snapshot.state,
                 "panel_gap":self.pet.y()+self.pet.content_rect().y()-self.bubble.y()-self.bubble.height() if not self.settings.card_only else None,
@@ -527,6 +550,8 @@ class Controller(QObject):
                 configure_startup(settings.startup, runtime_command(self.root))
             save_settings(self.root, settings)
             self.settings = settings
+            if settings.card_only or previous.character!=settings.character:
+                self.idle_director.cancel();self.finish_interaction(refresh=False)
             self.next_balance=0
             self.next_checkin=0
             if not settings.checkin_enabled and self.checkin_job:self.checkin_job.cancel.set()
@@ -570,6 +595,9 @@ class Controller(QObject):
         self.user_visible = not self.user_visible
         self.pet.setVisible(self.user_visible and not self.settings.card_only)
         self.bubble.setVisible(self.user_visible)
+        if not self.user_visible:
+            self.idle_director.cancel();self.finish_interaction(refresh=False)
+        self.refresh()
 
     def demo_step(self):
         sequence = ("UserPromptSubmit", "PreToolUse", "PermissionRequest", "PostToolUse", "Stop")
@@ -601,6 +629,7 @@ class Controller(QObject):
         self.shutting_down = True
         self.timer.stop()
         self.interaction_timer.stop()
+        self.idle_director.cancel()
         if self.demo and hasattr(self,'demo_timer'):self.demo_timer.stop()
         if self.stats_job:self.stats_job.cancel.set()
         if self.balance_job:self.balance_job.cancel.set()

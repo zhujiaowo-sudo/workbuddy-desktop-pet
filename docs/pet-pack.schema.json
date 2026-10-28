@@ -1,27 +1,388 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "WorkBuddy Desktop Pet character pack v1",
+  "title": "WorkBuddy Desktop Pet character packs v1/v2",
   "type": "object",
-  "required": ["schema", "id", "name", "author", "version", "license", "actions"],
+  "required": [
+    "schema",
+    "id",
+    "name",
+    "author",
+    "version",
+    "license",
+    "actions"
+  ],
   "properties": {
-    "schema": {"const": 1},
-    "id": {"type": "string", "minLength": 1, "maxLength": 200},
-    "name": {"type": "string", "minLength": 1, "maxLength": 200},
-    "author": {"type": "string", "minLength": 1, "maxLength": 200},
-    "version": {"type": "string", "minLength": 1, "maxLength": 200},
-    "license": {"type": "string", "minLength": 1, "maxLength": 200},
-    "quality": {"enum": ["light", "hd"], "default": "light"},
-    "actions": {
-      "type": "object", "required": ["idle"], "maxProperties": 7,
-      "propertyNames": {"enum": ["idle", "thinking", "working", "waiting", "review", "done", "failed"]},
+    "schema": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "quality": {
+      "enum": [
+        "light",
+        "hd"
+      ],
+      "default": "light"
+    },
+    "files": {
+      "type": "object",
       "additionalProperties": {
-        "type": "object", "required": ["file"],
-        "properties": {
-          "file": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "\\.(png|gif|webp)$"},
-          "loop": {"type": "boolean", "default": true}
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "actions": {
+          "type": "object",
+          "required": [
+            "idle"
+          ],
+          "maxProperties": 7,
+          "propertyNames": {
+            "enum": [
+              "idle",
+              "thinking",
+              "working",
+              "waiting",
+              "review",
+              "done",
+              "failed"
+            ]
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "file"
+            ],
+            "properties": {
+              "file": {
+                "type": "string",
+                "maxLength": 240,
+                "pattern": "\\.(png|gif|webp)$"
+              },
+              "loop": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
         }
       }
     },
-    "files": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
-  }
+    {
+      "required": [
+        "quality"
+      ],
+      "properties": {
+        "schema": {
+          "const": 2
+        },
+        "actions": {
+          "type": "object",
+          "required": [
+            "idle",
+            "thinking",
+            "working",
+            "waiting",
+            "review",
+            "done",
+            "failed",
+            "click_wave",
+            "click_heart",
+            "click_shy",
+            "click_surprised",
+            "leisure_snack",
+            "leisure_phone",
+            "leisure_stretch",
+            "leisure_music"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "idle": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/idle\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "thinking": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/thinking\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "working": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/working\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "waiting": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/waiting\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "review": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/review\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "done": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/done\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "failed": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/failed\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "click_wave": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/click_wave\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "click_heart": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/click_heart\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "click_shy": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/click_shy\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "click_surprised": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/click_surprised\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "leisure_snack": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/leisure_snack\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "leisure_phone": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/leisure_phone\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "leisure_stretch": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/leisure_stretch\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            },
+            "leisure_music": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/leisure_music\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": true
+                }
+              }
+            }
+          }
+        },
+        "anchor": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 512
+          }
+        }
+      }
+    }
+  ]
 }
