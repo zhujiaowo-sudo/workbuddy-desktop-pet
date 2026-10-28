@@ -29,6 +29,10 @@ class Settings:
     card_position: tuple[int,int] | None = None
     balance_enabled: bool = False
     checkin_enabled: bool = False
+    onboarding_done: bool = False
+    quick_action: str = 'checkin'
+    quick_url: str = ''
+    auto_update: bool = True
 
 
 def clamp_position(position: tuple[int, int], size: tuple[int, int], screens: Sequence[Rect]) -> tuple[int, int]:
@@ -68,7 +72,11 @@ def load_settings(root: Path) -> Settings:
                         value.get('card_only') is True, value.get('auto_collapse', True) is True,
                         seconds if type(seconds) is int and 10 <= seconds <= 600 else 30,
                         character, value.get('compact') is True,tuple(card_position) if card_position else None,
-                        value.get('balance_enabled') is True,value.get('checkin_enabled') is True)
+                        value.get('balance_enabled') is True,value.get('checkin_enabled') is True,
+                        value.get('onboarding_done') is True,
+                        value.get('quick_action') if value.get('quick_action') in ('checkin','website','custom','refresh') else 'checkin',
+                        value.get('quick_url') if isinstance(value.get('quick_url'),str) and len(value['quick_url'])<=2048 else '',
+                        value.get('auto_update',True) is True)
     except (OSError, ValueError, TypeError):
         return Settings()
 

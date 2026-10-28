@@ -73,6 +73,8 @@ class Controller(QObject):
         self.started = time.time()
         self.dialog = None
         self.user_visible = True
+        self.avatar_collapsed=False
+        self.binding=None;self.discovery_job=None
         self.shutting_down = False
         self.workbuddy_home = workbuddy_home or Path.home()/'.workbuddy'
         self.library = MaterialLibrary(self.root/'characters')
@@ -110,6 +112,7 @@ class Controller(QObject):
         self.pet.manual_activity.connect(self.pet_activity)
         self.pet.settings_requested.connect(self.open_settings)
         self.pet.page_requested.connect(self.open_page)
+        self.pet.quit_requested.connect(app.quit)
         self.pet.moved.connect(self.position_bubble)
         self.pet.moved.connect(self.schedule_position_save)
         self.bubble.open_requested.connect(self.open_workbuddy)
@@ -119,7 +122,8 @@ class Controller(QObject):
         self.bubble.data_requested.connect(self.load_data)
         self.bubble.balance_requested.connect(self.open_balance)
         self.bubble.refresh_requested.connect(self.refresh_data)
-        self.bubble.checkin_requested.connect(self.checkin_clicked)
+        self.bubble.quick_requested.connect(self.quick_clicked)
+        self.bubble.set_quick_action(self.settings.quick_action,self.settings.quick_url)
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
         self.bubble.resized.connect(self.position_bubble)
@@ -135,6 +139,7 @@ class Controller(QObject):
         self.dialog.install_requested.connect(self.install_integration)
         self.dialog.uninstall_requested.connect(self.uninstall_integration)
         self.dialog.reset_requested.connect(self.reset_position)
+        self.dialog.detect_requested.connect(self.detect_workbuddy)
         self.bubble.add_page(self.dialog,'设置')
         self.bubble.observe_activity()
         self.save_timer = QTimer(self)
@@ -167,6 +172,10 @@ class Controller(QObject):
             self.demo_timer.start()
             self.demo_step()
         app.aboutToQuit.connect(self.shutdown)
+        from .ui.updates import UpdateManager
+        self.updates=UpdateManager(self)
+        self.dialog.update_requested.connect(lambda:self.updates.check(manual=True))
+        if not demo:QTimer.singleShot(1000,self.first_binding)
         self.refresh()
 
     def screens(self):
@@ -214,10 +223,14 @@ class Controller(QObject):
         self.schedule_position_save()
 
     def save_compact(self,value):
+        self.avatar_collapsed=value
+        self.pet.setVisible(self.user_visible and not self.settings.card_only and not value)
+        if value:self.idle_director.cancel();self.finish_interaction(refresh=False)
         self.settings=replace(self.settings,compact=value)
         save_settings(self.root,self.settings)
 
     def open_card(self):
+        self.avatar_collapsed=False
         self.finish_interaction()
         self.user_visible=True
         self.pet.setVisible(not self.settings.card_only)
@@ -233,6 +246,7 @@ class Controller(QObject):
             self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
             self.position_bubble()
         else:
+            self.avatar_collapsed=False
             self.user_visible=True;self.pet.setVisible(not self.settings.card_only);self.bubble.show()
             self.bubble.open_page(key)
             self.position_bubble();self.bubble.raise_();self.bubble.activateWindow()
@@ -329,8 +343,7 @@ class Controller(QObject):
 
     def open_balance(self):
         if not self.settings.balance_enabled:
-            self.open_settings()
-            self.dialog.hint.setText('勾选“授权本地查询剩余积分”并保存后，桌宠会通过 WorkBuddy 本地通道只读查询余额。')
+            self.show_binding()
             return
         self.open_card()
         self.next_balance=0
@@ -342,6 +355,15 @@ class Controller(QObject):
             self.next_balance=0
             self.load_balance()
         self.next_checkin=0;self.load_checkin()
+
+    def quick_clicked(self):
+        from .windows import open_website,WORKBUDDY_WEBSITE
+        try:
+            if self.settings.quick_action=='checkin':self.checkin_clicked()
+            elif self.settings.quick_action=='refresh':self.refresh_data();self.bubble.show_interaction('正在刷新积分和统计',3)
+            else:open_website(WORKBUDDY_WEBSITE if self.settings.quick_action=='website' else self.settings.quick_url)
+        except (OSError,ValueError):
+            self.open_settings();self.dialog.hint.setText('网页地址无效或无法打开，请填写 http:// 或 https:// 地址。')
 
     def load_checkin(self):
         if not self.settings.checkin_enabled:
@@ -404,6 +426,7 @@ class Controller(QObject):
         if not self.settings.balance_enabled:
             self.bubble.set_balance(None,'在设置中启用“授权本地查询剩余积分”')
             self.bubble.balance_badge.setText('积分未启用')
+            self.bubble.resize_balance_badge()
             self.bubble.balance_label.setText('剩余可用积分：未启用')
             return
         if self.demo or self.balance_job or self.shutting_down:return
@@ -546,6 +569,9 @@ class Controller(QObject):
             previous=self.settings
             if settings.workbuddy_path:
                 validate_workbuddy_path(Path(settings.workbuddy_path))
+            if settings.quick_action=='custom':
+                from .windows import website_url
+                website_url(settings.quick_url)
             if settings.startup != self.settings.startup:
                 from .integration import runtime_command
                 configure_startup(settings.startup, runtime_command(self.root))
@@ -557,7 +583,8 @@ class Controller(QObject):
             self.next_checkin=0
             if not settings.checkin_enabled and self.checkin_job:self.checkin_job.cancel.set()
             self.pet.set_pet_size(settings.size)
-            self.pet.setVisible(self.user_visible and not settings.card_only)
+            self.bubble.set_quick_action(settings.quick_action,settings.quick_url)
+            self.pet.setVisible(self.user_visible and not settings.card_only and not self.avatar_collapsed)
             self.player.set_visible(self.pet.isVisible())
             if settings.card_only:
                 self.player.clear();self.active_pack=None;self.pet.timer.stop()
@@ -568,9 +595,58 @@ class Controller(QObject):
                 self.dialog.hint.setText("设置已保存。")
                 self.dialog.settings = settings
                 self.dialog.card_only.setChecked(settings.card_only)
-        except (OSError, ValueError):
+        except (OSError, ValueError) as error:
             if self.dialog:
-                self.dialog.hint.setText("保存失败，请检查程序位置和用户目录是否可写。")
+                self.dialog.hint.setText(str(error) if isinstance(error,ValueError) else '保存失败，请检查用户目录是否可写。')
+
+    def first_binding(self):
+        if self.shutting_down or self.demo:return
+        if not self.settings.onboarding_done:
+            if self.settings.balance_enabled and (self.root/'integration-receipt.json').is_file():
+                self.settings=replace(self.settings,onboarding_done=True);save_settings(self.root,self.settings)
+            else:self.show_binding()
+
+    def show_binding(self):
+        from .ui.onboarding import BindingDialog
+        if self.binding is None:
+            self.binding=BindingDialog(self.bubble)
+            self.binding.bind_requested.connect(self.complete_binding)
+            self.binding.detect_requested.connect(self.detect_workbuddy)
+        self.binding.found(self.settings.workbuddy_path)
+        self.binding.show();self.binding.raise_();self.binding.activateWindow()
+        self.detect_workbuddy()
+
+    def detect_workbuddy(self):
+        if self.discovery_job or self.shutting_down:return
+        def find():
+            if self.settings.workbuddy_path:
+                try:return validate_workbuddy_path(Path(self.settings.workbuddy_path))
+                except (ValueError,OSError):pass
+            return discover_workbuddy()
+        self.discovery_job=Task(find,self)
+        def received(path):
+            if path:
+                self.settings=replace(self.settings,workbuddy_path=str(path));save_settings(self.root,self.settings)
+                self.dialog.path.setText(str(path));self.dialog.settings=self.settings
+            self.dialog.hint.setText('已检测到 WorkBuddy。' if path else '未找到 WorkBuddy，请启动后重新检测或手动选择。')
+            if self.binding:self.binding.found(path)
+        def finished():
+            job=self.discovery_job;self.discovery_job=None
+            if job:job.deleteLater()
+        self.discovery_job.done.connect(received);self.discovery_job.finished.connect(finished);self.discovery_job.start()
+
+    def complete_binding(self,balance,checkin):
+        from .integration import install_integration
+        try:
+            validate_workbuddy_path(Path(self.settings.workbuddy_path))
+            install_integration(self.workbuddy_home,self.root)
+            self.apply_settings(replace(self.settings,balance_enabled=balance,checkin_enabled=checkin,onboarding_done=True))
+            self.dialog.balance_enabled.setChecked(balance);self.dialog.checkin_enabled.setChecked(checkin)
+            if self.binding:self.binding.accept()
+            self.refresh_data()
+            self.bubble.show_interaction('已完成绑定，正在同步积分',5)
+        except (OSError,ValueError):
+            if self.binding:self.binding.hint.setText('绑定失败，未开启新的积分授权。请检查程序位置和目录写入权限后重试。')
 
     def install_integration(self):
         from .cli import diagnose
@@ -594,7 +670,7 @@ class Controller(QObject):
 
     def toggle_visible(self):
         self.user_visible = not self.user_visible
-        self.pet.setVisible(self.user_visible and not self.settings.card_only)
+        self.pet.setVisible(self.user_visible and not self.settings.card_only and not self.avatar_collapsed)
         self.bubble.setVisible(self.user_visible)
         if not self.user_visible:
             self.idle_director.cancel();self.finish_interaction(refresh=False)
@@ -635,6 +711,9 @@ class Controller(QObject):
         if self.stats_job:self.stats_job.cancel.set()
         if self.balance_job:self.balance_job.cancel.set()
         if self.checkin_job:self.checkin_job.cancel.set()
+        if self.discovery_job:self.discovery_job.cancel.set()
+        self.updates.shutdown()
+        if self.binding:self.binding.close()
         self.bubble.materials.shutdown()
         self.player.clear()
         if self.worker:

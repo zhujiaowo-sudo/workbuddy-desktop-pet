@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
-                              QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout)
+                              QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout,QComboBox)
 
 from ..settings import Settings
 
@@ -14,6 +14,8 @@ class SettingsDialog(QDialog):
     install_requested = Signal()
     uninstall_requested = Signal()
     reset_requested = Signal()
+    detect_requested = Signal()
+    update_requested = Signal()
 
     def __init__(self, settings: Settings, diagnostic: dict, parent=None, embedded=False):
         super().__init__(parent)
@@ -38,6 +40,7 @@ class SettingsDialog(QDialog):
         browse.clicked.connect(self.choose_path)
         line.addWidget(self.path)
         line.addWidget(browse)
+        detect=QPushButton('检测');detect.clicked.connect(self.detect_requested);line.addWidget(detect)
         form.addRow("WorkBuddy 位置", line)
         self.size = QSpinBox()
         self.size.setRange(100, 240)
@@ -68,6 +71,19 @@ class SettingsDialog(QDialog):
         self.checkin_enabled.setChecked(settings.checkin_enabled)
         self.checkin_enabled.setToolTip('通过 WorkBuddy 本地连接查询签到状态；仅点击签到按钮时领取。不自动签到，票据仅用于本机握手。')
         form.addRow('每日签到',self.checkin_enabled)
+        self.quick_action=QComboBox()
+        for label,key in (('每日签到','checkin'),('WorkBuddy 官网','website'),('自定义网页','custom'),('刷新数据','refresh')):
+            self.quick_action.addItem(label,key)
+        self.quick_action.setCurrentIndex(self.quick_action.findData(settings.quick_action))
+        form.addRow('左侧快捷按钮',self.quick_action)
+        self.quick_url=QLineEdit(settings.quick_url);self.quick_url.setPlaceholderText('https://example.com')
+        self.quick_url.setEnabled(settings.quick_action=='custom')
+        self.quick_action.currentIndexChanged.connect(lambda:self.quick_url.setEnabled(self.quick_action.currentData()=='custom'))
+        form.addRow('自定义网页',self.quick_url)
+        self.auto_update=QCheckBox('启动及每 6 小时检查新版本');self.auto_update.setChecked(settings.auto_update)
+        form.addRow('软件更新',self.auto_update)
+        update=QPushButton('检查更新');update.clicked.connect(self.update_requested);form.addRow('',update)
+        self.update_status=QLabel('后台检查不影响使用，确认后才下载/安装。');self.update_status.setWordWrap(True);form.addRow('',self.update_status)
         layout.addLayout(form)
         self.hint = QLabel("首次连接将安装本地状态插件。请保存后连接，再在 WorkBuddy 新建一个任务。")
         self.hint.setWordWrap(True)
@@ -102,7 +118,8 @@ class SettingsDialog(QDialog):
                                 notifications=self.notify.isChecked(), startup=self.startup.isChecked(),
                                 card_only=self.card_only.isChecked(), auto_collapse=self.auto_collapse.isChecked(),
                                 collapse_seconds=self.collapse_seconds.value(),balance_enabled=self.balance_enabled.isChecked(),
-                                checkin_enabled=self.checkin_enabled.isChecked()))
+                                checkin_enabled=self.checkin_enabled.isChecked(),quick_action=self.quick_action.currentData(),
+                                quick_url=self.quick_url.text().strip(),auto_update=self.auto_update.isChecked()))
 
     def set_diagnostic(self, report: dict):
         labels = {"plugin_not_configured": "尚未连接", "waiting_for_event": "已配置，等待 WorkBuddy 新任务",

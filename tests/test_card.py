@@ -138,9 +138,9 @@ def test_balance_unknown_is_not_zero_or_consumed_credit(qt_app):
     from workbuddy_pet.local_data import UsageSnapshot
     card=CardWindow();card.set_compact(True)
     card.set_snapshot(UsageSnapshot(True,total_credit=9999))
-    assert card.balance is None and card.balance_badge.text()=='积分待同步'
+    assert card.balance is None and card.balance_badge.text()=='待同步'
     card.set_balance(0,'synthetic source')
-    assert card.balance==0 and '0.0' in card.balance_badge.text()
+    assert card.balance==0 and card.balance_badge.text()=='0'
     for invalid in (-1,float('nan'),True,None):
         card.set_balance(invalid);assert card.balance is None
     card.close()
@@ -171,8 +171,8 @@ def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
     card.set_display(DisplayState('working','connected','s'))
     card.set_balance(123.45,'synthetic')
     card.set_compact(True);qt_app.processEvents()
-    assert card.mode=='capsule' and card.size().toTuple()==(342,36)
-    assert card.balance_badge.text()=='123.45'
+    assert card.mode=='capsule' and card.size().toTuple()==(card.capsule_width(),36)
+    assert card.balance_badge.text()=='123'
     image=card.grab().toImage()
     ratio=image.devicePixelRatio()
     # Transparent rounded corners and the gap between the only two modules.
@@ -184,7 +184,7 @@ def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
     assert image.pixelColor(round(gap*ratio),round(16*ratio)).alpha()==0
     QTest.mouseClick(card.capsule,Qt.MouseButton.LeftButton);qt_app.processEvents()
     assert card.mode=='summary' and not card.expanded.isVisible()
-    assert card.remaining_value.text()=='123.45' and card.today_value.text()=='3.500'
+    assert card.remaining_value.text()=='123' and card.today_value.text()=='3.500'
     assert card.session_link.isVisible() and card.session_link.toolTip()=='测试会话'
     QTest.mouseClick(card.data_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
     assert card.mode=='expanded' and card.tabs.currentIndex()==1

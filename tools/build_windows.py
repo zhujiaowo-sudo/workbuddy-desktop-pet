@@ -59,6 +59,7 @@ def main():
                     "--name", "WorkBuddyDesktopPet", "--icon", str(icon), "--paths", str(project / "src"),
                     '--add-data',str(project/'src/workbuddy_pet/catalog.json')+';workbuddy_pet',
                     '--add-data',str(project/'src/workbuddy_pet/assets')+';workbuddy_pet/assets',
+                    '--add-data',str(project/'src/workbuddy_pet/update_install.ps1')+';workbuddy_pet',
                     "--distpath", str(project / "dist"), "--workpath", str(work / "pyinstaller"),
                     "--specpath", str(work), str(project / "launch.py")], cwd=project, check=True)
     dist = project / "dist/WorkBuddyDesktopPet"

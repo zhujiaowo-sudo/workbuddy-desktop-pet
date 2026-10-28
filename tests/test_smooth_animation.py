@@ -50,3 +50,14 @@ def test_generated_seated_typing_keeps_furniture_and_outline_fixed():
     assert all(frame.crop((0,180,256,256)).tobytes()==base.crop((0,180,256,256)).tobytes() for frame in frames)
     assert all(frame.crop((190,0,256,256)).tobytes()==base.crop((190,0,256,256)).tobytes() for frame in frames)
     assert any(frame.tobytes()!=base.tobytes() for frame in frames[1:])
+
+
+def test_seated_leisure_has_fixed_chair_feet_and_distinct_hand_frames():
+    from workbuddy_pet.sprite_sheet import leisure_frames
+    for action in ('phone','snack'):
+        path=Path(__file__).resolve().parents[1]/f'art/mint-orbit/{action}-sheet-v1.2.0.png'
+        frames=leisure_frames(path,256);base=frames[0]
+        assert len(frames)==8 and all(f.size==(256,256) for f in frames)
+        assert all(alpha_bounds(f)==alpha_bounds(base) for f in frames)
+        assert all(f.crop((0,193,256,256)).tobytes()==base.crop((0,193,256,256)).tobytes() for f in frames)
+        assert len({f.tobytes() for f in frames})==8

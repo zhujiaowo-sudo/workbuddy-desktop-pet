@@ -47,6 +47,7 @@ class PetWindow(QWidget):
     page_requested = Signal(str)
     interact_requested = Signal()
     manual_activity = Signal()
+    quit_requested = Signal()
 
     def __init__(self, size: int = 160, demo: bool = False, *, use_builtin_image=True):
         super().__init__(None, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
@@ -83,6 +84,8 @@ class PetWindow(QWidget):
         self.context_menu.addSeparator()
         action=self.context_menu.addAction('收成胶囊');action.setData('capsule')
         action.triggered.connect(lambda:self.page_requested.emit('capsule'))
+        self.context_menu.addSeparator()
+        self.context_menu.addAction('退出桌宠',self.quit_requested.emit)
         self.set_pet_size(size)
         self.timer = QTimer(self)
         self.timer.setInterval(40)

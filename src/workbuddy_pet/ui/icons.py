@@ -23,6 +23,8 @@ def action_icon(kind):
         p.drawEllipse(QRectF(5,5,10,10));p.drawEllipse(QRectF(8,8,4,4))
         for a,b in ((QPointF(10,2),QPointF(10,5)),(QPointF(10,15),QPointF(10,18)),
                     (QPointF(2,10),QPointF(5,10)),(QPointF(15,10),QPointF(18,10))):p.drawLine(a,b)
+    elif kind=='website':
+        p.drawEllipse(QRectF(3,3,14,14));p.drawEllipse(QRectF(7,3,6,14));p.drawLine(3,10,17,10)
     elif kind=='collapse':p.drawLine(5,10,15,10)
     elif kind=='close':
         p.drawLine(6,6,14,14);p.drawLine(14,6,6,14)

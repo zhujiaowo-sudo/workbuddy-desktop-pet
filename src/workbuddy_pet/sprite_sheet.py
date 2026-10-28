@@ -27,7 +27,7 @@ def _remove_specks(image):
     return output
 
 
-def typing_frames(sheet_path,resolution):
+def typing_frames(sheet_path,resolution,*,regions=((.23,.25,.57,.46),(.29,.52,.60,.68))):
     """4x2 sheet: lock furniture/outline, animate only registered face and hands."""
     with Image.open(sheet_path) as sheet:
         sheet=sheet.convert('RGBA');raw=[]
@@ -57,7 +57,12 @@ def typing_frames(sheet_path,resolution):
     base=frames[0];box=alpha_bounds(base);x,y,right,bottom=box;w,h=right-x,bottom-y
     mask=Image.new('L',base.size);draw=ImageDraw.Draw(mask)
     # Eyes/cheeks and wrists/keyboard. Desk, monitor and silhouette remain exact.
-    for a,b,c,d in ((.23,.25,.57,.46),(.29,.52,.60,.68)):
+    for a,b,c,d in regions:
         draw.rounded_rectangle((round(x+w*a),round(y+h*b),round(x+w*c),round(y+h*d)),radius=3,fill=255)
     mask=mask.filter(ImageFilter.GaussianBlur(max(.7,resolution/340)))
     return tuple(Image.composite(frame,base,mask) for frame in frames)
+
+
+def leisure_frames(sheet_path,resolution):
+    """Seated phone/snack: fixed chair, boots and silhouette; face/forearms move."""
+    return typing_frames(sheet_path,resolution,regions=((.23,.29,.74,.54),(.25,.48,.76,.73)))

@@ -49,6 +49,7 @@ def main():
         assert runtime['checkin_state']=='disabled'
     assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Optional material catalog missing'
     assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
+    assert (exe.parent/'_internal/workbuddy_pet/update_install.ps1').is_file(),'Update installer missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
     from workbuddy_pet import __version__
     for page,mode,card_only in (('summary','summary',True),('capsule','capsule',True),('data','expanded',True),

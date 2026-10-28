@@ -64,6 +64,7 @@ class CardWindow(QWidget):
     refresh_requested=Signal()
     checkin_requested=Signal()
     chat_requested=Signal()
+    quick_requested=Signal()
 
     def __init__(self,demo=False):
         super().__init__(None,Qt.WindowType.Tool|Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -75,11 +76,12 @@ class CardWindow(QWidget):
         self.last_interaction=time.monotonic();self.drag_origin=None;self.pressed=None;self.child_drag=None
         self.local_sessions={};self.current_session=None;self.balance=None
         self.interaction_text='';self.interaction_until=0
+        self.quick_action='checkin';self.last_checkin=None
         self.root_layout=QVBoxLayout(self);self.root_layout.setContentsMargins(0,0,0,0);self.root_layout.setSpacing(0)
         self.compact_bar=QWidget();compact=QHBoxLayout(self.compact_bar);compact.setContentsMargins(0,0,0,0);compact.setSpacing(6)
         self.signin_button=QPushButton();self.signin_button.setFixedSize(36,36);self.signin_button.setIconSize(QSize(20,20))
         self.signin_button.setFocusPolicy(Qt.FocusPolicy.NoFocus);self.signin_button.setAccessibleName('WorkBuddy 每日签到')
-        self.signin_button.clicked.connect(self.checkin_requested)
+        self.signin_button.clicked.connect(self.quick_requested)
         self.signin_button.setIcon(action_icon('checkin'))
         self.signin_button.setStyleSheet('background:#fbfeff;border:1px solid #d7eafa;border-radius:18px;padding:7px;')
         self.signin_button.setToolTip('每日签到：等待状态，点击设置授权')
@@ -215,7 +217,7 @@ class CardWindow(QWidget):
         self.mode=mode;self.compact=mode=='capsule'
         self.full.setVisible(not self.compact);self.compact_bar.setVisible(self.compact)
         self.expanded.setVisible(mode=='expanded')
-        self.setFixedSize(*MODE_SIZES[mode])
+        self.setFixedSize(self.capsule_width(),36) if self.compact else self.setFixedSize(*MODE_SIZES[mode])
         self.root_layout.activate()
         self.update_session_link();self.last_interaction=time.monotonic()
         if manual:self.compact_changed.emit(self.compact)
@@ -236,6 +238,8 @@ class CardWindow(QWidget):
         self.interaction_text='';self.interaction_until=0;self.update_session_link()
 
     def set_checkin(self,snapshot):
+        self.last_checkin=snapshot
+        if self.quick_action!='checkin':return
         self.signin_button.setEnabled(True)
         self.signin_button.setProperty('checkinState',snapshot.state)
         self.signin_button.setIcon(action_icon('checked' if snapshot.checked else 'checkin'))
@@ -245,8 +249,30 @@ class CardWindow(QWidget):
         self.signin_button.setToolTip(note)
 
     def set_checkin_busy(self,claiming=False):
+        if self.quick_action!='checkin':return
         self.signin_button.setEnabled(False);self.signin_button.setIcon(action_icon('refresh'))
         self.signin_button.setToolTip('正在签到，请稍候…' if claiming else '正在查询签到状态…')
+
+    def set_quick_action(self,action,url=''):
+        self.quick_action=action
+        self.signin_button.setEnabled(True)
+        if action=='checkin':
+            self.signin_button.setIcon(action_icon('checkin'))
+            self.signin_button.setToolTip('每日签到：仅点击时领取')
+            if self.last_checkin:self.set_checkin(self.last_checkin)
+        else:
+            labels={'website':'打开 WorkBuddy 官网','custom':'打开自定义网页','refresh':'刷新积分和统计'}
+            self.signin_button.setIcon(action_icon('refresh' if action=='refresh' else 'website'))
+            self.signin_button.setToolTip(labels.get(action,'快捷操作')+('\n'+url if action=='custom' else ''))
+        self.signin_button.setAccessibleName(self.signin_button.toolTip())
+
+    def capsule_width(self):return 36+200+self.balance_badge.width()+12
+
+    def resize_balance_badge(self):
+        width=max(42,self.balance_badge.fontMetrics().horizontalAdvance(self.balance_badge.text())+22)
+        self.balance_badge.setFixedWidth(width)
+        if self.compact:
+            self.setFixedSize(self.capsule_width(),36);self.root_layout.activate();self.resized.emit()
 
     def maybe_collapse(self,settings,now=None):
         now=time.monotonic() if now is None else now;focus=QApplication.focusWidget()
@@ -281,11 +307,11 @@ class CardWindow(QWidget):
     def set_balance(self,value,source_note='WorkBuddy 余额需要客户端授权接口；本机消耗记录不能推算剩余积分'):
         valid=type(value) in (int,float) and math.isfinite(value) and value>=0
         self.balance=value if valid else None
-        text=f'{value:,.2f}' if valid else '积分待同步'
-        self.balance_badge.setText(self.balance_badge.fontMetrics().elidedText(text,Qt.TextElideMode.ElideRight,88))
-        self.balance_badge.setToolTip((f'剩余可用积分：{value:,.2f}\n' if valid else '')+source_note)
-        self.balance_label.setText(f'剩余可用积分：{value:,.2f}' if valid else '剩余可用积分：待同步');self.balance_label.setToolTip(source_note)
-        self.remaining_value.setText(f'{value:,.2f}' if valid else '待同步')
+        text=f'{math.floor(value):,}' if valid else '待同步'
+        self.balance_badge.setText(text);self.resize_balance_badge()
+        self.balance_badge.setToolTip(('剩余可用积分：'+text+'\n' if valid else '')+source_note)
+        self.balance_label.setText('剩余可用积分：'+text);self.balance_label.setToolTip(source_note)
+        self.remaining_value.setText(text)
         self.remaining_value.setToolTip(self.balance_badge.toolTip())
         self.remaining_note.setToolTip(source_note)
 

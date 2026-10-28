@@ -33,7 +33,7 @@ def render_frame(image, action, phase, rect):
     return _pil(canvas)
 
 
-def export_interactive(destination: Path, quality='light', source: Path | None = None, typing_sheet: Path | None = None):
+def export_interactive(destination: Path, quality='light', source: Path | None = None, typing_sheet: Path | None = None, leisure_sheets=None):
     """Source=None exports only our original CC0 robot, never the built-in portrait."""
     from .ui.pet import PetWindow
     if quality not in ('light', 'hd'):raise ValueError('未知画质')
@@ -45,6 +45,13 @@ def export_interactive(destination: Path, quality='light', source: Path | None =
         pet = PetWindow(size=resolution, use_builtin_image=False) if not source else None
         try:
             for action in ALL_ACTIONS:
+                if source and leisure_sheets and action in leisure_sheets:
+                    from .sprite_sheet import leisure_frames
+                    frames=list(leisure_frames(leisure_sheets[action],resolution))
+                    boxes.extend(alpha_bounds(f) for f in frames)
+                    stream=io.BytesIO()
+                    frames[0].save(stream,format='WEBP',save_all=True,append_images=frames[1:],duration=200,loop=0,lossless=True,method=3)
+                    payload[f'actions/{action}.webp']=stream.getvalue();continue
                 if action=='working' and typing_sheet and source:
                     from .sprite_sheet import typing_frames
                     frames=list(typing_frames(typing_sheet,resolution))
@@ -96,14 +103,14 @@ def export_interactive(destination: Path, quality='light', source: Path | None =
     manifest = {'schema':2, 'id':'mint-orbit-interactive' if source else 'my-interactive-pet',
         'name':'薄荷星伴 · 坐姿互动版' if source else '小搭子 · 完整互动模板',
         'author':pack.author if source else 'WorkBuddy Desktop Pet contributors',
-        'version':'1.1.1' if source else '2.0.1','license':pack.license if source else 'CC0-1.0',
+        'version':'1.2.0' if source else '2.0.1','license':pack.license if source else 'CC0-1.0',
         'quality':quality,'anchor':[min(b[0] for b in boxes),min(b[1] for b in boxes),max(b[2] for b in boxes),max(b[3] for b in boxes)],
         'actions':{a:{'file':f'actions/{a}.webp','loop':a in LOOP_ACTIONS} for a in ALL_ACTIONS},
         'files':{name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}}
     if source:
         manifest['source']={'name':pack.name,'author':pack.author,'version':'1.0.1',
             'license':pack.license,'license_url':'https://creativecommons.org/licenses/by/4.0/',
-            'changes':'任务/休闲保留原素材派生；点击去除上下跳动并放慢节奏。working使用imagegen生成的薄荷坐姿打字8关键帧，固定桌椅与外轮廓、注册面部和手部局部动画；显示器朝角色。原1.0.1素材包不变。'}
+            'changes':'保留原任务素材与署名；点击无上下跳动。working、leisure_phone、leisure_snack使用imagegen生成坐姿8关键帧，固定座椅、脚底与轮廓，局部面部/手部动画。电脑和手机屏幕朝人物，零食由手送到嘴边。原1.0.1包不变。'}
     destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(destination,'w',zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2))

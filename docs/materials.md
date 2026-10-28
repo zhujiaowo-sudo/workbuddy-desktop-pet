@@ -95,7 +95,7 @@ ZIP根目录直接放manifest.json，不要额外嵌套同名顶层文件夹。�
 
 素材页“导出15动作模板”可导出可直接再次导入的轻量ZIP，使用本项目原创小搭子机器人（CC0-1.0），**不会把薄荷形象标成CC0**。替换全部15个同名动画、填写作者/许可、更新摘要和包络后导入验证。
 
-公开下载：[v0.5.0模板与动画附件](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.5.1)。提供轻量/高清模板和薄荷互动包，二者许可分别说明。
+公开下载：[v0.6.0模板与动画附件](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.6.0)。提供轻量/高清模板2.0.1和薄荷互动包1.2.0，二者许可分别说明。
 
 源码环境验证（只检查临时副本，不启用角色）：
 
@@ -112,4 +112,4 @@ python tools/create_interactive_pack.py --output dist/materials
 
 schema=1沿用原7标识，idle必需，支持静态PNG、APNG、GIF、WebP；其他任务动作缺失回退idle。单边≤1024px、每段≤300帧；帧时长规范化为20ms–10秒；仍受全包安全上限约束。无需改名即可导入。新8个扩展标识只在schema=2中使用。
 
-薄荷星伴原作者Buddy娘、CC-BY-4.0，互动版1.1.1派生自用户提供的1.0.1包，保留署名、许可链接及改动说明。原包仍在[v0.3.1](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1)。见[NOTICE](../NOTICE.md)。不要将该许可套用于白龙、其他角色或整个程序代码；只分发自己有权分发的图像。
+薄荷星伴原作者Buddy娘、CC-BY-4.0，互动版1.2.0派生自用户提供的1.0.1包，保留署名、许可链接及改动说明。工作、手机、零食采用真正坐姿，屏幕朝人物，身体/座椅/脚底固定，手部/面部局部变化。社区投稿的这三类动作也应满足同样构图要求，不用站姿叠加漂浮道具；格式、尺寸与15动作数量规范不变。源图及提示词见[生成记录](../art/mint-orbit/leisure-v1.2.0.md)。原包仍在[v0.3.1](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.3.1)。见[NOTICE](../NOTICE.md)。不要将该许可套用于白龙、其他角色或整个程序代码；只分发自己有权分发的图像。

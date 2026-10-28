@@ -68,7 +68,7 @@ def test_enabled_balance_updates_badge_without_persisting_amount(tmp_path,qt_app
     controller=Controller(qt_app,tmp_path,False,workbuddy_home=tmp_path/'absent')
     QTest.qWait(100)
     assert controller.bubble.balance==123.45
-    assert '123.45' in controller.bubble.balance_badge.text()
+    assert controller.bubble.balance_badge.text()=='123'
     assert '123.45' not in (tmp_path/'settings.json').read_text()
     assert '123.45' not in (tmp_path/'runtime.json').read_text()
     controller.shutdown()
