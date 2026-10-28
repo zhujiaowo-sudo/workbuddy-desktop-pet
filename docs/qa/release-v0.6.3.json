@@ -1,0 +1,105 @@
+{
+  "version": "0.6.3",
+  "material_version": "1.5.0",
+  "regression": {
+    "passed": 170,
+    "failed": 0,
+    "confirmed_process_exit_code": 0
+  },
+  "frozen_light": {
+    "hook_collector": true,
+    "powershell_forwarding": true,
+    "gui": true,
+    "schema3_material_import": true,
+    "card_views_and_interaction": true
+  },
+  "frozen_hd": {
+    "frozen_hd_import": true,
+    "native_windows": true,
+    "scale": 1.5,
+    "canvas": 720,
+    "idle_playback_seconds": 12,
+    "at_least_three_loops": true,
+    "version": "0.6.3",
+    "live_workbuddy_integration": false,
+    "account_queries_disabled": true
+  },
+  "native_hd": {
+    "scope": "isolated synthetic profile, real Windows Qt timers; no live WorkBuddy integration",
+    "material_quality": "hd",
+    "canvas": 720,
+    "scale": "1.5",
+    "platform": "windows",
+    "playback_seconds": 12.001,
+    "expected_source_loops": 3.6,
+    "changed_callbacks": 288,
+    "rss_min_mib": 102.33,
+    "rss_max_mib": 104.32,
+    "small_card_minus_keeps_avatar": true,
+    "avatar_capsule_restore": true,
+    "hide_stops_animation": true,
+    "switch_working_and_idle": true,
+    "account_queries_disabled": true,
+    "other_actions_count": 15,
+    "loop_visual_status": "candidate; endpoint differences remain"
+  },
+  "catalog": {
+    "schema": 1,
+    "release": "v0.6.3",
+    "packs": {
+      "light": {
+        "name": "mint-orbit-interactive-light-v1.5.0.zip",
+        "bytes": 23206637,
+        "sha256": "1a7ec4fa01894b340f1eb8fc87fae98f77e70a13b5dc38d3a8823c0c3d27036e",
+        "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.3/mint-orbit-interactive-light-v1.5.0.zip"
+      },
+      "hd": {
+        "name": "mint-orbit-interactive-hd-v1.5.0.zip",
+        "bytes": 45976223,
+        "sha256": "c5a02e4744b919b0afb4112fc446f2f90a4458d10a9d40111ecbd8ea6832ab12",
+        "url": "https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/download/v0.6.3/mint-orbit-interactive-hd-v1.5.0.zip"
+      }
+    }
+  },
+  "attachments": {
+    "mint-orbit-interactive-hd-v1.5.0.zip": {
+      "bytes": 45976223,
+      "sha256": "c5a02e4744b919b0afb4112fc446f2f90a4458d10a9d40111ecbd8ea6832ab12"
+    },
+    "mint-orbit-interactive-light-v1.5.0.zip": {
+      "bytes": 23206637,
+      "sha256": "1a7ec4fa01894b340f1eb8fc87fae98f77e70a13b5dc38d3a8823c0c3d27036e"
+    },
+    "SHA256SUMS.txt": {
+      "bytes": 626,
+      "sha256": "34ca0690ec8c7f6ab629ef5538cc9fd8ad11df7e6db9b21e72b2420e25fb7df3"
+    },
+    "workbuddy-desktop-pet-0.6.3-windows-x64.zip": {
+      "bytes": 62156573,
+      "sha256": "b3f0c8d35f9f5177dbcddcecc5785f001cb30116abc01bf267bae7c93ca30fff"
+    },
+    "workbuddy-pet-template-hd-v2.0.1.zip": {
+      "bytes": 10626370,
+      "sha256": "1c9a4ea8c695b9fc095aace96dc52545fc2bb31b5c60af10edafcf12a496578c"
+    },
+    "workbuddy-pet-template-light-v2.0.1.zip": {
+      "bytes": 5035279,
+      "sha256": "1c789e8fd43fbe93e7e15157a8d9bfdbd39c5ea4844c9687a690cff915878020"
+    },
+    "安装与素材说明.txt": {
+      "bytes": 1070,
+      "sha256": "c583611bb44ec644cbb2f77cc8acbd280510fba9df23aafbd5aac20d2a76d4de"
+    }
+  },
+  "publication_gates": [
+    "GitHub Windows CI success on release commit",
+    "uploaded asset digests match",
+    "anonymous downloads match SHA256SUMS"
+  ],
+  "limits": [
+    "video idle loop has mouth/detail differences",
+    "other 15 actions not redrawn",
+    "720 legacy actions are uniformly enlarged from512",
+    "synthetic UI verification does not imply full live WorkBuddy event integration"
+  ]
+}
