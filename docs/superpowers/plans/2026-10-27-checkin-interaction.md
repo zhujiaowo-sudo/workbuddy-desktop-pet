@@ -52,10 +52,10 @@ Files: interaction.py, ui/pet.py, ui/card.py, app.py, tests/test_interaction.py�
 
 ### Task 4: 验证与交付
 
-- [ ] 取得本机签到额外授权后只读查询真实状态；领取仅用户点击触发。
+- [x] 取得本机签到额外授权后只读查询真实状态；领取仅用户点击触发。
 - [x] 全套测试、合成和原素材预览、冻结程序验证；更新本机保留设置。
 - [x] 更新中文说明，推送、CI通过和发布v0.4.0，核验公开附件。
 
 交付：代码9401cef；[Windows检查及全部步骤成功](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40522473180/job/122252969681)；[v0.4.0公开下载](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.4.0)。95项测试及冻结程序验证通过，公开附件摘要与匿名校验文件下载已核对。本机界面和互动已更新，保留224大小、高清人物与余额查询。
 
-待用户确认：此前本机票据只授权余额，新增签到用途的异步授权问题尚未答复；交付时checkin_enabled=false、状态disabled。没有查询本机签到状态或领取积分，没有真实到账实测结论。用户明确扩展授权后，再启用并仅做状态查询；领取仍由用户点击。
+2026-10-28完成授权与只读验证：用户明确允许查询签到状态、仅点击时领取。状态接口实测返回available；本机仅修改checkin_enabled=true并重启，冻结程序同样查询为available，保留224大小、高清动画与余额功能。没有调用领取接口，没有真实到账实测结论。公共默认配置仍关闭。
