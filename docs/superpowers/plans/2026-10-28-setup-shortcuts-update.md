@@ -41,4 +41,6 @@
 ### Task 4：交付
 
 - [x] 回归、原生截图、冻结验证、本机升级与设置保留。
-- [ ] 推送、CI、发布新版，核对公开校验值及匿名下载。
+- [x] 推送、CI、发布新版，核对公开校验值及匿名下载。
+
+交付：代码提交 `c0e38314a691731ed92364a5a7a1e0746ee9d316`，[Windows CI成功](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40629236615/job/122621445419)，[v0.6.0正式发布](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.6.0)。6附件大小/摘要与本地一致；匿名下载校验清单、15动作轻量包通过。实际更新器通过 latest 接口识别0.6.0，完整下载50,313,020字节程序包并校验SHA-256与进度100%。真实冻结包交换/重启及坏程序回退另在独立目录验证；本机0.6.0运行并可查询余额，保留大小150、自启关闭及原授权。公开源图及提示词见art/mint-orbit/leisure-v1.2.0.md。
