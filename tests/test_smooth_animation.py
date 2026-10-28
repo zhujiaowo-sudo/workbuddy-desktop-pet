@@ -61,3 +61,13 @@ def test_seated_leisure_has_fixed_chair_feet_and_distinct_hand_frames():
         assert all(alpha_bounds(f)==alpha_bounds(base) for f in frames)
         assert all(f.crop((0,193,256,256)).tobytes()==base.crop((0,193,256,256)).tobytes() for f in frames)
         assert len({f.tobytes() for f in frames})==8
+
+
+def test_idle_blink_and_scratch_keep_boots_fixed():
+    from workbuddy_pet.sprite_sheet import gentle_idle_frames,scratch_frames
+    root=Path(__file__).resolve().parents[1]/'art/mint-orbit'
+    for name,extract,count in (('idle',gentle_idle_frames,16),('scratch',scratch_frames,8)):
+        frames=extract(root/f'{name}-sheet-v1.3.0.png',256);base=frames[0]
+        assert len(frames)==count and all(f.size==(256,256) for f in frames)
+        assert all(f.crop((0,200,256,256)).tobytes()==base.crop((0,200,256,256)).tobytes() for f in frames)
+        assert len({f.tobytes() for f in frames})==count

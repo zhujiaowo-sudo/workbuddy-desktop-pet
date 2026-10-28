@@ -66,3 +66,18 @@ def typing_frames(sheet_path,resolution,*,regions=((.23,.25,.57,.46),(.29,.52,.6
 def leisure_frames(sheet_path,resolution):
     """Seated phone/snack: fixed chair, boots and silhouette; face/forearms move."""
     return typing_frames(sheet_path,resolution,regions=((.23,.29,.74,.54),(.25,.48,.76,.73)))
+
+
+def gentle_idle_frames(sheet_path,resolution):
+    """One blink per 3.2s; quiet open-eye expressions occupy most of the loop."""
+    frames=typing_frames(sheet_path,resolution,regions=((.22,.26,.79,.44),))
+    quiet=[Image.blend(frames[0],frames[6],index/80) for index in range(11)]
+    return tuple(quiet+[frames[1],frames[2],frames[3],frames[4],frames[7]])
+
+
+def scratch_frames(sheet_path,resolution):
+    """The moving arm replaces its resting position, with no duplicate glove."""
+    # Preserve the whole authored upper-body pose; a rectangular wrist patch
+    # crossing the helmet silhouette leaves a clipped double edge. Feet and
+    # lower legs remain registered to the base, without any window movement.
+    return typing_frames(sheet_path,resolution,regions=((-.08,-.02,1.08,.78),))

@@ -24,11 +24,11 @@ from .ui.animation import AnimationPlayer
 from .ui.materials import MaterialPanel
 from .materials import MaterialLibrary, MaterialError
 from .local_data import LocalDataReader
-from .placement import card_position,fit_capsule_pet,panel_height_limit
+from .placement import card_position,fit_capsule_pet,panel_height_limit,pet_below_capsule
 from .background import Task
 from .balance import read_balance
 from .checkin import CheckinSnapshot,read_checkin,perform_checkin,local_day
-from .interaction import Interaction,response_for_click,IdleDirector,idle_allowed
+from .interaction import Interaction,response_for_click,IdleDirector,AmbientDirector,idle_allowed
 from .ui.settings import SettingsDialog
 from .ui.tray import PetTray
 from .windows import configure_startup, discover_workbuddy, open_workbuddy, open_conversation, validate_workbuddy_path
@@ -73,7 +73,8 @@ class Controller(QObject):
         self.started = time.time()
         self.dialog = None
         self.user_visible = True
-        self.avatar_collapsed=False
+        self.avatar_collapsed=self.settings.avatar_collapsed
+        self._capsule_anchor=None
         self.binding=None;self.discovery_job=None
         self.shutting_down = False
         self.workbuddy_home = workbuddy_home or Path.home()/'.workbuddy'
@@ -90,6 +91,7 @@ class Controller(QObject):
         self.checkin_job=None;self.next_checkin=0;self.checkin_snapshot=CheckinSnapshot();self.checkin_day=local_day()
         self.active_interaction=None;self.interaction_deadline=0;self.interaction_index=0;self.last_pet_click=-1
         self.idle_director=IdleDirector()
+        self.ambient_director=AmbientDirector()
         self.visual_action='idle'
         self.interaction_timer=QTimer(self);self.interaction_timer.setSingleShot(True)
         self.interaction_timer.timeout.connect(self.finish_interaction)
@@ -123,6 +125,10 @@ class Controller(QObject):
         self.bubble.balance_requested.connect(self.open_balance)
         self.bubble.refresh_requested.connect(self.refresh_data)
         self.bubble.quick_requested.connect(self.quick_clicked)
+        self.bubble.page_requested.connect(self.open_page)
+        self.bubble.avatar_requested.connect(self.show_avatar)
+        self.bubble.quit_requested.connect(app.quit)
+        self.bubble.set_avatar_hidden(self.avatar_collapsed or self.settings.card_only,self.settings.card_only)
         self.bubble.set_quick_action(self.settings.quick_action,self.settings.quick_url)
         self.bubble.moved.connect(self.card_moved)
         self.bubble.compact_changed.connect(self.save_compact)
@@ -138,7 +144,7 @@ class Controller(QObject):
         self.dialog.saved.connect(self.apply_settings)
         self.dialog.install_requested.connect(self.install_integration)
         self.dialog.uninstall_requested.connect(self.uninstall_integration)
-        self.dialog.reset_requested.connect(self.reset_position)
+        self.dialog.reset_requested.connect(self.reset_to_corner)
         self.dialog.detect_requested.connect(self.detect_workbuddy)
         self.bubble.add_page(self.dialog,'设置')
         self.bubble.observe_activity()
@@ -148,11 +154,12 @@ class Controller(QObject):
         self.save_timer.timeout.connect(self.save_position)
         self.tray = PetTray(self, self.toggle_visible, self.open_settings, app.quit)
         self.tray.messageClicked.connect(self.open_workbuddy)
+        self.bubble.set_compact(self.settings.compact)
+        self._card_placed=False  # First placement uses saved pet/card coordinates, not the hidden widget's origin.
         self.reset_position(self.settings.position)
-        self.pet.setVisible(not self.settings.card_only)
+        self.pet.setVisible(not self.settings.card_only and not self.avatar_collapsed)
         if self.settings.card_only:self.pet.timer.stop()
         self.bubble.show()
-        self.bubble.set_compact(self.settings.compact)
         self.restore_character()
         self.position_bubble()
         self.worker = None
@@ -187,7 +194,7 @@ class Controller(QObject):
         position = position or (screen.right() - self.pet.width() - 35, screen.bottom() - self.pet.height() - 30)
         x, y = clamp_position(position, (self.pet.width(), self.pet.height()), self.screens())
         self.pet.move(x, y)
-        if self.settings.card_only and self.settings.card_position:
+        if (self.settings.card_only or self.avatar_collapsed) and self.settings.card_position:
             self.bubble.move(*clamp_position(self.settings.card_position,(self.bubble.width(),self.bubble.height()),self.screens()))
             self._card_placed=True
         self.position_bubble()
@@ -197,7 +204,7 @@ class Controller(QObject):
         self._positioning=True
         try:
             size=(self.bubble.width(),self.bubble.height())
-            if self.settings.card_only and self._card_placed:
+            if (self.settings.card_only or self.avatar_collapsed) and self._card_placed:
                 x,y=clamp_position((self.bubble.x(),self.bubble.y()),size,self.screens())
             else:
                 rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height())
@@ -212,25 +219,69 @@ class Controller(QObject):
                     rect=Rect(*fitted,rect.width,rect.height)
                 x,y=card_position(rect,size,self.screens(),compact=self.bubble.compact,anchor=anchor)
             self.bubble.move(x,y);self._last_card_pos=(x,y);self._card_placed=True
+            if self.avatar_collapsed and self.bubble.compact:
+                self._capsule_anchor=Rect(x,y,*size)
         finally:self._positioning=False
 
+    def reset_to_corner(self):
+        if self.settings.card_only or self.avatar_collapsed:
+            screen=QGuiApplication.primaryScreen().availableGeometry()
+            position=clamp_position((screen.right()+1-self.bubble.width()-24,screen.bottom()+1-self.bubble.height()-24),
+                                    (self.bubble.width(),self.bubble.height()),self.screens())
+            self.bubble.move(*position);self._last_card_pos=position;self._card_placed=True
+            if self.avatar_collapsed and self.bubble.compact:self._capsule_anchor=Rect(*position,self.bubble.width(),self.bubble.height())
+            self.save_position()
+        else:self.reset_position();self.save_position()
+
     def card_moved(self,x,y):
-        if not self.settings.card_only and self._last_card_pos:
+        if not self.settings.card_only and not self.avatar_collapsed and self._last_card_pos:
             dx,dy=x-self._last_card_pos[0],y-self._last_card_pos[1]
             self.pet.move(*clamp_position((self.pet.x()+dx,self.pet.y()+dy),(self.pet.width(),self.pet.height()),self.screens()))
             self.position_bubble()
-        else:self._last_card_pos=(x,y)
+        else:
+            position=clamp_position((x,y),(self.bubble.width(),self.bubble.height()),self.screens())
+            self.bubble.move(*position);self._last_card_pos=position
+            if self.avatar_collapsed and self.bubble.compact:self._capsule_anchor=Rect(*position,self.bubble.width(),self.bubble.height())
         self.schedule_position_save()
 
     def save_compact(self,value):
+        if not value and self.avatar_collapsed:self.restore_avatar(persist=False)
         self.avatar_collapsed=value
         self.pet.setVisible(self.user_visible and not self.settings.card_only and not value)
-        if value:self.idle_director.cancel();self.finish_interaction(refresh=False)
-        self.settings=replace(self.settings,compact=value)
+        if value:
+            self._capsule_anchor=Rect(self.bubble.x(),self.bubble.y(),self.bubble.width(),self.bubble.height())
+            self.idle_director.cancel();self.finish_interaction(refresh=False)
+            self.ambient_director.cancel()
+        self.bubble.set_avatar_hidden(value or self.settings.card_only,self.settings.card_only)
+        self.settings=replace(self.settings,compact=value,avatar_collapsed=value,
+                              card_position=(self.bubble.x(),self.bubble.y()) if value else self.settings.card_position)
         save_settings(self.root,self.settings)
+        self.dialog.settings=self.settings
+
+    def restore_avatar(self,*,exit_card_only=False,persist=True):
+        if self.settings.card_only and not exit_card_only:return
+        detached=self.avatar_collapsed or self.settings.card_only
+        capsule=self._capsule_anchor or Rect(self.bubble.x(),self.bubble.y(),self.bubble.width(),self.bubble.height())
+        was_card_only=self.settings.card_only
+        self.user_visible=True;self.avatar_collapsed=False
+        self.settings=replace(self.settings,avatar_collapsed=False,card_only=False if exit_card_only else self.settings.card_only)
+        if was_card_only:self.restore_character()
+        if detached:
+            rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height());visible=self.pet.content_rect()
+            anchor=Rect(rect.x+visible.x(),rect.y+visible.y(),visible.width(),visible.height())
+            self.pet.move(*pet_below_capsule(rect,anchor,capsule,self.screens()))
+        self.pet.setVisible(not self.settings.card_only)
+        self.bubble.set_avatar_hidden(self.settings.card_only,self.settings.card_only)
+        self.dialog.card_only.setChecked(self.settings.card_only);self.dialog.settings=self.settings
+        self.position_bubble()
+        if persist:save_settings(self.root,self.settings);self.schedule_position_save()
+
+    def show_avatar(self):
+        self.restore_avatar(exit_card_only=True)
+        self.bubble.show();self.refresh()
 
     def open_card(self):
-        self.avatar_collapsed=False
+        self.restore_avatar()
         self.finish_interaction()
         self.user_visible=True
         self.pet.setVisible(not self.settings.card_only)
@@ -246,7 +297,7 @@ class Controller(QObject):
             self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
             self.position_bubble()
         else:
-            self.avatar_collapsed=False
+            self.restore_avatar()
             self.user_visible=True;self.pet.setVisible(not self.settings.card_only);self.bubble.show()
             self.bubble.open_page(key)
             self.position_bubble();self.bubble.raise_();self.bubble.activateWindow()
@@ -275,6 +326,7 @@ class Controller(QObject):
 
     def pet_activity(self):
         self.idle_director.cancel()
+        self.ambient_director.cancel()
         self.finish_interaction(refresh=False)
         self.refresh()
 
@@ -283,6 +335,7 @@ class Controller(QObject):
 
     def restore_character(self):
         self.idle_director.cancel()
+        self.ambient_director.cancel()
         self.active_pack=None
         self.player.clear()
         if self.settings.card_only:return
@@ -462,7 +515,7 @@ class Controller(QObject):
         self.save_timer.start()
 
     def save_position(self):
-        if self.settings.card_only:
+        if self.settings.card_only or self.avatar_collapsed:
             position=clamp_position((self.bubble.x(),self.bubble.y()),(self.bubble.width(),self.bubble.height()),self.screens())
             self.bubble.move(*position)
             self.settings=replace(self.settings,card_position=position)
@@ -495,9 +548,12 @@ class Controller(QObject):
             self.finish_interaction(refresh=False)
         eligible=(self.pet.isVisible() and not self.settings.card_only and not self.active_interaction
                   and self.bubble.mode in ('capsule','summary') and self.pet.press_position is None
-                  and not self.pet.context_menu.isVisible() and idle_allowed(self.sessions,display,time.time()))
+                  and not self.pet.context_menu.isVisible() and not self.bubble.context_menu.isVisible()
+                  and idle_allowed(self.sessions,display,time.time()))
         leisure=self.idle_director.step(now,eligible)
-        action=self.active_interaction.action if self.active_interaction else leisure.action if leisure else display.state
+        ambient=self.ambient_director.step(now,eligible and not leisure and bool(self.active_pack and 'idle_scratch' in self.active_pack.actions))
+        base='idle' if display.state=='done' and idle_allowed(self.sessions,display,time.time()) else display.state
+        action=self.active_interaction.action if self.active_interaction else leisure.action if leisure else ambient.action if ambient else base
         self.visual_action=action
         self.pet.set_display(display)
         self.bubble.set_display(display)
@@ -532,6 +588,8 @@ class Controller(QObject):
                 "chat_behavior":"open-workbuddy",
                 "visual_action":self.visual_action,"leisure":self.idle_director.active is not None,
                 "interacting":self.active_interaction is not None and time.monotonic()<self.interaction_deadline,
+                "avatar_collapsed":self.avatar_collapsed,"pet_visible":self.pet.isVisible(),
+                "ambient":self.ambient_director.active is not None,
                 "checkin_state":self.checkin_snapshot.state,
                 "panel_gap":self.pet.y()+self.pet.content_rect().y()-self.bubble.y()-self.bubble.height() if not self.settings.card_only else None,
                 "capsule_gap":self.pet.y()+self.pet.content_rect().y()-self.bubble.y()-self.bubble.height()
@@ -584,6 +642,7 @@ class Controller(QObject):
             if not settings.checkin_enabled and self.checkin_job:self.checkin_job.cancel.set()
             self.pet.set_pet_size(settings.size)
             self.bubble.set_quick_action(settings.quick_action,settings.quick_url)
+            self.bubble.set_avatar_hidden(settings.card_only or self.avatar_collapsed,settings.card_only)
             self.pet.setVisible(self.user_visible and not settings.card_only and not self.avatar_collapsed)
             self.player.set_visible(self.pet.isVisible())
             if settings.card_only:
@@ -674,6 +733,7 @@ class Controller(QObject):
         self.bubble.setVisible(self.user_visible)
         if not self.user_visible:
             self.idle_director.cancel();self.finish_interaction(refresh=False)
+            self.ambient_director.cancel()
         self.refresh()
 
     def demo_step(self):
@@ -685,7 +745,7 @@ class Controller(QObject):
     def capture(self, path: Path):
         from PySide6.QtGui import QColor, QPainter, QPixmap
         bounds=self.bubble.geometry()
-        if not self.settings.card_only:bounds=bounds.united(self.pet.geometry())
+        if self.pet.isVisible():bounds=bounds.united(self.pet.geometry())
         bounds=bounds.adjusted(-16,-16,16,16)
         import math
         ratio=self.bubble.devicePixelRatioF()
@@ -695,7 +755,7 @@ class Controller(QObject):
         painter = QPainter(image)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         painter.drawPixmap(self.bubble.x()-bounds.x(),self.bubble.y()-bounds.y(), self.bubble.grab())
-        if not self.settings.card_only:painter.drawPixmap(self.pet.x()-bounds.x(),self.pet.y()-bounds.y(), self.pet.grab())
+        if self.pet.isVisible():painter.drawPixmap(self.pet.x()-bounds.x(),self.pet.y()-bounds.y(), self.pet.grab())
         painter.end()
         path.parent.mkdir(parents=True, exist_ok=True)
         image.save(str(path))
@@ -707,6 +767,7 @@ class Controller(QObject):
         self.timer.stop()
         self.interaction_timer.stop()
         self.idle_director.cancel()
+        self.ambient_director.cancel()
         if self.demo and hasattr(self,'demo_timer'):self.demo_timer.stop()
         if self.stats_job:self.stats_job.cancel.set()
         if self.balance_job:self.balance_job.cancel.set()
@@ -715,6 +776,7 @@ class Controller(QObject):
         self.updates.shutdown()
         if self.binding:self.binding.close()
         self.bubble.materials.shutdown()
+        self.pet.context_menu.hide();self.bubble.context_menu.hide()
         self.player.clear()
         if self.worker:
             self.worker.requestInterruption()
@@ -773,7 +835,7 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
                 controller.open_current_conversation()
             else:
                 controller.user_visible = True
-                controller.pet.setVisible(not controller.settings.card_only)
+                if not controller.settings.card_only:controller.restore_avatar()
                 controller.bubble.show()
             peer.disconnectFromServer()
             if peer in peers:

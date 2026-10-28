@@ -75,17 +75,8 @@ class PetWindow(QWidget):
             from PIL import Image
             image=self.default_pixmap.toImage().convertToFormat(QImage.Format.Format_RGBA8888)
             self.default_bounds=alpha_bounds(Image.frombytes('RGBA',(image.width(),image.height()),bytes(image.bits())))
-        self.context_menu = QMenu(self)
-        self.context_menu.setStyleSheet('QMenu{background:#fbfeff;border:1px solid #d9e7f1;padding:5px;} QMenu::item{padding:7px 18px;color:#2b506d;} QMenu::item:selected{background:#e7f2fb;border-radius:5px;}')
-        for label,key in (('数据小卡','summary'),('任务详情','details'),('积分与模型','data'),('在 WorkBuddy 中聊天 ↗','chat'),('角色与素材','materials'),('设置与连接','settings')):
-            action=self.context_menu.addAction(label)
-            action.setData(key)
-            action.triggered.connect(lambda checked=False,page=key:self.page_requested.emit(page))
-        self.context_menu.addSeparator()
-        action=self.context_menu.addAction('收成胶囊');action.setData('capsule')
-        action.triggered.connect(lambda:self.page_requested.emit('capsule'))
-        self.context_menu.addSeparator()
-        self.context_menu.addAction('退出桌宠',self.quit_requested.emit)
+        from .menu import module_menu
+        self.context_menu,_=module_menu(self,self.page_requested,self.quit_requested)
         self.set_pet_size(size)
         self.timer = QTimer(self)
         self.timer.setInterval(40)

@@ -36,3 +36,17 @@ def card_position(pet: Rect, size: tuple[int,int], screens, *, compact: bool,anc
     anchor=anchor or pet
     x=round(anchor.x+anchor.width/2-width/2);y=anchor.y-height-8
     return clamp_position((x,y),size,[screen])
+
+
+def pet_below_capsule(pet: Rect,anchor: Rect,capsule: Rect,screens):
+    """Restore around the detached capsule, then move the whole pair into view."""
+    dx,dy=anchor.x-pet.x,anchor.y-pet.y
+    x=round(capsule.x+capsule.width/2-dx-anchor.width/2)
+    y=capsule.y+capsule.height+8-dy
+    candidate=Rect(x,y,pet.width,pet.height)
+    visible=Rect(x+dx,y+dy,anchor.width,anchor.height)
+    if screens:
+        cx,cy=capsule.x+capsule.width/2,capsule.y+capsule.height/2
+        screen=min(screens,key=lambda s:max(s.x-cx,0,cx-s.x-s.width)**2+max(s.y-cy,0,cy-s.y-s.height)**2)
+        screens=[screen]
+    return fit_capsule_pet(candidate,(capsule.width,capsule.height),screens,anchor=visible)

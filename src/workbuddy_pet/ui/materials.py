@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QPushButton,QFileDialog
 
 from ..background import Task
-from ..materials import MaterialError, ALL_ACTIONS
+from ..materials import MaterialError, ALL_ACTIONS, OPTIONAL_IDLE_ACTIONS
 from .animation import AnimationPlayer
 
 
@@ -28,6 +28,7 @@ class MaterialPanel(QWidget):
         labels=('待机','思考','玩电脑 / 执行','等待回复','等待确认','完成','失败','点击 · 招手','点击 · 比心',
                 '点击 · 害羞','点击 · 惊讶','休闲 · 吃零食','休闲 · 玩手机','休闲 · 伸懒腰','休闲 · 听音乐')
         for action,label in zip(ALL_ACTIONS,labels):self.action_choice.addItem(label,action)
+        self.action_choice.addItem('待机挠头（可选）','idle_scratch')
         self.action_choice.currentIndexChanged.connect(self.preview_action)
         layout.addWidget(self.action_choice)
         self.choices.currentIndexChanged.connect(self.preview_selected)
@@ -72,7 +73,12 @@ class MaterialPanel(QWidget):
         try:
             pack=self.library.load(key)
             self.preview_pack=pack
+            for action in OPTIONAL_IDLE_ACTIONS:
+                index=self.action_choice.findData(action)
+                self.action_choice.model().item(index).setEnabled(action in pack.actions)
+                if self.action_choice.currentData()==action and action not in pack.actions:self.action_choice.setCurrentIndex(0)
             coverage='完整互动 · 15/15动作' if pack.schema==2 else f'兼容包 · {len(pack.actions)}/15动作，缺项由内置道具与近似表情补充'
+            if 'idle_scratch' in pack.actions:coverage+=' + 待机挠头'
             self.description.setText(f'作者：{pack.author}  /  许可：{pack.license}\n{coverage}')
             self.preview_action();self.player.set_visible(self.isVisible())
             self.update_preview()

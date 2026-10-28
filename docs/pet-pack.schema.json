@@ -369,6 +369,22 @@
                   "const": true
                 }
               }
+            },
+            "idle_scratch": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/idle_scratch\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
             }
           }
         },

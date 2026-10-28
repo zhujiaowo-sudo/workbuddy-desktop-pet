@@ -67,3 +67,23 @@ class IdleDirector:
             self.until = now + self.active.seconds
             return self.active
         return None
+
+
+class AmbientDirector:
+    """Brief idle gestures have their own clock, so long leisure never starves."""
+    def __init__(self,rng=None):
+        self.rng=rng or random.Random();self.next_due=None;self.active=None;self.until=0
+
+    def cancel(self):
+        self.next_due=None;self.active=None;self.until=0
+
+    def step(self,now,eligible):
+        if not eligible:self.cancel();return None
+        if self.active and now<self.until:return self.active
+        if self.active:
+            self.active=None;self.next_due=now+self.rng.uniform(18,40)
+        if self.next_due is None:self.next_due=now+self.rng.uniform(18,40)
+        if now>=self.next_due:
+            self.active=Interaction('','idle_scratch',1.8);self.until=now+self.active.seconds
+            return self.active
+        return None

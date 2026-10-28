@@ -65,6 +65,9 @@ class CardWindow(QWidget):
     checkin_requested=Signal()
     chat_requested=Signal()
     quick_requested=Signal()
+    page_requested=Signal(str)
+    avatar_requested=Signal()
+    quit_requested=Signal()
 
     def __init__(self,demo=False):
         super().__init__(None,Qt.WindowType.Tool|Qt.WindowType.FramelessWindowHint|Qt.WindowType.WindowStaysOnTopHint)
@@ -77,6 +80,9 @@ class CardWindow(QWidget):
         self.local_sessions={};self.current_session=None;self.balance=None
         self.interaction_text='';self.interaction_until=0
         self.quick_action='checkin';self.last_checkin=None
+        from .menu import module_menu
+        self.context_menu,self.show_avatar_action=module_menu(self,self.page_requested,self.quit_requested,self.avatar_requested)
+        self.show_avatar_action.setVisible(False)
         self.root_layout=QVBoxLayout(self);self.root_layout.setContentsMargins(0,0,0,0);self.root_layout.setSpacing(0)
         self.compact_bar=QWidget();compact=QHBoxLayout(self.compact_bar);compact.setContentsMargins(0,0,0,0);compact.setSpacing(6)
         self.signin_button=QPushButton();self.signin_button.setFixedSize(36,36);self.signin_button.setIconSize(QSize(20,20))
@@ -185,6 +191,9 @@ class CardWindow(QWidget):
         for widget in self.findChildren(QWidget):widget.installEventFilter(self)
 
     def eventFilter(self,watched,event):
+        if self.compact and event.type()==QEvent.Type.ContextMenu and watched in (self,self.compact_bar,self.capsule,self.balance_badge,self.signin_button):
+            self.child_drag=None;self.pressed=None
+            self.context_menu.popup(event.globalPos());event.accept();return True
         if event.type() in (QEvent.Type.MouseButtonPress,QEvent.Type.KeyPress,QEvent.Type.Wheel):self.last_interaction=time.monotonic()
         if self.compact and watched in (self.capsule,self.balance_badge,self.signin_button):
             if event.type()==QEvent.Type.MouseButtonPress and event.button()==Qt.MouseButton.LeftButton:
@@ -361,7 +370,11 @@ class CardWindow(QWidget):
     def mouseReleaseEvent(self,event):
         if self.pressed is not None:
             delta=event.globalPosition().toPoint()-self.pressed
-            if delta.manhattanLength()<=6 and self.compact:self.set_compact(False)
+            if delta.manhattanLength()<=6 and self.compact:self.set_compact(False,manual=True)
             self.pressed=None
 
     def resizeEvent(self,event):super().resizeEvent(event);self.resized.emit()
+
+    def set_avatar_hidden(self,hidden,card_only=False):
+        self.show_avatar_action.setVisible(hidden)
+        self.show_avatar_action.setText('显示桌宠（退出仅卡片模式）' if card_only else '显示桌宠')

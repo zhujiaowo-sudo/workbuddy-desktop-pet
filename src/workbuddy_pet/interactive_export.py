@@ -33,18 +33,26 @@ def render_frame(image, action, phase, rect):
     return _pil(canvas)
 
 
-def export_interactive(destination: Path, quality='light', source: Path | None = None, typing_sheet: Path | None = None, leisure_sheets=None):
+def export_interactive(destination: Path, quality='light', source: Path | None = None, typing_sheet: Path | None = None, leisure_sheets=None,idle_sheets=None):
     """Source=None exports only our original CC0 robot, never the built-in portrait."""
     from .ui.pet import PetWindow
     if quality not in ('light', 'hd'):raise ValueError('未知画质')
     if source and typing_sheet is None:raise ValueError('薄荷互动版需要提供坐姿打字精灵图')
     resolution = 256 if quality == 'light' else 512
     payload, boxes = {}, []
+    exported_actions=ALL_ACTIONS+(('idle_scratch',) if source and idle_sheets and 'idle_scratch' in idle_sheets else ())
     with tempfile.TemporaryDirectory(prefix='wb-pet-export-') as temporary:
         pack = MaterialLibrary(Path(temporary) / 'library').import_pack(source) if source else None
         pet = PetWindow(size=resolution, use_builtin_image=False) if not source else None
         try:
-            for action in ALL_ACTIONS:
+            for action in exported_actions:
+                if source and idle_sheets and action in idle_sheets:
+                    from .sprite_sheet import gentle_idle_frames,scratch_frames
+                    frames=list((gentle_idle_frames if action=='idle' else scratch_frames)(idle_sheets[action],resolution))
+                    boxes.extend(alpha_bounds(f) for f in frames)
+                    stream=io.BytesIO()
+                    frames[0].save(stream,format='WEBP',save_all=True,append_images=frames[1:],duration=200,loop=0,lossless=True,method=3)
+                    payload[f'actions/{action}.webp']=stream.getvalue();continue
                 if source and leisure_sheets and action in leisure_sheets:
                     from .sprite_sheet import leisure_frames
                     frames=list(leisure_frames(leisure_sheets[action],resolution))
@@ -101,16 +109,16 @@ def export_interactive(destination: Path, quality='light', source: Path | None =
         finally:
             if pet:pet.timer.stop();pet.close();pet.deleteLater()
     manifest = {'schema':2, 'id':'mint-orbit-interactive' if source else 'my-interactive-pet',
-        'name':'薄荷星伴 · 坐姿互动版' if source else '小搭子 · 完整互动模板',
+        'name':'薄荷星伴 · 灵动待机版' if source else '小搭子 · 完整互动模板',
         'author':pack.author if source else 'WorkBuddy Desktop Pet contributors',
-        'version':'1.2.0' if source else '2.0.1','license':pack.license if source else 'CC0-1.0',
+        'version':'1.3.0' if source else '2.0.1','license':pack.license if source else 'CC0-1.0',
         'quality':quality,'anchor':[min(b[0] for b in boxes),min(b[1] for b in boxes),max(b[2] for b in boxes),max(b[3] for b in boxes)],
-        'actions':{a:{'file':f'actions/{a}.webp','loop':a in LOOP_ACTIONS} for a in ALL_ACTIONS},
+        'actions':{a:{'file':f'actions/{a}.webp','loop':a in LOOP_ACTIONS} for a in exported_actions},
         'files':{name:hashlib.sha256(data).hexdigest() for name,data in payload.items()}}
     if source:
         manifest['source']={'name':pack.name,'author':pack.author,'version':'1.0.1',
             'license':pack.license,'license_url':'https://creativecommons.org/licenses/by/4.0/',
-            'changes':'保留原任务素材与署名；点击无上下跳动。working、leisure_phone、leisure_snack使用imagegen生成坐姿8关键帧，固定座椅、脚底与轮廓，局部面部/手部动画。电脑和手机屏幕朝人物，零食由手送到嘴边。原1.0.1包不变。'}
+            'changes':'保留原任务素材与署名；点击无上下跳动。工作/手机/零食沿用坐姿关键帧，新增待机眨眼和可选idle_scratch挠头，由imagegen生成源图并锁定身体/脚底，局部面部/手臂动画。原1.0.1包不变。'}
     destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(destination,'w',zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False,indent=2))

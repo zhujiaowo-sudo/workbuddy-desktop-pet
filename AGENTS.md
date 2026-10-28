@@ -10,3 +10,4 @@
 - Do not import third-party character assets or source files without their applicable attribution and license.
 - Keep public documentation in clear Chinese, with English identifiers for code.
 - Keep unrelated local applications and existing desktop pets unchanged.
+- For every feature change, check interactions with existing features and record the result. Present concrete conflicts or unreasonable behavior, their impact and a recommendation to the user for a decision before implementing a tradeoff. Continue independent work while awaiting that decision; do not invent hypothetical approval gates.

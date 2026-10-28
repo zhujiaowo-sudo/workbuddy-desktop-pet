@@ -33,6 +33,7 @@ class Settings:
     quick_action: str = 'checkin'
     quick_url: str = ''
     auto_update: bool = True
+    avatar_collapsed: bool = False
 
 
 def clamp_position(position: tuple[int, int], size: tuple[int, int], screens: Sequence[Rect]) -> tuple[int, int]:
@@ -76,7 +77,8 @@ def load_settings(root: Path) -> Settings:
                         value.get('onboarding_done') is True,
                         value.get('quick_action') if value.get('quick_action') in ('checkin','website','custom','refresh') else 'checkin',
                         value.get('quick_url') if isinstance(value.get('quick_url'),str) and len(value['quick_url'])<=2048 else '',
-                        value.get('auto_update',True) is True)
+                        value.get('auto_update',True) is True,
+                        value.get('avatar_collapsed') is True and value.get('compact') is True)
     except (OSError, ValueError, TypeError):
         return Settings()
 
