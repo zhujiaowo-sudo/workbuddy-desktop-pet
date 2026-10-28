@@ -13,11 +13,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scratch", type=Path, required=True)
     parser.add_argument('--interactive-pack',type=Path,help='额外验证完整15动作素材的冻结导入和播放')
+    parser.add_argument("--dist-root",type=Path,help="Verify a staged build without touching a running installation")
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(project / "src"))
     from workbuddy_pet.integration import powershell_command
-    exe = project / "dist/WorkBuddyDesktopPet/WorkBuddyDesktopPet.exe"
+    exe = (args.dist_root or project/"dist") / "WorkBuddyDesktopPet/WorkBuddyDesktopPet.exe"
     root = args.scratch.absolute() / ("verify-" + uuid.uuid4().hex)
     payload = json.dumps({"session_id": "synthetic-packaged-test", "prompt": "NEVER-WRITE-THIS"}).encode()
     result = subprocess.run([str(exe), "--root", str(root), "--hook", "UserPromptSubmit"],

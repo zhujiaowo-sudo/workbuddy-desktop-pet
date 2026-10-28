@@ -571,7 +571,7 @@ class Controller(QObject):
         self.pet.set_display(display)
         self.bubble.set_display(display)
         if self.active_pack and self.pet.isVisible():
-            try:self.player.load(self.active_pack,action)
+            try:self.player.load(self.active_pack,action,defer=not self.active_interaction and action not in ('review','waiting','failed'))
             except MaterialError:
                 self.player.clear();self.active_pack=None
                 self.pet.timer.start()

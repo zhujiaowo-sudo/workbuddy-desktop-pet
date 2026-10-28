@@ -18,22 +18,29 @@ class AnimationPlayer(QObject):
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.timeout.connect(self._timeout);self.timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.frames=();self.index=0;self.loop=True;self.visible=True
         self.identity=None;self.content_bounds=None;self.frame_started=0
-        self.stream=None;self.stream_path=None;self.deadline=0;self.error=None
+        self.stream=None;self.stream_path=None;self.deadline=0;self.error=None;self.pending=None;self.loop_range=None;self.ended=False
 
     @property
     def pixmap(self):
         return self.frames[self.index][0] if self.frames else None
 
-    def load(self,pack,state):
-        action=pack.action(state);identity=(pack.key,action.file,action.loop)
+    def load(self,pack,state,*,defer=False):
+        action=pack.action(state);identity=(pack.key,action.file,action.loop,getattr(action,'loop_range',None))
         if identity==self.identity:
             if self.error:raise MaterialError(self.error)
+            if self.stream and self.stream.tail_started.is_set() and not self.ended:
+                self.pending=(pack,state)
+            else:
+                self.pending=None
+                if self.stream and not self.stream.done.is_set():self.stream.exit.clear()
             return
+        if defer and self.stream and not self.ended:
+            self.pending=(pack,state);self.stream.exit.set();return
         if getattr(pack, 'schema', 1) == 3:
             self.clear(notify=False)
             self.identity=identity;self.loop=action.loop;self.content_bounds=pack.anchor
-            self.stream_path=pack.root/action.file
-            if self.visible:self.stream=FrameStream(self.stream_path,self.loop);self.timer.start(1)
+            self.stream_path=pack.root/action.file;self.loop_range=getattr(action,'loop_range',None)
+            if self.visible:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range);self.timer.start(1)
             self.bounds_changed.emit();self.changed.emit()
             return
         frames=decode_animation(pack.root/action.file);prepared=[]
@@ -52,7 +59,7 @@ class AnimationPlayer(QObject):
     def clear(self,*,notify=True):
         had_frames=bool(self.frames or self.stream_path);self.timer.stop()
         if self.stream:self.stream.close()
-        self.stream=None;self.stream_path=None;self.deadline=0;self.error=None
+        self.stream=None;self.stream_path=None;self.deadline=0;self.error=None;self.pending=None;self.loop_range=None;self.ended=False
         self.frames=();self.index=0;self.identity=None;self.content_bounds=None
         if notify and had_frames:self.bounds_changed.emit();self.changed.emit()
 
@@ -60,9 +67,10 @@ class AnimationPlayer(QObject):
         if self.visible == value:return
         self.visible=value
         if self.stream_path:
+            self.pending=None;self.ended=False
             if self.stream:self.stream.close()
             self.stream=None;self.deadline=0
-            if value:self.stream=FrameStream(self.stream_path,self.loop);self.timer.start(1)
+            if value:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range);self.timer.start(1)
         elif value:
             self.frame_started=time.perf_counter()
             self.deadline=self.frame_started+(self.frames[self.index][1]/1000 if self.frames else 0)
@@ -111,7 +119,11 @@ class AnimationPlayer(QObject):
             if self.error:return
             if self.deadline>now:
                 self.timer.start(max(1,math.ceil((self.deadline-now)*1000)));return
-            self.finished.emit()
+            self.ended=True
+            if self.pending:
+                pack,state=self.pending
+                self.clear(notify=False);self.load(pack,state)
+            else:self.finished.emit()
             return
         self.timer.start(max(1,math.ceil((self.deadline-now)*1000)) if self.deadline>now else 5)
 

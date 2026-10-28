@@ -444,6 +444,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -460,6 +470,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -476,6 +496,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -492,6 +522,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -508,6 +548,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -620,6 +670,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -636,6 +696,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -652,6 +722,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },
@@ -668,6 +748,16 @@
                 },
                 "loop": {
                   "const": true
+                },
+                "loop_range": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 239
+                  }
                 }
               }
             },

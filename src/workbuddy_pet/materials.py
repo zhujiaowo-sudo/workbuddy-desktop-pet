@@ -104,6 +104,7 @@ def decode_animation(path: Path) -> tuple[Frame, ...]:
 class Action:
     file: str
     loop: bool = True
+    loop_range: tuple[int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -171,6 +172,12 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
                 with path.open('rb') as stream:
                     if hashlib.file_digest(stream, 'sha256').hexdigest() != hashes[name]:
                         raise MaterialError('素材 SHA-256 校验失败')
+            loop_range = item.get('loop_range')
+            if loop_range is not None:
+                if (schema != 3 or not item.get('loop') or not isinstance(loop_range,list) or len(loop_range)!=2
+                    or any(type(n) is not int for n in loop_range) or not 0 < loop_range[0] < loop_range[1] < 240):
+                    raise MaterialError('loop_range须为schema3循环动作的有效中段[起始帧,结束帧)，且保留进入及退出段')
+                loop_range=tuple(loop_range)
             if schema == 3 and path.stat().st_size > 64 * 1024 * 1024:
                 raise MaterialError('长动画单文件不得超过64MiB')
             if decode and name not in seen:
@@ -195,10 +202,12 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
                         raise MaterialError('整套角色的解码体积超过上限，请拆分画质或减少帧数')
                 if schema >= 2 and not 8 <= count <= (240 if schema == 3 else 16):
                     raise MaterialError('完整互动包每段需要8–240帧' if schema == 3 else '完整互动包每段需要8–16帧')
+                if loop_range and loop_range[1]>=count:
+                    raise MaterialError('loop_range必须在末尾保留退出帧')
                 if schema == 3 and elapsed > 12000:
                     raise MaterialError('长动画每段不得超过12秒')
                 seen.add(name)
-            parsed[state] = Action(name, item.get('loop', True))
+            parsed[state] = Action(name, item.get('loop', True),loop_range)
         return CharacterPack(key, root, data['name'], data['author'], quality, data['license'], parsed, schema, anchor)
     except (OSError, ValueError, TypeError, KeyError) as error:
         if isinstance(error, MaterialError):

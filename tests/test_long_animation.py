@@ -117,3 +117,37 @@ def test_long_click_waits_for_authored_end_and_keeps_urgent_interrupts(tmp_path,
     now=time.time();controller.consume([Event('start',now,'s','UserPromptSubmit'),Event('wait',now+.01,'s','PermissionRequest')])
     assert controller.active_interaction is None
     controller.shutdown()
+
+
+def test_segment_worker_enters_once_loops_forward_and_exits_tail(tmp_path,monkeypatch):
+    from workbuddy_pet.materials import Frame
+    monkeypatch.setattr('workbuddy_pet.ui.frame_stream.iter_animation',lambda *a,**k:iter(Frame((1,1),bytes((i,0,0,255)),42) for i in range(8)))
+    stream=FrameStream(tmp_path/'unused',True,(2,6));seen=[]
+    for _ in range(14):seen.append(stream.frames.get(timeout=2).rgba[0])
+    assert seen[:6]==list(range(6))
+    assert all(x in (2,3,4,5) for x in seen[6:])
+    stream.exit.set()
+    while not stream.done.is_set() or not stream.frames.empty():
+        try:seen.append(stream.frames.get(timeout=.1).rgba[0])
+        except __import__('queue').Empty:pass
+    assert stream.tail_started.is_set() and seen[-2:]==[6,7]
+    assert 0 not in seen[6:]
+
+
+def test_deferred_switch_finishes_tail_and_latest_request_wins(tmp_path,qt_app):
+    data=pack(tmp_path);data['actions']['idle']['loop_range']=[4,12]
+    (tmp_path/'manifest.json').write_text(json.dumps(data));character=validate_pack(tmp_path)
+    player=AnimationPlayer();player.load(character,'idle')
+    wait_until(qt_app,lambda:bool(player.frames))
+    player.load(character,'thinking',defer=True);old=player.stream
+    player.load(character,'working',defer=True)
+    assert player.identity[1]=='actions/idle.png'
+    wait_until(qt_app,lambda:player.identity[1]=='actions/working.png')
+    assert old.tail_started.is_set() and old.done.is_set()
+    player.clear()
+
+
+def test_loop_range_must_leave_real_entry_and_exit(tmp_path):
+    data=pack(tmp_path);data['actions']['idle']['loop_range']=[0,20]
+    (tmp_path/'manifest.json').write_text(json.dumps(data))
+    with pytest.raises(MaterialError):validate_pack(tmp_path)

@@ -7,18 +7,20 @@ _SLOTS = threading.BoundedSemaphore(2)
 
 
 class FrameStream:
-    def __init__(self, path, loop):
+    def __init__(self, path, loop, loop_range=None):
         self.frames = queue.Queue(6)
         self.stop = threading.Event()
         self.done = threading.Event()
+        self.exit = threading.Event()
+        self.tail_started = threading.Event()
         self.error = None
-        self.thread = threading.Thread(target=self._run, args=(path, loop), daemon=True)
+        self.thread = threading.Thread(target=self._run, args=(path, loop, loop_range), daemon=True)
         self.thread.start()
 
     def close(self):
         self.stop.set()
 
-    def _run(self, path, loop):
+    def _run(self, path, loop, loop_range):
         acquired = False
         try:
             while not self.stop.is_set():
@@ -27,8 +29,14 @@ class FrameStream:
                     break
             if not acquired:
                 return
+            first = True
             while not self.stop.is_set():
-                for frame in iter_animation(path, long=True):
+                for index,frame in enumerate(iter_animation(path, long=True)):
+                    if loop_range:
+                        if not first and index < loop_range[0]:continue
+                        if index == loop_range[1]:
+                            if not self.exit.is_set():break
+                            self.tail_started.set()
                     if self.stop.is_set():
                         return
                     while not self.stop.is_set():
@@ -37,8 +45,9 @@ class FrameStream:
                             break
                         except queue.Full:
                             pass
-                if not loop:
+                if not loop or (self.exit.is_set() and (not loop_range or self.tail_started.is_set())):
                     return
+                first = False
         except Exception as error:
             self.error = str(error)
         finally:

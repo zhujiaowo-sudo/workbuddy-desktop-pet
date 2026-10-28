@@ -42,8 +42,11 @@ def fix_native_icu(dist: Path) -> None:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--work", type=Path, default=Path("build/windows"))
+    parser.add_argument("--dist-root",type=Path,help="Build beside a running installation without overwriting its loaded files")
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
+    dist_root=(args.dist_root or project/"dist").absolute()
+    dist_root.mkdir(parents=True,exist_ok=True)
     work = args.work.absolute()
     work.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -60,9 +63,9 @@ def main():
                     '--add-data',str(project/'src/workbuddy_pet/catalog.json')+';workbuddy_pet',
                     '--add-data',str(project/'src/workbuddy_pet/assets')+';workbuddy_pet/assets',
                     '--add-data',str(project/'src/workbuddy_pet/update_install.ps1')+';workbuddy_pet',
-                    "--distpath", str(project / "dist"), "--workpath", str(work / "pyinstaller"),
+                    "--distpath", str(dist_root), "--workpath", str(work / "pyinstaller"),
                     "--specpath", str(work), str(project / "launch.py")], cwd=project, check=True)
-    dist = project / "dist/WorkBuddyDesktopPet"
+    dist = dist_root / "WorkBuddyDesktopPet"
     fix_native_icu(dist)
     (dist/'仅卡片启动.vbs').write_text('Set shell = CreateObject("WScript.Shell")\nSet fso = CreateObject("Scripting.FileSystemObject")\n'
         'exe = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "WorkBuddyDesktopPet.exe")\n'
@@ -89,10 +92,10 @@ def main():
                     target = dist / "licenses" / package / source.name
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(source, target)
-    archive = shutil.make_archive(str(project / "dist" / f"workbuddy-desktop-pet-{__version__}-windows-x64"), "zip",
-                                  root_dir=project / "dist", base_dir="WorkBuddyDesktopPet")
+    archive = shutil.make_archive(str(dist_root / f"workbuddy-desktop-pet-{__version__}-windows-x64"), "zip",
+                                  root_dir=dist_root, base_dir="WorkBuddyDesktopPet")
     sha = hashlib.file_digest(Path(archive).open("rb"), "sha256").hexdigest()
-    (project / "dist/SHA256SUMS.txt").write_text(sha + "  " + Path(archive).name + "\n", encoding="utf-8")
+    (dist_root / "SHA256SUMS.txt").write_text(sha + "  " + Path(archive).name + "\n", encoding="utf-8")
     print(json.dumps({"archive": archive, "sha256": sha}, indent=2))
 
 
