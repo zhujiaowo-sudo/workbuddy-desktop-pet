@@ -5,6 +5,12 @@
   "date": "2026-10-29",
   "environment": {"windows": "10 22H2", "python": "3.12.10", "pyside6": "6.12.0"},
   "automated": {"passed": 197, "failed": 0, "baseline": 177, "synthetic_only": true},
+  "frozen_package": {
+    "collector": true, "powershell_stdin": true, "gui": true,
+    "material_import": true, "card_only": true, "three_views": true,
+    "visible_docking": true, "interaction": true, "checkin_disabled_by_default": true,
+    "sha256": "7148db3e5b5e43fc6ef088f3908bbdca105ae5b55ece35ec2b6e5909277d623c"
+  },
   "native_ui": {
     "scales": [100, 150],
     "characters": ["builtin", "builtin-blue-fish"],

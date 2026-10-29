@@ -6,6 +6,8 @@
 
 两套角色在100%及150%原生窗口中通过过期提示、小卡/胶囊、休闲转审批的变动场景检查，未修改任何原始GIF。素材菜单预热后连续打开20次，新增GIF哈希次数为0；平均约23–26ms（本机结果，不作为其他机器性能保证）。稳定诊断状态按15秒心跳由后台线程写入，启动及变化及时提交。验证数据见[本轮记录](qa/stability-v0.6.7.json)。
 
+最终0.6.7冻结包验证通过：Hook采集、PowerShell输入转发、GUI、素材导入、仅卡片、三层卡片、可见轮廓停靠、互动与默认签到关闭。SHA-256记录于本轮JSON；这是本地未发布测试包，没有覆盖用户正在运行的安装。
+
 真实客户端5.9.3由用户新建测试并处理审批，观察到UserPromptSubmit、SessionStart、PreToolUse、PostToolUse、Stop以及Notification(permission_prompt/idle_prompt)。审批阶段现有0.6.6桌宠显示review、connected、demo=false。idle_prompt发生在Stop之后，不等同等待输入验收。未收到input_required/elicitation_dialog、PostToolUseFailure或有父标识的SubagentStart/Stop配对，保留未验证状态；用户反馈操作成功也不能替代事件证据。真实顺序中的晚到SessionStart已用于0.6.7回归修复；新版逻辑重放与合成验收不冒称新版已实际安装并全链路联调。操作清单见[真实验收](qa/live-events.md)。
 
 ## v0.6.2 动画结构与收起入口
