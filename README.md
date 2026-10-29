@@ -2,6 +2,8 @@
 
 # WorkBuddy Desktop Pet · WorkBuddy 桌面搭子
 
+![WorkBuddy Desktop Pet 宣传海报：薄荷星伴与蓝色小鱼陪伴工作](docs/images/workbuddy-poster.png)
+
 让 WorkBuddy 的工作进度，变成桌面上看得见的陪伴。
 
 为 **Windows 10 / 11 x64** 打造的 WorkBuddy 专用桌宠：任务进行时陪你工作，完成时提醒你，空闲时眨眼、招手、吃零食。通过会话胶囊查看任务、积分与本机用量，也可以一键回到 WorkBuddy 对话。
