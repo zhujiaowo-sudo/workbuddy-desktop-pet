@@ -95,12 +95,18 @@ def reduce_event(sessions: Mapping[str, SessionState], event: Event) -> dict[str
     return result
 
 
+def effective_state(session, now):
+    if session.state in ('thinking', 'working') and now-session.at >= 120:
+        return 'idle'
+    return 'idle' if session.state == 'done' and session.reminder is None else session.state
+
+
 def derive_display(sessions: Mapping[str, SessionState], now: float) -> DisplayState:
     if not sessions:
         return DisplayState()
     states = list(sessions.values())
-    top = max(states, key=lambda s: (PRIORITY["idle" if s.state == "done" and s.reminder is None else s.state], s.at))
-    business = "idle" if top.state == "done" and top.reminder is None else top.state
+    top = max(states, key=lambda s: (PRIORITY[effective_state(s, now)], s.at))
+    business = effective_state(top, now)
     stale = top.state in ("working", "thinking") and now - top.at >= 120
     reminders = tuple(s.reminder for s in sorted(states, key=lambda s: (-PRIORITY[s.state], -s.at)) if s.reminder)
     return DisplayState(business, "stale" if stale else "connected", top.session_id, reminders, len(states))

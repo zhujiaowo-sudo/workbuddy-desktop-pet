@@ -125,7 +125,7 @@ class MaterialPanel(QWidget):
     def export_template(self):
         key=self.choices.currentData()
         if key not in BUILTIN_PACKS:key='builtin'
-        filename='blue-fish-v1.0.0.zip' if key=='builtin-blue-fish' else 'mint-orbit-user-gifs-v2.0.0.zip'
+        filename='blue-fish-v1.0.1.zip' if key=='builtin-blue-fish' else 'mint-orbit-user-gifs-v2.0.0.zip'
         path,_=QFileDialog.getSaveFileName(self,'导出内置完整套装',filename,'角色包 (*.zip)')
         if not path:return
         # Copy the original GIFs and their manifest without rendering new artwork.

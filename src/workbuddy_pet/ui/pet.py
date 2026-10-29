@@ -63,6 +63,9 @@ class PetWindow(QWidget):
         self.player = None
         self.visual_action = 'idle'
         self.effect_action = ''
+        self.lift=0.0;self.drag_angle=0.0
+        self.lift_animation=QVariantAnimation(self)
+        self.lift_animation.valueChanged.connect(self._set_lift)
         self.motion=0.0
         self.motion_animation=QVariantAnimation(self);self.motion_animation.setDuration(900)
         self.motion_animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
@@ -133,6 +136,18 @@ class PetWindow(QWidget):
         right=target.x()+math.ceil(bounds[2]*sx);bottom=target.y()+math.ceil(bounds[3]*sy)
         return QRect(left,top,right-left,bottom-top)
 
+    def _set_lift(self,value):
+        self.lift=float(value)
+        if self.lift==0:self.drag_angle=0.0
+        self.update()
+
+    def animate_lift(self,raised):
+        self.lift_animation.stop()
+        self.lift_animation.setDuration(180 if raised else 420)
+        self.lift_animation.setEasingCurve(QEasingCurve.Type.OutCubic if raised else QEasingCurve.Type.OutBounce)
+        self.lift_animation.setStartValue(self.lift);self.lift_animation.setEndValue(1.0 if raised else 0.0)
+        self.lift_animation.start()
+
     def _set_motion(self,value):self.motion=float(value);self.update()
 
     def play_interaction_motion(self):
@@ -147,6 +162,12 @@ class PetWindow(QWidget):
         visual_rect = QRectF(self.content_rect())
         phase = (self.tick % 16) / 16
         if self.effect_action:transform_character(p, visual_rect, self.effect_action, phase)
+        if self.lift:
+            # Scale uniformly within the existing canvas so limbs never clip or distort.
+            p.translate(visual_rect.center().x(),visual_rect.top())
+            p.translate(0,-6*self.lift);p.rotate(self.drag_angle*self.lift)
+            p.scale(1-.04*self.lift,1-.04*self.lift)
+            p.translate(-visual_rect.center().x(),-visual_rect.top())
         if self.motion:
             cx,cy=self.width()/2,self.height()
             p.translate(cx,cy)
@@ -244,7 +265,13 @@ class PetWindow(QWidget):
     def mouseMoveEvent(self, event):
         if self.press_position is not None and event.buttons() & Qt.MouseButton.LeftButton:
             delta = event.globalPosition().toPoint() - self.press_position
+            was_dragging=self.dragging
             self.dragging = self.dragging or delta.manhattanLength() > 6
+            if self.dragging and not was_dragging:self.animate_lift(True)
+            if self.dragging:
+                step=event.globalPosition().toPoint().x()-getattr(self,'last_drag_x',event.globalPosition().toPoint().x())
+                self.drag_angle=max(-3.0,min(3.0,step*.15));self.update()
+            self.last_drag_x=event.globalPosition().toPoint().x()
             if self.dragging:
                 self.move(self.origin + delta)
                 self.moved.emit(self.x(), self.y())
@@ -253,11 +280,13 @@ class PetWindow(QWidget):
         if event.button() == Qt.MouseButton.LeftButton and self.press_position is not None:
             if not self.dragging:
                 self.interact_requested.emit()
+            else:self.animate_lift(False)
+            self.dragging=False
             self.press_position = None
 
     def contextMenuEvent(self, event):
         self.manual_activity.emit()
-        self.press_position=None;self.dragging=False
+        self.press_position=None;self.dragging=False;self.animate_lift(False)
         self.context_menu.popup(event.globalPos())
         event.accept()
 
@@ -271,6 +300,7 @@ class PetWindow(QWidget):
         super().hideEvent(event)
         self.timer.stop()
         self.motion_animation.stop();self.motion=0.0
+        self.lift_animation.stop();self._set_lift(0);self.press_position=None;self.dragging=False
         if self.player:
             self.player.set_visible(False)
 

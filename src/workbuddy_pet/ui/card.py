@@ -2,7 +2,7 @@
 import math
 import time
 from PySide6.QtCore import Qt,QEvent,Signal,QRectF,QSize
-from PySide6.QtGui import QColor,QPainter,QPen
+from PySide6.QtGui import QColor,QPainter,QPen,QFontMetrics
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTabBar,
     QStackedWidget,QScrollArea,QComboBox,QTableWidget,QTableWidgetItem,QHeaderView,
     QAbstractItemView,QLineEdit,QTextEdit,QApplication,QFrame)
@@ -75,7 +75,7 @@ class CardWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet('QLabel{color:#2d4a62;} QPushButton{border:0;border-radius:7px;padding:5px 7px;font-size:11px;color:#3179aa;background:#edf6fc;} '
             'QPushButton:hover{background:#dfeefa;} QLineEdit,QTextEdit,QSpinBox{background:white;}')
-        self.mode='summary';self.compact=False;self.demo=demo;self.display=DisplayState()
+        self.minimal=False;self.mode='summary';self.compact=False;self.demo=demo;self.display=DisplayState()
         self.last_interaction=time.monotonic();self.drag_origin=None;self.pressed=None;self.child_drag=None
         self.local_sessions={};self.current_session=None;self.balance=None
         self.interaction_text='';self.interaction_until=0
@@ -223,9 +223,13 @@ class CardWindow(QWidget):
     def set_mode(self,mode,manual=False):
         if mode not in ('capsule','summary','expanded'):return
         self.mode=mode;self.compact=mode=='capsule'
+        self.signin_button.setVisible(not self.minimal);self.capsule.setVisible(not self.minimal)
+        self.balance_badge.setFixedHeight(48 if self.minimal else 36)
+        self.balance_badge.setStyleSheet('background:#edf5fc;border-radius:%dpx;color:#477c9f;font-size:11px;font-weight:700;padding:0px;'%(24 if self.minimal else 18))
+        self.resize_balance_badge()
         self.full.setVisible(not self.compact);self.compact_bar.setVisible(self.compact)
         self.expanded.setVisible(mode=='expanded')
-        self.setFixedSize(self.capsule_width(),36) if self.compact else self.setFixedSize(*MODE_SIZES[mode])
+        self.setFixedSize(self.capsule_width(),48 if self.minimal else 36) if self.compact else self.setFixedSize(*MODE_SIZES[mode])
         self.root_layout.activate()
         self.update_session_link();self.last_interaction=time.monotonic()
         if manual:self.compact_changed.emit(self.compact)
@@ -274,13 +278,19 @@ class CardWindow(QWidget):
             self.signin_button.setToolTip(labels.get(action,'快捷操作')+('\n'+url if action=='custom' else ''))
         self.signin_button.setAccessibleName(self.signin_button.toolTip())
 
-    def capsule_width(self):return 36+200+self.balance_badge.width()+12
+    def capsule_width(self):return 48 if self.minimal else 36+200+self.balance_badge.width()+12
 
     def resize_balance_badge(self):
-        width=max(42,self.balance_badge.fontMetrics().horizontalAdvance(self.balance_badge.text())+22)
+        if self.minimal:
+            self.balance_badge.setText(str(math.floor(self.balance)) if self.balance is not None else '—')
+        width=48 if self.minimal else max(42,self.balance_badge.fontMetrics().horizontalAdvance(self.balance_badge.text())+22)
+        font=self.balance_badge.font();font.setPixelSize(11)
+        while self.minimal and font.pixelSize()>7 and QFontMetrics(font).horizontalAdvance(self.balance_badge.text())>42:
+            font.setPixelSize(font.pixelSize()-1)
+        self.balance_badge.setFont(font)
         self.balance_badge.setFixedWidth(width)
         if self.compact:
-            self.setFixedSize(self.capsule_width(),36);self.root_layout.activate();self.resized.emit()
+            self.setFixedSize(self.capsule_width(),48 if self.minimal else 36);self.root_layout.activate();self.resized.emit()
 
     def maybe_collapse(self,settings,now=None):
         now=time.monotonic() if now is None else now;focus=QApplication.focusWidget()
@@ -291,7 +301,7 @@ class CardWindow(QWidget):
     def set_display(self,display):
         self.display=display;title,subtitle=LABELS[display.state],SUBTITLES[display.state]
         if display.connection=='disconnected':title,subtitle='等待 WorkBuddy 连接','打开设置，完成首次连接'
-        elif display.connection=='stale':subtitle='暂时没有新进展，可打开 WorkBuddy 查看'
+        elif display.connection=='stale':subtitle='任务状态已过期，暂以待机显示；请打开 WorkBuddy 确认'
         self.title.setText(title);self.title.setToolTip(subtitle);self.ack.setVisible(bool(display.reminders))
         labels={'connected':'已收到 WorkBuddy 事件','disconnected':'等待 WorkBuddy 连接','stale':'任务状态可能已过期'}
         self.connection.setText(labels.get(display.connection,display.connection)+f' · {display.session_count} 个任务');self.update_session_link()

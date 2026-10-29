@@ -2,7 +2,7 @@
   "schema": 3,
   "id": "blue-fish",
   "name": "蓝色小鱼",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "用户提供",
   "license": "LicenseRef-User-Provided",
   "quality": "hd",
@@ -13,7 +13,7 @@
     699
   ],
   "source": {
-    "changes": "用户提供16组透明GIF，仅按动作标识重命名，原文件字节和时序不变；休闲进食为吃酸菜鱼。",
+    "changes": "保留原有15段动作，思考替换为用户提供手部眼神版v3，原GIF字节与时序保留。",
     "rights": "用户授权本项目发布；原包未声明通用再分发许可，不沿用其他角色的许可。"
   },
   "actions": {
@@ -83,7 +83,7 @@
     }
   },
   "files": {
-    "actions/thinking.gif": "2c5d856a1197221197cd9d8440036fbeca703ca606ac25261380289c130dd543",
+    "actions/thinking.gif": "bc5985e09f74d34fb76f1e7a0c38abcc2047eb61a3d62af6d5ea81736bf38082",
     "actions/working.gif": "94e40521fa01c17ab600a10d16a98b58b1912afcf9973c8c7fe5006bf8dd0ae0",
     "actions/waiting.gif": "fcb94d5162e966b5b1e48ccae21f1d9598f7b141bb6fa33ddd998c8a1064f4b6",
     "actions/review.gif": "763a21f9170cccf045482ecaa61a803e676e85cd193e801a83bab1225e62889b",

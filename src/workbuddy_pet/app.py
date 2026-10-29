@@ -148,6 +148,9 @@ class Controller(QObject):
         self.dialog.reset_requested.connect(self.reset_to_corner)
         self.dialog.detect_requested.connect(self.detect_workbuddy)
         self.bubble.add_page(self.dialog,'设置')
+        for menu in (self.pet.context_menu,self.bubble.context_menu):
+            menu.aboutToShow.connect(lambda m=menu:self.populate_menu(m))
+        self.bubble.minimal=self.settings.minimal
         self.bubble.observe_activity()
         self.save_timer = QTimer(self)
         self.save_timer.setSingleShot(True)
@@ -155,6 +158,7 @@ class Controller(QObject):
         self.save_timer.timeout.connect(self.save_position)
         self.tray = PetTray(self, self.toggle_visible, self.open_settings, app.quit)
         self.tray.messageClicked.connect(self.open_workbuddy)
+        self.bubble.minimal=self.settings.minimal and not (self.avatar_collapsed or self.settings.card_only)
         self.bubble.set_compact(self.settings.compact)
         self._card_placed=False  # First placement uses saved pet/card coordinates, not the hidden widget's origin.
         self.reset_position(self.settings.position)
@@ -258,6 +262,7 @@ class Controller(QObject):
         self.dialog.settings=self.settings
 
     def collapse_avatar(self):
+        self.bubble.minimal=False
         self.user_visible=True;self.bubble.show();self.bubble.set_compact(True,manual=True)
         self.avatar_collapsed=True;self.pet.hide()
         self.idle_director.cancel();self.ambient_director.cancel();self.finish_interaction(refresh=False)
@@ -282,6 +287,8 @@ class Controller(QObject):
             rect=Rect(self.pet.x(),self.pet.y(),self.pet.width(),self.pet.height());visible=self.pet.content_rect()
             anchor=Rect(rect.x+visible.x(),rect.y+visible.y(),visible.width(),visible.height())
             self.pet.move(*pet_below_capsule(rect,anchor,capsule,self.screens()))
+        self.bubble.minimal=self.settings.minimal
+        self.bubble.set_mode(self.bubble.mode)
         self.pet.setVisible(not self.settings.card_only)
         self.bubble.set_avatar_hidden(self.settings.card_only,self.settings.card_only)
         self.dialog.card_only.setChecked(self.settings.card_only);self.dialog.settings=self.settings
@@ -301,7 +308,28 @@ class Controller(QObject):
         self.position_bubble()
         self.bubble.raise_();self.bubble.activateWindow()
 
+    def populate_menu(self,menu):
+        from .builtin import BUILTIN_PACKS,builtin_pack
+        submenu=menu.character_menu;submenu.clear()
+        packs=[builtin_pack(key) for key in BUILTIN_PACKS]+self.library.list_packs()
+        for pack in packs:
+            action=submenu.addAction(pack.name);action.setCheckable(True)
+            action.setChecked(pack.key==self.settings.character);action.setData(pack.key)
+            action.triggered.connect(lambda checked=False,key=pack.key:self.activate_character(key))
+        submenu.addSeparator();submenu.addAction('管理素材…',lambda:self.open_page('materials'))
+        for key,action in menu.mode_actions.items():
+            action.setChecked(self.settings.minimal if key=='minimal' else not self.settings.minimal)
+
+    def set_display_mode(self,minimal):
+        self.restore_avatar(exit_card_only=True)
+        self.settings=replace(self.settings,minimal=minimal,compact=True)
+        self.bubble.minimal=minimal;self.bubble.set_compact(True)
+        self.dialog.settings=self.settings
+        save_settings(self.root,self.settings);self.bubble.show();self.position_bubble()
+
     def open_page(self,key):
+        if key.startswith('mode:'):
+            self.set_display_mode(key=='mode:minimal');return
         if key=='chat':self.open_current_conversation();return
         if key=='summary':self.open_card();return
         self.finish_interaction()
