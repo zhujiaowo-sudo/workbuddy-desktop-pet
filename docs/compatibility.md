@@ -1,5 +1,13 @@
 # WorkBuddy 桌面版兼容性记录
 
+## v0.6.7 稳定性与后台性能（开发构建）
+
+2026-10-29：Windows10 22H2、Python3.12.10、PySide6 6.12.0。最终197项自动回归通过，包含原177项及新增20项状态、更新、缓存、后台写入、增量索引与脱敏审计验证。独立代码复核发现无换行尾行重写的索引残留，已修复并新增回归。发布状态仍为待发布，不能把本机构建视为GitHub CI或公开发布完成。
+
+两套角色在100%及150%原生窗口中通过过期提示、小卡/胶囊、休闲转审批的变动场景检查，未修改任何原始GIF。素材菜单预热后连续打开20次，新增GIF哈希次数为0；平均约23–26ms（本机结果，不作为其他机器性能保证）。稳定诊断状态按15秒心跳由后台线程写入，启动及变化及时提交。验证数据见[本轮记录](qa/stability-v0.6.7.json)。
+
+真实客户端5.9.3由用户新建测试并处理审批，观察到UserPromptSubmit、SessionStart、PreToolUse、PostToolUse、Stop以及Notification(permission_prompt/idle_prompt)。审批阶段现有0.6.6桌宠显示review、connected、demo=false。idle_prompt发生在Stop之后，不等同等待输入验收。未收到input_required/elicitation_dialog、PostToolUseFailure或有父标识的SubagentStart/Stop配对，保留未验证状态；用户反馈操作成功也不能替代事件证据。真实顺序中的晚到SessionStart已用于0.6.7回归修复；新版逻辑重放与合成验收不冒称新版已实际安装并全链路联调。操作清单见[真实验收](qa/live-events.md)。
+
 ## v0.6.2 动画结构与收起入口
 
 [代码097c881的Windows CI成功](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/actions/runs/40646376430/job/122676040505)，[v0.6.2已正式公开](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/tag/v0.6.2)。最终冻结程序可导入/播放APNG1.4.0；独立目录真实0.6.1→0.6.2自动升级重启并保留配置/测试文件成功。公开6附件摘要一致，匿名默认16段轻量包可导入；公开latest及程序下载50,324,386字节校验成功。本机已启动0.6.2/素材1.4.0，原大小150、自启关闭、授权和显隐状态保留，未领取签到。

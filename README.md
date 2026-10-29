@@ -1,4 +1,4 @@
-> v0.6.6：右键可快捷切换角色，选择极简圆形积分或胶囊模式；拖动人物时增加拎起与放下动效。蓝色小鱼思考动画更新。长时间未更新的任务停止思考展示，并提示状态待确认，不据此判定任务完成。
+> 开发版本 v0.6.7（待发布）：修复“稍后”仍自动安装、过期状态与休闲动作不一致及工具乱序；优化素材校验、后台状态写入和日志增量统计。最近正式版仍为 v0.6.6，下载入口以正式发行页为准。见[待发布说明](docs/releases/v0.6.7.md)。
 
 # WorkBuddy Desktop Pet · WorkBuddy 桌面搭子
 
@@ -28,7 +28,7 @@
 <img src="src/workbuddy_pet/assets/blue_fish/actions/click_wave.gif" width="220" alt="蓝色小鱼挥手GIF">
 <img src="src/workbuddy_pet/assets/blue_fish/actions/working.gif" width="220" alt="蓝色小鱼工作GIF">
 
-v0.6.6新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒，包括吃酸菜鱼。素材页可在薄荷星伴与蓝色小鱼之间切换；更新保持当前角色选择。新套装由用户提供并授权本项目发布，原包未声明通用再分发许可，见[蓝色小鱼素材说明](licenses/blue-fish/NOTICE.txt)。
+v0.6.5新增蓝色小鱼1.0.0；v0.6.6更新为1.0.1，仅替换思考动画，其他15段保持不变。套装包含完整16组720×720透明GIF，包括吃酸菜鱼。素材页可在薄荷星伴与蓝色小鱼之间切换；更新保持当前角色选择。新套装由用户提供并授权本项目发布，原包未声明通用再分发许可，见[蓝色小鱼素材说明](licenses/blue-fish/NOTICE.txt)。
 
 当前正式版为 **v0.6.6**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.6.6.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
 
@@ -46,7 +46,7 @@ v0.6.6新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒�
 | 自制角色 | 导入 ZIP 或文件夹、按动作预览、启用、删除；支持 PNG/APNG、GIF、WebP，可导出内置完整套装副本。 |
 | 更新与连接管理 | 首次连接引导、接入诊断、可选登录自启；正式发布版支持检查更新、校验下载、安装重启与失败回退。 |
 
-**接入范围：** 已在 WorkBuddy 5.9.2 验证主要任务开始、工具调用与完成事件；等待确认、等待回复、失败和子任务的真实事件联调仍需补充。播放器及状态逻辑支持这些状态，不能据此认定所有 WorkBuddy 版本都会发出对应事件。详见[兼容性记录](docs/compatibility.md)。
+**接入范围：** 已在 WorkBuddy 5.9.2 验证主要任务开始、工具调用与完成事件；本轮在5.9.3再次观察到这些事件，并确认真实审批通知及现有桌宠的待确认状态。等待输入、独立失败和子任务事件仍未完成真实验收，完成后的idle_prompt不作为等待输入证据。播放器及状态逻辑支持这些状态，不能据此认定所有版本都会发出对应事件。详见[兼容性记录](docs/compatibility.md)。
 
 ## 运行环境
 
@@ -175,7 +175,9 @@ workbuddy-desktop-pet/
 │  ├─ balance.py / checkin.py    # 独立授权的余额与签到能力
 │  ├─ workbuddy_relay.py          # WorkBuddy本机转发
 │  ├─ materials.py / builtin.py  # 角色校验、角色库与默认套装
-│  ├─ assets/default_pet/        # 唯一内置套装清单及16段GIF
+│  ├─ assets/default_pet/        # 薄荷星伴清单及16段GIF
+│  ├─ assets/blue_fish/          # 蓝色小鱼清单及16段GIF
+│  ├─ runtime.py                # 后台状态写入与低频心跳
 │  ├─ ui/                       # 人物、卡片、素材、设置与后台动画播放
 │  └─ update.py / update_install.ps1  # 校验更新及Windows安装回退
 ├─ tests/                       # 合成数据与功能回归

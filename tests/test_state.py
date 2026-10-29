@@ -85,3 +85,10 @@ def test_late_distinct_parallel_tool_is_not_discarded():
     s = reduce_event(s, e('PostToolUse', 103, tool_call_id='new'))
     assert s['main'].tools == frozenset({'old'})
     assert s['main'].state == 'working'
+
+
+@pytest.mark.parametrize('kind,state',[('UserPromptSubmit','thinking'),('PreToolUse','working'),('PermissionRequest','review')])
+def test_late_session_start_keeps_active_business_state(kind,state):
+    s=reduce_event({},e(kind,100))
+    s=reduce_event(s,e('SessionStart',101))
+    assert s['main'].state==state

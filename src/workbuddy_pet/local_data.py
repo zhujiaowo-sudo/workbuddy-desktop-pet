@@ -88,8 +88,10 @@ def _read_history(path, previous):
                 break
         cursor.eof = stream.tell() >= stat.st_size
         cursor.signature = signature
-        length = min(128, cursor.offset)
-        spans = {(0, length), (cursor.offset - length, length)}
+        length = min(128, stat.st_size)
+        boundary_length = min(128, cursor.offset)
+        spans = {(0, length), (stat.st_size - length, length),
+                 (cursor.offset - boundary_length, boundary_length)}
         cursor.fingerprints = tuple((start, size, _fingerprint(stream, start, size)) for start, size in spans)
         return cursor
 

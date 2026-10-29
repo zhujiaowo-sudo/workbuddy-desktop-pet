@@ -62,8 +62,9 @@ def reduce_event(sessions: Mapping[str, SessionState], event: Event) -> dict[str
         s = replace(s, phase=s.phase + 1, started=event.at, turn_id=event.turn_id,
                     state="thinking", terminal=False, tools=frozenset(), reminder=None, completed_tools=())
     elif event.kind == "SessionStart":
-        if not old.terminal:
-            s = replace(s, state="idle")
+        # WorkBuddy can emit startup after UserPromptSubmit/tool activity.
+        # A new session already defaults to idle; never erase active state.
+        pass
     elif event.kind == "SessionEnd":
         s = replace(s, state="idle", terminal=True, tools=frozenset(), reminder=None)
     elif event.kind in ("PreToolUse", "SubagentStart"):

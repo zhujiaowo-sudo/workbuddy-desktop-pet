@@ -116,6 +116,14 @@ def test_history_reset_on_truncation_replacement_and_same_size_edit(tmp_path):
     path.unlink();assert not reader._history({'s'}) and not reader.cache
 
 
+def test_unterminated_record_rewritten_longer_discards_old_metadata(tmp_path):
+    path=fixture_home(tmp_path);reader=LocalDataReader(tmp_path)
+    path.write_bytes(history_line('old').rstrip(b'\n'))
+    assert set(reader._history({'s'}))=={('s','old')}
+    path.write_bytes(history_line('replacement','new-model').rstrip(b'\n'))
+    assert set(reader._history({'s'}))=={('s','replacement')}
+
+
 def test_history_scan_budget_continues_next_poll_and_skips_oversized_lines(tmp_path,monkeypatch):
     import workbuddy_pet.local_data as module
     monkeypatch.setattr(module,'HISTORY_READ_LIMIT',512,raising=False)

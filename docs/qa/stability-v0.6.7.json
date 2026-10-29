@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "version": "0.6.7",
+  "release_status": "unpublished",
+  "date": "2026-10-29",
+  "environment": {"windows": "10 22H2", "python": "3.12.10", "pyside6": "6.12.0"},
+  "automated": {"passed": 197, "failed": 0, "baseline": 177, "synthetic_only": true},
+  "native_ui": {
+    "scales": [100, 150],
+    "characters": ["builtin", "builtin-blue-fish"],
+    "stale_summary_and_capsule": true,
+    "leisure_to_review": true,
+    "source_gifs_unchanged": true,
+    "scope": "changed state and interaction scenes; not a new audit of all artwork"
+  },
+  "menu_cache": {"warm_opens_per_scale": 20, "additional_gif_hashes": 0, "mean_ms": [23.02, 26.12]},
+  "real_events": {
+    "workbuddy_version": "5.9.3",
+    "installed_pet_version": "0.6.6",
+    "observed": ["UserPromptSubmit", "SessionStart", "PreToolUse", "PostToolUse", "Stop", "Notification:permission_prompt", "Notification:idle_prompt"],
+    "existing_pet_review_confirmed": true,
+    "late_session_start_regression_added": true,
+    "unverified": ["input_required/elicitation_dialog", "PostToolUseFailure", "parent-linked SubagentStart/SubagentStop"],
+    "note": "idle_prompt followed Stop; not evidence of an input dialog. No claim of newly installed 0.6.7 live end-to-end verification."
+  }
+}
