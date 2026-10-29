@@ -11,6 +11,28 @@ def test_stale_busy_yields_without_fabricated_completion():
     assert derive_display({'old':replace(old,at=221)},221).state=='working'
     assert derive_display({'old':replace(old,state='review')},9999).state=='review'
 
+
+def test_stale_allows_leisure_without_resolving_task_and_keeps_visible_warning(qt_app):
+    from workbuddy_pet.interaction import idle_allowed
+    from workbuddy_pet.ui.card import CardWindow
+    old = SessionState('old', state='working', at=100)
+    sessions = {'old': old}
+    display = derive_display(sessions, 220)
+    assert idle_allowed(sessions, display, 220)
+    assert sessions['old'].state == 'working' and not sessions['old'].terminal
+    card = CardWindow()
+    try:
+        card.set_display(display)
+        assert '状态待确认' in card.capsule.text()
+        assert not card.subtitle.isHidden() and '确认' in card.subtitle.text()
+        for state in ('review', 'waiting', 'failed', 'thinking'):
+            peers = {**sessions, 'fresh': SessionState('fresh', state=state, at=219)}
+            assert not idle_allowed(peers, derive_display(peers, 220), 220)
+        card.set_display(derive_display({'fresh': SessionState('fresh', state='thinking', at=219)}, 220))
+        assert card.subtitle.isHidden() and '状态待确认' not in card.capsule.text()
+    finally:
+        card.close()
+
 def test_modes_menus_and_persistence(qt_app,tmp_path):
     from workbuddy_pet.app import Controller
     save_settings(tmp_path,Settings(notifications=False))

@@ -64,3 +64,24 @@ def test_tools_parallel_and_session_end_is_not_success():
     s = reduce_event(s, e("SessionEnd", 103))
     assert not derive_display(s, 103).reminders
     assert derive_display(s, 103).state == "idle"
+
+
+def test_late_tool_start_and_duplicate_end_do_not_reopen_completed_tool():
+    s = reduce_event({}, e('UserPromptSubmit', turn_id='a'))
+    s = reduce_event(s, e('PostToolUse', 102, tool_call_id='one', turn_id='a'))
+    s = reduce_event(s, e('PreToolUse', 101, tool_call_id='one', turn_id='a'))
+    assert not s['main'].tools and s['main'].state == 'thinking'
+    s = reduce_event(s, e('PermissionRequest', 103))
+    s = reduce_event(s, e('PostToolUse', 102.5, tool_call_id='one'))
+    assert s['main'].state == 'review'
+    s = reduce_event(s, e('UserPromptSubmit', 104, turn_id='b'))
+    s = reduce_event(s, e('PreToolUse', 105, tool_call_id='one', turn_id='b'))
+    assert s['main'].tools == frozenset({'one'})
+
+
+def test_late_distinct_parallel_tool_is_not_discarded():
+    s = reduce_event({}, e('PreToolUse', 102, tool_call_id='new'))
+    s = reduce_event(s, e('PreToolUse', 101, tool_call_id='old'))
+    s = reduce_event(s, e('PostToolUse', 103, tool_call_id='new'))
+    assert s['main'].tools == frozenset({'old'})
+    assert s['main'].state == 'working'

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import random
 
 from .materials import LEISURE_ACTIONS
+from .state import effective_state
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ def idle_allowed(sessions, display, wall_time):
     if display.state not in ('idle', 'done'):
         return False
     for session in sessions.values():
-        if session.state not in ('idle', 'done'):
+        if effective_state(session, wall_time) not in ('idle', 'done'):
             return False
         if session.state == 'done' and wall_time - session.at < 12:
             return False

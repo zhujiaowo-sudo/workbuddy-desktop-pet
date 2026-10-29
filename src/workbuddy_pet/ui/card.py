@@ -314,13 +314,15 @@ class CardWindow(QWidget):
         self.session_link.setText(self.session_link.fontMetrics().elidedText(name+' ↗' if name else '尚无会话 · 打开 WorkBuddy ↗',Qt.TextElideMode.ElideRight,self.width()-28));self.session_link.setToolTip(name)
         short={'idle':'待命','thinking':'思考中','working':'执行中','waiting':'等回复','review':'待确认','done':'已完成','failed':'需查看'}[self.display.state]
         if self.display.connection=='disconnected':short='待连接'
+        elif self.display.connection=='stale':short='状态待确认'
         text=short+(' · '+name if name else '')
         interacting=bool(self.interaction_text) and time.monotonic()<self.interaction_until
         shown=self.interaction_text if interacting else text
         self.capsule.setText(self.capsule.fontMetrics().elidedText(shown,Qt.TextElideMode.ElideRight,186))
         self.capsule.setToolTip((shown+'\n当前任务：' if interacting else '')+text+'\n点击展开数据模式')
-        self.subtitle.setVisible(interacting)
+        self.subtitle.setVisible(interacting or self.display.connection=='stale')
         if interacting:self.subtitle.setText(self.subtitle.fontMetrics().elidedText(self.interaction_text,Qt.TextElideMode.ElideRight,self.width()-28))
+        elif self.display.connection=='stale':self.subtitle.setText('任务状态待确认，请打开 WorkBuddy 查看')
 
     def set_balance(self,value,source_note='WorkBuddy 余额需要客户端授权接口；本机消耗记录不能推算剩余积分'):
         valid=type(value) in (int,float) and math.isfinite(value) and value>=0

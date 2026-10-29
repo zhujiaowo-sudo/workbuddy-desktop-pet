@@ -40,6 +40,9 @@ class UpdateManager(QObject):
     def __init__(self,controller):
         super().__init__(controller)
         self.controller=controller;self.job=None;self.release=None;self.plan=None;self.phase='idle';self.dismissed=set()
+        self.install_paused=False
+        self.install_timer=QTimer(self);self.install_timer.setSingleShot(True)
+        self.install_timer.timeout.connect(self.auto_install)
         self.dialog=UpdateDialog(controller.bubble)
         self.dialog.action_requested.connect(self.action)
         self.dialog.cancel_requested.connect(self.cancel)
@@ -86,6 +89,7 @@ class UpdateManager(QObject):
     def action(self):
         if self.job:return
         if self.phase=='ready':
+            self.install_timer.stop();self.install_paused=True
             try:
                 process=launch_install(self.plan)
                 if process.poll() is not None:raise UpdateError('更新安装助手未启动，请重试')
@@ -109,6 +113,7 @@ class UpdateManager(QObject):
     def download(self):
         if not getattr(sys,'frozen',False):
             self.dialog.status.setText('源码运行请更新 Git 仓库。Windows 发布版支持一键安装。');return
+        self.install_timer.stop();self.install_paused=False
         self.phase='downloading';self.dialog.action.setEnabled(False);self.dialog.later.setText('取消下载')
         self.dialog.progress.show();self.dialog.progress.setValue(0);self.dialog.status.setText('正在下载…')
         install=Path(sys.executable).parent
@@ -122,18 +127,18 @@ class UpdateManager(QObject):
         def done(plan):
             self.plan=plan;self.phase='ready';self.dialog.action.setEnabled(True);self.dialog.action.setText('重启并安装')
             self.dialog.later.setText('稍后');self.dialog.status.setText('下载、校验及准备完成。点击重启安装，设置和素材会保留。')
-            if self.dialog.restart.isChecked():QTimer.singleShot(100,self.auto_install)
+            if self.dialog.restart.isChecked() and not self.install_paused:self.install_timer.start(100)
         self.job.done.connect(done);self.job.failed.connect(lambda message:self.failed(message,True))
         self.job.finished.connect(self.finished);self.job.start()
 
     def auto_install(self):
-        if self.phase!='ready' or self.controller.shutting_down or not self.dialog.restart.isChecked():return
+        if self.phase!='ready' or self.install_paused or self.controller.shutting_down or not self.dialog.restart.isChecked():return
         focus=QApplication.focusWidget()
         editing=isinstance(focus,(QLineEdit,QAbstractSpinBox)) and self.controller.bubble.isAncestorOf(focus)
         busy=self.controller.bubble.materials.job or self.controller.pet.press_position is not None
         if self.job or busy or editing:
             self.dialog.status.setText('更新已就绪，等待当前编辑或素材操作结束后自动安装；也可点击重启安装。')
-            QTimer.singleShot(1000,self.auto_install);return
+            self.install_timer.start(1000);return
         self.action()
 
     def show_progress(self,done,total,attempt):
@@ -154,10 +159,13 @@ class UpdateManager(QObject):
             if job and job.cancel.is_set():self.dialog.status.setText('已取消下载，可稍后重试。')
 
     def cancel(self):
+        self.install_paused=True;self.install_timer.stop()
+        if self.phase=='ready':self.dialog.status.setText('更新已就绪，已暂停自动安装；点击“重启并安装”继续。')
         if self.release:self.dismissed.add(self.release.version)
         if self.job and self.phase=='downloading':self.job.cancel.set();self.phase='error'
 
     def shutdown(self):
         self.timer.stop()
+        self.install_paused=True;self.install_timer.stop()
         if self.job:self.job.cancel.set()
         self.dialog.hide()

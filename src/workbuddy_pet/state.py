@@ -27,6 +27,7 @@ class SessionState:
     terminal: bool = False
     reminder: Reminder | None = None
     seen: tuple[str, ...] = ()
+    completed_tools: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -52,11 +53,14 @@ def reduce_event(sessions: Mapping[str, SessionState], event: Event) -> dict[str
         return result
     if old.terminal and event.kind not in ("UserPromptSubmit", "SessionStart", "SessionEnd"):
         return result
+    if (event.kind in ('PreToolUse', 'PostToolUse', 'PostToolUseFailure')
+            and event.tool_call_id and event.tool_call_id in old.completed_tools):
+        return result
     s = replace(old, at=max(old.at, event.at), seen=(*old.seen[-255:], event.id),
                 parent_session_id=event.parent_session_id or old.parent_session_id)
     if event.kind == "UserPromptSubmit":
         s = replace(s, phase=s.phase + 1, started=event.at, turn_id=event.turn_id,
-                    state="thinking", terminal=False, tools=frozenset(), reminder=None)
+                    state="thinking", terminal=False, tools=frozenset(), reminder=None, completed_tools=())
     elif event.kind == "SessionStart":
         if not old.terminal:
             s = replace(s, state="idle")
@@ -69,6 +73,7 @@ def reduce_event(sessions: Mapping[str, SessionState], event: Event) -> dict[str
         tools = set(s.tools)
         if event.tool_call_id:
             tools.discard(event.tool_call_id)
+            s = replace(s, completed_tools=(*s.completed_tools[-511:], event.tool_call_id))
         elif tools:
             tools.remove(sorted(tools)[0])
         s = replace(s, state="failed" if event.kind == "PostToolUseFailure" else "working" if tools else "thinking",
