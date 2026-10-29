@@ -1,13 +1,97 @@
 """Read-only local usage. Billing credits and context capacity are distinct."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from contextlib import closing
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 import json
+import hashlib
 import math
+import os
 from pathlib import Path
 import sqlite3
 import time
+
+HISTORY_READ_LIMIT = 64 * 1024 * 1024
+HISTORY_LINE_LIMIT = 2 * 1024 * 1024
+
+
+@dataclass
+class HistoryCursor:
+    identity: tuple
+    signature: tuple = ()
+    offset: int = 0
+    eof: bool = False
+    skipping: bool = False
+    fingerprints: tuple = ()
+    metadata: dict = field(default_factory=dict)
+
+
+def _fingerprint(stream, start, size):
+    stream.seek(start)
+    return hashlib.sha256(stream.read(size)).digest()
+
+
+def _merge_metadata(metadata, line):
+    try:
+        item = request_metadata(json.loads(line))
+    except (ValueError, RecursionError):
+        return
+    if item:
+        request, data = item
+        old = metadata.get(request)
+        times = [v for v in (data[1], old[1] if old else None) if v is not None]
+        winner = data if old is None or data[2] >= old[2] else old
+        metadata[request] = (winner[0], min(times) if times else None, winner[2])
+
+
+def _read_history(path, previous):
+    with path.open('rb') as stream:
+        stat = os.fstat(stream.fileno())
+        identity = (stat.st_dev, stat.st_ino)
+        signature = (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+        cursor = previous
+        if cursor:
+            rewritten = (cursor.identity != identity or stat.st_size < cursor.signature[0]
+                         or stat.st_size == cursor.signature[0] and signature != cursor.signature)
+            if not rewritten:
+                rewritten = any(_fingerprint(stream, start, length) != digest
+                                for start, length, digest in cursor.fingerprints)
+            if rewritten:
+                cursor = None
+            elif signature == cursor.signature and cursor.eof:
+                return cursor
+        if cursor is None:
+            cursor = HistoryCursor(identity)
+        stream.seek(cursor.offset)
+        budget = HISTORY_READ_LIMIT
+        cursor.eof = False
+        while budget > 0 and stream.tell() < stat.st_size:
+            line = stream.readline(min(HISTORY_LINE_LIMIT + 1, budget, stat.st_size - stream.tell()))
+            if not line:
+                break
+            budget -= len(line)
+            ended = line.endswith(b'\n')
+            if cursor.skipping or len(line) > HISTORY_LINE_LIMIT:
+                cursor.skipping = not ended
+                cursor.offset = stream.tell()
+                continue
+            if ended:
+                _merge_metadata(cursor.metadata, line)
+                cursor.offset = stream.tell()
+            elif stream.tell() >= stat.st_size:
+                # Compatible with complete final JSON without a newline. Re-read this
+                # tail after append; retain only metadata, never the partial body.
+                _merge_metadata(cursor.metadata, line)
+                break
+            else:
+                # Budget cut through a line. Start at its boundary next poll.
+                break
+        cursor.eof = stream.tell() >= stat.st_size
+        cursor.signature = signature
+        length = min(128, cursor.offset)
+        spans = {(0, length), (cursor.offset - length, length)}
+        cursor.fingerprints = tuple((start, size, _fingerprint(stream, start, size)) for start, size in spans)
+        return cursor
 
 
 @dataclass(frozen=True)
@@ -95,37 +179,9 @@ class LocalDataReader:
                 continue
             present.add(path)
             try:
-                stat = path.stat()
-                signature = (stat.st_size, stat.st_mtime_ns)
-                previous = self.cache.get(path)
-                if previous and previous[0] == signature:
-                    metadata = previous[1]
-                else:
-                    metadata = {}
-                    with path.open('rb') as stream:
-                        scanned = 0
-                        while scanned < 64 * 1024 * 1024:
-                            line = stream.readline(2 * 1024 * 1024 + 1)
-                            if not line:
-                                break
-                            scanned += len(line)
-                            if len(line) > 2 * 1024 * 1024:
-                                while line and not line.endswith(b'\n'):
-                                    line = stream.readline(2 * 1024 * 1024)
-                                    scanned += len(line)
-                                continue
-                            try:
-                                item = request_metadata(json.loads(line))
-                            except (ValueError, RecursionError):
-                                continue
-                            if item:
-                                request, data = item
-                                old = metadata.get(request)
-                                times = [v for v in (data[1], old[1] if old else None) if v is not None]
-                                winner = data if old is None or data[2] >= old[2] else old
-                                metadata[request] = (winner[0], min(times) if times else None, winner[2])
-                    self.cache[path] = signature, metadata
-                result.update({(path.stem, request): data[:2] for request, data in metadata.items()})
+                cursor = _read_history(path, self.cache.get(path))
+                self.cache[path] = cursor
+                result.update({(path.stem, request): data[:2] for request, data in cursor.metadata.items()})
             except OSError:
                 continue
         self.cache = {p: v for p, v in self.cache.items() if p in present}

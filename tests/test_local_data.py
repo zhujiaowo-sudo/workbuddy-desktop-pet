@@ -75,3 +75,55 @@ def test_today_uses_local_midnight_and_is_independent_of_report_range(tmp_path):
         assert snap.today_date=='2026-10-27' and snap.unknown_time==1
     tomorrow=reader.snapshot(now=datetime(2026,10,28).timestamp())
     assert tomorrow.today_credit==0 and tomorrow.today_requests==0
+
+
+def history_line(request, model='test', content=''):
+    return json.dumps({'timestamp':1,'providerData':{'requestId':request,'model':model},'content':content}).encode()+b'\n'
+
+
+def test_append_only_parses_new_records_and_partial_line_keeps_no_content(tmp_path,monkeypatch):
+    import workbuddy_pet.local_data as module
+    path=fixture_home(tmp_path)
+    path.write_bytes(b''.join(history_line(str(i)) for i in range(100)))
+    reader=LocalDataReader(tmp_path);reader._history({'s'})
+    parsed=[];original=module.request_metadata
+    monkeypatch.setattr(module,'request_metadata',lambda value:parsed.append(1) or original(value))
+    extra=history_line('next',content='PRIVATE-SENTINEL')
+    with path.open('ab') as stream:stream.write(extra[:45])
+    reader._history({'s'})
+    assert 'PRIVATE-SENTINEL' not in repr(reader.__dict__)
+    with path.open('ab') as stream:stream.write(extra[45:])
+    data=reader._history({'s'})
+    assert ('s','next') in data and len(parsed)==1
+    reader._history({'s'});assert len(parsed)==1
+    assert 'PRIVATE-SENTINEL' not in repr(reader.__dict__)
+
+
+def test_history_reset_on_truncation_replacement_and_same_size_edit(tmp_path):
+    path=fixture_home(tmp_path);reader=LocalDataReader(tmp_path)
+    path.write_bytes(history_line('old')+history_line('old2'))
+    assert ('s','old') in reader._history({'s'})
+    path.write_bytes(history_line('new'))
+    assert set(reader._history({'s'}))=={('s','new')}
+    before=path.stat().st_mtime_ns
+    path.write_bytes(history_line('now'))
+    import os
+    os.utime(path,ns=(before+10000000,before+10000000))
+    assert set(reader._history({'s'}))=={('s','now')}
+    replacement=path.with_suffix('.replacement');replacement.write_bytes(history_line('other'))
+    replacement.replace(path)
+    assert set(reader._history({'s'}))=={('s','other')}
+    path.unlink();assert not reader._history({'s'}) and not reader.cache
+
+
+def test_history_scan_budget_continues_next_poll_and_skips_oversized_lines(tmp_path,monkeypatch):
+    import workbuddy_pet.local_data as module
+    monkeypatch.setattr(module,'HISTORY_READ_LIMIT',512,raising=False)
+    monkeypatch.setattr(module,'HISTORY_LINE_LIMIT',200,raising=False)
+    path=fixture_home(tmp_path)
+    path.write_bytes(history_line('too-large',content='x'*900)+b''.join(history_line(str(i)) for i in range(20)))
+    reader=LocalDataReader(tmp_path)
+    first=reader._history({'s'})
+    assert not first
+    for _ in range(20):data=reader._history({'s'})
+    assert len(data)==20 and ('s','19') in data and ('s','too-large') not in data
