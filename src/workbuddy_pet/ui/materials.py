@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,Q
 
 from ..background import Task
 from ..materials import MaterialError, ALL_ACTIONS, OPTIONAL_IDLE_ACTIONS
+from ..builtin import builtin_pack,BUILTIN_PACKS
 from .animation import AnimationPlayer
 
 
@@ -46,7 +47,8 @@ class MaterialPanel(QWidget):
 
     def reload(self,selected=None):
         selected=selected or self.choices.currentData()
-        self.choices.blockSignals(True);self.choices.clear();self.choices.addItem('薄荷星伴 · 内置完整动作','builtin')
+        self.choices.blockSignals(True);self.choices.clear();
+        for key in BUILTIN_PACKS:self.choices.addItem(builtin_pack(key).name+' · 内置完整动作',key)
         try:
             for pack in self.library.list_packs():
                 self.choices.addItem(pack.name+' · '+('高清' if pack.quality=='hd' else '轻量'),pack.key)
@@ -59,11 +61,11 @@ class MaterialPanel(QWidget):
         self.preview_pack=None
         self.player.clear()
         self.action_choice.setEnabled(key is not None)
-        self.remove.setEnabled(key not in (None,'builtin') and self.job is None)
+        self.remove.setEnabled(key is not None and key not in BUILTIN_PACKS and self.job is None)
         try:
-            if key in (None,'builtin'):
+            if key is None or key in BUILTIN_PACKS:
                 from ..builtin import builtin_pack
-                pack=builtin_pack()
+                pack=builtin_pack(key or 'builtin')
             else:pack=self.library.load(key)
             self.preview_pack=pack
             for action in OPTIONAL_IDLE_ACTIONS:
@@ -72,7 +74,8 @@ class MaterialPanel(QWidget):
                 if self.action_choice.currentData()==action and action not in pack.actions:self.action_choice.setCurrentIndex(0)
             coverage='完整互动 · 15/15动作' if pack.schema>=2 else f'兼容包 · {len(pack.actions)}/15动作，缺项由内置道具与近似表情补充'
             if 'idle_scratch' in pack.actions:coverage+=' + 待机挠头'
-            self.description.setText(f'作者：{pack.author}  /  许可：{pack.license}\n{coverage}')
+            license_label='用户提供（其他用途需另行授权）' if pack.license=='LicenseRef-User-Provided' else pack.license
+            self.description.setText(f'作者：{pack.author}  /  许可：{license_label}\n{coverage}')
             self.preview_action();self.player.set_visible(self.isVisible())
             self.update_preview()
         except MaterialError as error:self.status.setText(str(error));self.preview.setText('素材不可用')
@@ -117,16 +120,19 @@ class MaterialPanel(QWidget):
         job=self.job;self.job=None
         if job:job.deleteLater()
         for button in (self.import_zip,self.import_folder,self.activate,self.template):button.setEnabled(True)
-        self.remove.setEnabled(self.choices.currentData() not in (None,'builtin'))
+        self.remove.setEnabled(self.choices.currentData() is not None and self.choices.currentData() not in BUILTIN_PACKS)
 
     def export_template(self):
-        path,_=QFileDialog.getSaveFileName(self,'导出内置完整套装','mint-orbit-user-gifs-v2.0.0.zip','角色包 (*.zip)')
+        key=self.choices.currentData()
+        if key not in BUILTIN_PACKS:key='builtin'
+        filename='blue-fish-v1.0.0.zip' if key=='builtin-blue-fish' else 'mint-orbit-user-gifs-v2.0.0.zip'
+        path,_=QFileDialog.getSaveFileName(self,'导出内置完整套装',filename,'角色包 (*.zip)')
         if not path:return
         # Copy the original GIFs and their manifest without rendering new artwork.
         if self.job:return
         try:
             from ..templates import export_starter
-            export_starter(Path(path));self.status.setText('完整16段素材已导出，保留原GIF及署名，可直接导入。')
+            export_starter(Path(path),key=key);self.status.setText('完整16段素材已导出，保留原GIF及署名，可直接导入。')
         except (OSError,ValueError):self.status.setText('模板导出失败，请检查保存位置。')
 
     def shutdown(self):

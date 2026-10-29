@@ -1,0 +1,103 @@
+{
+  "schema": 3,
+  "id": "blue-fish",
+  "name": "蓝色小鱼",
+  "version": "1.0.0",
+  "author": "用户提供",
+  "license": "LicenseRef-User-Provided",
+  "quality": "hd",
+  "anchor": [
+    84,
+    32,
+    641,
+    699
+  ],
+  "source": {
+    "changes": "用户提供16组透明GIF，仅按动作标识重命名，原文件字节和时序不变；休闲进食为吃酸菜鱼。",
+    "rights": "用户授权本项目发布；原包未声明通用再分发许可，不沿用其他角色的许可。"
+  },
+  "actions": {
+    "thinking": {
+      "file": "actions/thinking.gif",
+      "loop": true
+    },
+    "working": {
+      "file": "actions/working.gif",
+      "loop": true
+    },
+    "waiting": {
+      "file": "actions/waiting.gif",
+      "loop": true
+    },
+    "review": {
+      "file": "actions/review.gif",
+      "loop": true
+    },
+    "done": {
+      "file": "actions/done.gif",
+      "loop": false
+    },
+    "failed": {
+      "file": "actions/failed.gif",
+      "loop": false
+    },
+    "click_wave": {
+      "file": "actions/click_wave.gif",
+      "loop": false
+    },
+    "click_heart": {
+      "file": "actions/click_heart.gif",
+      "loop": false
+    },
+    "click_shy": {
+      "file": "actions/click_shy.gif",
+      "loop": false
+    },
+    "click_surprised": {
+      "file": "actions/click_surprised.gif",
+      "loop": false
+    },
+    "leisure_snack": {
+      "file": "actions/leisure_snack.gif",
+      "loop": true
+    },
+    "leisure_phone": {
+      "file": "actions/leisure_phone.gif",
+      "loop": true
+    },
+    "leisure_stretch": {
+      "file": "actions/leisure_stretch.gif",
+      "loop": true
+    },
+    "leisure_music": {
+      "file": "actions/leisure_music.gif",
+      "loop": true
+    },
+    "idle_scratch": {
+      "file": "actions/idle_scratch.gif",
+      "loop": false
+    },
+    "idle": {
+      "file": "actions/idle.gif",
+      "loop": true
+    }
+  },
+  "files": {
+    "actions/thinking.gif": "2c5d856a1197221197cd9d8440036fbeca703ca606ac25261380289c130dd543",
+    "actions/working.gif": "94e40521fa01c17ab600a10d16a98b58b1912afcf9973c8c7fe5006bf8dd0ae0",
+    "actions/waiting.gif": "fcb94d5162e966b5b1e48ccae21f1d9598f7b141bb6fa33ddd998c8a1064f4b6",
+    "actions/review.gif": "763a21f9170cccf045482ecaa61a803e676e85cd193e801a83bab1225e62889b",
+    "actions/done.gif": "cf1c0b0232eac8c418102e0440e2cf19d91ce0adcd67e40bd98046e52760ce0f",
+    "actions/failed.gif": "e71effbd62a9c16d94e6fe150ee832c9a3454467b0b3af7f2f057453940f09a9",
+    "actions/click_wave.gif": "7bea8f931846fd52694e4127a509b0d0963ab7028c14ee065a5e6eb63f4dd1b2",
+    "actions/click_heart.gif": "4d8c189487c0b05245bce3f930235bd88a547a55315e075a25f9e0aa59462c04",
+    "actions/click_shy.gif": "0e5dec42a6c13c711182bcacb58180c3301631797cc265226635e8077a93c2b7",
+    "actions/click_surprised.gif": "d2abc3014b78291ada06b1dc905fcdbe3d76b703cad06f4f7fd7b91d7e96f3a4",
+    "actions/leisure_snack.gif": "88e19412a4674bc2e37e9bd6fc0c3c57a5a11c538fd99920c7dec72041a2de1b",
+    "actions/leisure_phone.gif": "bdaa1fac084f62d3cb1da176c56142139680fcae0aebf3d27565ade3ee2fef4c",
+    "actions/leisure_stretch.gif": "4e52af1893d482c1761aeb40b0b5cafc749c7a4fc886ea8b78a0cc3e38327ca7",
+    "actions/leisure_music.gif": "f3e54b9d20051259c4817e30edaf0e06d327bf85d6970d5b6c55568d7ee2bdfe",
+    "actions/idle_scratch.gif": "473ca550c00fd1503b86d6bfc6d434e489b97dc94e7c6df7ca464d490aabb926",
+    "actions/idle.gif": "f09774f5bdeb7321d8c7c8eccc2b26c23d3309df0fbb3833ce51b444f07cfa95"
+  }
+}

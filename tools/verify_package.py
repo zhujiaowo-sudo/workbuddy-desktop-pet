@@ -50,6 +50,7 @@ def main():
         assert runtime['checkin_state']=='disabled'
     assert (exe.parent/'_internal/workbuddy_pet/catalog.json').is_file(),'Compatibility catalog missing'
     assert len(list((exe.parent/'_internal/workbuddy_pet/assets/default_pet/actions').glob('*.gif')))==16,'Complete bundled set missing'
+    assert len(list((exe.parent/'_internal/workbuddy_pet/assets/blue_fish/actions').glob('*.gif')))==16,'Blue fish builtin missing'
     assert (exe.parent/'_internal/workbuddy_pet/assets/mint-orbit-idle.png').is_file(),'Default portrait missing'
     assert (exe.parent/'_internal/workbuddy_pet/update_install.ps1').is_file(),'Update installer missing'
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
@@ -71,6 +72,14 @@ def main():
         assert runtime['checkin_state']=='disabled','Packaged demo must never query or claim check-in'
         assert runtime['chat_behavior']=='open-workbuddy','Chat must only open WorkBuddy'
         assert (root/('preview-'+suffix+'.png')).is_file()
+    from workbuddy_pet.settings import Settings,save_settings
+    fish_root=root/'gui-builtin-fish'
+    save_settings(fish_root,Settings(character='builtin-blue-fish',notifications=False))
+    result=subprocess.run([str(exe),'--root',str(fish_root),'--demo','--smoke-seconds','2','--workbuddy-home',str(root/'absent-workbuddy'),'--capture',str(root/'preview-builtin-fish.png')],env=env,capture_output=True,timeout=25)
+    assert result.returncode==0,'Frozen builtin blue fish startup failed'
+    runtime=json.loads((fish_root/'runtime.json').read_text(encoding='utf-8'))
+    assert runtime['animation_loaded'] and not runtime['card_only']
+    assert json.loads((fish_root/'settings.json').read_text(encoding='utf-8'))['character']=='builtin-blue-fish'
     print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
                       'three_views':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
 

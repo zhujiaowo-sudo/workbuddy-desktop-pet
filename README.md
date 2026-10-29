@@ -19,7 +19,14 @@
 
 以上均直接引用程序内置的原始 GIF，展示角色动作，**不是 WorkBuddy 真实任务联动录屏**。默认套装为薄荷星伴 **2.0.0**，共 **16 段 720×720 透明 GIF**，包含待机、6种其他任务状态、4种点击互动、4种休闲动作和挠头。所有动作每段16帧，保留作者原始画面及时序；待机4.61秒，其他2.25–3.16秒。
 
-当前正式版为 **v0.6.4**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.6.4.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
+### 新增套装：蓝色小鱼
+
+<img src="src/workbuddy_pet/assets/blue_fish/actions/click_wave.gif" width="220" alt="蓝色小鱼挥手GIF">
+<img src="src/workbuddy_pet/assets/blue_fish/actions/working.gif" width="220" alt="蓝色小鱼工作GIF">
+
+v0.6.5新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒，包括吃酸菜鱼。素材页可在薄荷星伴与蓝色小鱼之间切换；更新保持当前角色选择。新套装由用户提供并授权本项目发布，原包未声明通用再分发许可，见[蓝色小鱼素材说明](licenses/blue-fish/NOTICE.txt)。
+
+当前正式版为 **v0.6.5**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.6.5.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
 
 ## 功能特性
 
@@ -49,7 +56,7 @@
 
 ## 安装与首次连接
 
-1. 打开[最新发行页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest)，下载 `workbuddy-desktop-pet-0.6.4-windows-x64.zip`（约80MB）。源码 ZIP 不含可直接运行的 Windows 程序。
+1. 打开[最新发行页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest)，下载 `workbuddy-desktop-pet-0.6.5-windows-x64.zip`。源码 ZIP 不含可直接运行的 Windows 程序。
 2. 将压缩包**完整解压到固定、可写的目录**，运行 `WorkBuddyDesktopPet/WorkBuddyDesktopPet.exe`。不要仅复制单个 exe；接入命令引用安装位置，连接后请保持目录位置稳定。
 3. 在 WorkBuddy 中登录。桌宠会尝试自动检测安装位置；未识别时，打开“设置与连接”，使用“检测”或手动选择 `WorkBuddy.exe`。
 4. 在首次连接引导中确认绑定，并按需要勾选余额、签到的独立授权。程序添加本项目的本地状态插件，保留其他插件配置，不替你处理 WorkBuddy 的审批决定。
@@ -81,7 +88,7 @@
 
 自制素材通过“导入 ZIP／导入文件夹”进入本机角色库，校验后预览并启用；不会修改原文件。旧版 `schema=1/2` 继续兼容，完整长动画使用 `schema=3`，提供15个必填动作，可另加挠头。尺寸、帧数、停留时长及透明度要求见[素材规范](docs/materials.md)和[JSON Schema](docs/pet-pack.schema.json)。
 
-v0.6.4的程序包只内置这一套新GIF，不再提供旧分件动作或机器人素材模板。外部自导入角色仍可使用，普通程序更新不会强制清空用户角色库。应用、任务栏和托盘保留独立的蓝色小搭子图标，人物切换不会改变应用图标。
+v0.6.5内置薄荷星伴与蓝色小鱼两套完整动作，不再提供旧分件动作或机器人素材模板。外部自导入角色仍可使用，普通程序更新不会强制清空用户角色库。应用、任务栏和托盘保留独立的蓝色小搭子图标，人物切换不会改变应用图标。
 
 ## 数据与权限
 

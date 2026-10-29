@@ -355,9 +355,9 @@ class Controller(QObject):
         self.active_pack=None
         self.player.clear()
         if self.settings.card_only:return
-        from .builtin import builtin_pack
-        if self.settings.character=='builtin':
-            self.active_pack=builtin_pack()
+        from .builtin import builtin_pack,BUILTIN_PACKS
+        if self.settings.character in BUILTIN_PACKS:
+            self.active_pack=builtin_pack(self.settings.character)
             self.player.load(self.active_pack,'idle')
         else:
             try:
@@ -375,19 +375,21 @@ class Controller(QObject):
     def activate_character(self,key):
         previous=self.settings
         try:
-            if key!='builtin':
+            from .builtin import builtin_pack,BUILTIN_PACKS
+            if key not in BUILTIN_PACKS:
                 candidate=self.library.load(key)
                 self.player.load(candidate,derive_display(self.sessions,time.time()).state)
                 self.active_pack=candidate
             else:
                 from .builtin import builtin_pack
-                self.active_pack=builtin_pack();self.player.load(self.active_pack,'idle')
+                self.active_pack=builtin_pack(key);self.player.load(self.active_pack,'idle')
             self.apply_settings(replace(previous,character=key,card_only=False))
             self.bubble.materials.status.setText('所选角色已启用。')
         except MaterialError as error:self.bubble.materials.status.setText(str(error))
 
     def remove_character(self,key):
-        if not key or key=='builtin':return
+        from .builtin import BUILTIN_PACKS
+        if not key or key in BUILTIN_PACKS:return
         if self.bubble.materials.job:return
         try:
             if self.settings.character==key:

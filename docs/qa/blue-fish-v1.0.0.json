@@ -1,0 +1,318 @@
+{
+  "functional_regressions": 174,
+  "preserves_original_builtin": true,
+  "preserves_selection": true,
+  "new_builtin": "builtin-blue-fish",
+  "native": [
+    {
+      "platform": "windows",
+      "scale": "1",
+      "actions": [
+        {
+          "action": "thinking",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 50,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "working",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 51,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "waiting",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "review",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "done",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "failed",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_wave",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_heart",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_shy",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_surprised",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_snack",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_phone",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_stretch",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_music",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "idle_scratch",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "idle",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        }
+      ],
+      "transitions": {
+        "idle_to_working": true,
+        "urgent_review_interrupts_click": true,
+        "click_finishes_authored_timing": true
+      }
+    },
+    {
+      "platform": "windows",
+      "scale": "1.5",
+      "actions": [
+        {
+          "action": "thinking",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 50,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "working",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 51,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "waiting",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "review",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "done",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "failed",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_wave",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_heart",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_shy",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "click_surprised",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_snack",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_phone",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_stretch",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "leisure_music",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "idle_scratch",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 52,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        },
+        {
+          "action": "idle",
+          "frames": 16,
+          "cycle_ms": 2720,
+          "native_callbacks": 53,
+          "seconds": 8.66,
+          "three_loops": true,
+          "hide_resume": true
+        }
+      ],
+      "transitions": {
+        "idle_to_working": true,
+        "urgent_review_interrupts_click": true,
+        "click_finishes_authored_timing": true
+      }
+    }
+  ]
+}

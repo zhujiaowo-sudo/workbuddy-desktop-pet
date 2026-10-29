@@ -62,7 +62,7 @@ def load_settings(root: Path) -> Settings:
             path = ""
         character = value.get('character', 'builtin')
         import re
-        if character != 'builtin' and not (isinstance(character, str) and re.fullmatch('[0-9a-f]{32}', character)):
+        if character not in ('builtin','builtin-blue-fish') and not (isinstance(character, str) and re.fullmatch('[0-9a-f]{32}', character)):
             character = 'builtin'
         seconds = value.get('collapse_seconds', 30)
         card_position=value.get('card_position')

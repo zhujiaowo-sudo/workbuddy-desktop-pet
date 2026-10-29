@@ -10,7 +10,7 @@ def test_bundled_gifs_preserve_all_authored_frames_and_timing():
     pack=validate_pack(PACK_ROOT)
     assert set(pack.actions)==set(ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS)==set(audit)
     assert pack.schema==3 and pack.quality=='hd'
-    assert set(PACK_ROOT.parent.iterdir())=={PACK_ROOT,PACK_ROOT.parent/'mint-orbit-idle.png'}
+    assert set(PACK_ROOT.parent.iterdir())=={PACK_ROOT,PACK_ROOT.parent/'mint-orbit-idle.png',PACK_ROOT.parent/'blue_fish'}
     for action,spec in pack.actions.items():
         path=PACK_ROOT/spec.file;expected=audit[action]
         assert hashlib.sha256(path.read_bytes()).hexdigest()==expected['sha256']

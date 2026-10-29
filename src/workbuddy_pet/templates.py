@@ -1,9 +1,10 @@
 """Export a byte-preserving copy of the bundled character with attribution."""
 from pathlib import Path
 import zipfile
-from .builtin import PACK_ROOT
+from .builtin import builtin_pack
 
-def export_starter(destination: Path):
+def export_starter(destination: Path,key='builtin'):
+    PACK_ROOT=builtin_pack(key).root
     destination=Path(destination)
     destination.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(destination,'w',zipfile.ZIP_DEFLATED) as archive:
