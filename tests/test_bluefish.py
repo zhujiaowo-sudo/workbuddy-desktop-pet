@@ -6,7 +6,7 @@ from workbuddy_pet.settings import Settings,save_settings,load_settings
 def test_new_set_matches_source_and_keeps_original():
     assert builtin_pack().name=='薄荷星伴'
     p=builtin_pack('builtin-blue-fish');assert p.name=='蓝色小鱼' and len(validate_pack(p.root).actions)==16
-    audit=json.loads((Path(__file__).resolve().parents[1]/'art/blue-fish/user-gifs-v1.0.0.json').read_text())
+    audit=json.loads((Path(__file__).resolve().parents[1]/'art/blue-fish/user-gifs-v1.0.0.json').read_text(encoding='utf-8'))
     for a,spec in p.actions.items():assert hashlib.sha256((p.root/spec.file).read_bytes()).hexdigest()==audit[a]['sha256']
 def test_selection_persists_and_controller_switches(qt_app,tmp_path):
     from workbuddy_pet.app import Controller
