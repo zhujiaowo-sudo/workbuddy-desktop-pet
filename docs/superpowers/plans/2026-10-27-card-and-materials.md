@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- WorkBuddy only；不拷贝白龙代码或人物素材。
+- WorkBuddy only；不拷贝未获授权的第三方代码或人物素材。
 - 本机统计不能冒充全账户账单；used/size不能当作累计token。
 - 角色包 schema=1，idle必填，7状态缺动作回退idle。
 - 不修改WorkBuddy审批决策、不公开登录凭据、不提交真实数据。

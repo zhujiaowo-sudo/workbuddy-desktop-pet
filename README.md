@@ -185,6 +185,6 @@ workbuddy-desktop-pet/
 
 默认角色“薄荷星伴”原作者为 **Buddy娘**，采用 [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/)。本版动作由用户制作提供；内置GIF原字节与时序保留，许可及改动说明见 [NOTICE](NOTICE.md) 和[角色署名](licenses/mint-orbit/NOTICE.txt)。
 
-代码发行许可尚未指定；角色素材的CC-BY-4.0不覆盖整个程序，也不覆盖白龙或其他角色。PySide6、Pillow等依赖按各自许可分发，随包保留相应说明。
+薄荷星伴素材采用CC-BY-4.0；其他角色的授权以各自声明为准。程序代码的发行许可尚未指定。PySide6、Pillow等依赖按各自许可分发，随包保留相应说明。
 
-参考了[白龙桌宠](https://github.com/Wunsch2048/codex-bailong-desktop-pet)及[WorkBuddy Buddy](https://github.com/FlashFamily/workbuddy-buddy)的桌宠与状态展示思路，来源边界见[参考说明](NOTICE.md)。本项目为独立社区项目，与腾讯、WorkBuddy及参考项目作者无隶属或背书关系。
+本项目为独立社区项目，与腾讯、WorkBuddy无隶属或背书关系。素材来源和依赖许可见[项目说明](NOTICE.md)。
