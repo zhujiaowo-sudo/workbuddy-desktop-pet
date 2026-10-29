@@ -66,7 +66,10 @@ def test_enabled_balance_updates_badge_without_persisting_amount(tmp_path,qt_app
     monkeypatch.setattr(application,'read_balance',lambda home:BalanceSnapshot(123.45,1,'synthetic source'))
     save_settings(tmp_path,Settings(balance_enabled=True,notifications=False))
     controller=Controller(qt_app,tmp_path,False,workbuddy_home=tmp_path/'absent')
-    QTest.qWait(100)
+    import time
+    deadline=time.monotonic()+3
+    while time.monotonic()<deadline and (controller.bubble.balance is None or not (tmp_path/'runtime.json').is_file()):
+        qt_app.processEvents();time.sleep(.01)
     assert controller.bubble.balance==123.45
     assert controller.bubble.balance_badge.text()=='123'
     assert '123.45' not in (tmp_path/'settings.json').read_text()

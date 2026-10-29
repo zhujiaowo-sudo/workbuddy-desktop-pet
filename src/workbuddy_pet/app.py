@@ -18,6 +18,7 @@ from .settings import Rect, clamp_position, load_settings, save_settings
 from .spool import SpoolReader
 from .state import acknowledge, derive_display, reduce_event
 from .storage import atomic_json, plain
+from .runtime import RuntimeWriter
 from .ui.pet import PetWindow, mascot_icon
 from .ui.card import CardWindow,PAGE_KEYS
 from .ui.animation import AnimationPlayer
@@ -77,6 +78,7 @@ class Controller(QObject):
         self._capsule_anchor=None
         self.binding=None;self.discovery_job=None
         self.shutting_down = False
+        self.runtime_writer = RuntimeWriter(self.root / 'runtime.json')
         self.workbuddy_home = workbuddy_home or Path.home()/'.workbuddy'
         self.library = MaterialLibrary(self.root/'characters')
         self.data_reader = LocalDataReader(self.workbuddy_home)
@@ -405,12 +407,12 @@ class Controller(QObject):
         try:
             from .builtin import builtin_pack,BUILTIN_PACKS
             if key not in BUILTIN_PACKS:
-                candidate=self.library.load(key)
+                candidate=self.library.load(key,force=True)
                 self.player.load(candidate,derive_display(self.sessions,time.time()).state)
                 self.active_pack=candidate
             else:
                 from .builtin import builtin_pack
-                self.active_pack=builtin_pack(key);self.player.load(self.active_pack,'idle')
+                self.active_pack=builtin_pack(key,force=True);self.player.load(self.active_pack,'idle')
             self.apply_settings(replace(previous,character=key,card_only=False))
             self.bubble.materials.status.setText('所选角色已启用。')
         except MaterialError as error:self.bubble.materials.status.setText(str(error))
@@ -631,7 +633,7 @@ class Controller(QObject):
                 if self.settings.notifications and not self.demo:
                     self.tray.remind(reminder.kind)
         try:
-            atomic_json(self.root / "runtime.json", {"schema": 1, "version": __version__, "pid": os.getpid(),
+            self.runtime_writer.submit({"schema": 1, "version": __version__, "pid": os.getpid(),
                 "at": time.time(), "state": display.state, "connection": display.connection,
                 "sessions": display.session_count, "unread": len(display.reminders), "demo": self.demo,
                 "visible": self.bubble.isVisible(), "card_only":self.settings.card_only,
@@ -834,6 +836,7 @@ class Controller(QObject):
             self.worker.requestInterruption()
             self.worker.wait(3000)
         self.save_position()
+        self.runtime_writer.close()
         self.tray.hide()
         self.bubble.hide()
         self.pet.hide()

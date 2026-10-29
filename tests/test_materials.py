@@ -71,3 +71,34 @@ def test_gif_keeps_frame_duration_and_alpha(tmp_path):
     frames[0].save(path,save_all=True,append_images=frames[1:],duration=[80,120],loop=0,disposal=2)
     decoded = decode_animation(path)
     assert len(decoded) == 2 and [f.duration for f in decoded] == [80,120]
+
+
+def test_pack_cache_avoids_hashing_and_invalidates_changed_files(tmp_path,monkeypatch):
+    import hashlib
+    from workbuddy_pet.materials import validate_pack
+    root=source(tmp_path/'source')
+    manifest=json.loads((root/'manifest.json').read_text(encoding='utf-8'))
+    manifest['files']={'idle.png':hashlib.sha256((root/'idle.png').read_bytes()).hexdigest()}
+    (root/'manifest.json').write_text(json.dumps(manifest),encoding='utf-8')
+    original=hashlib.file_digest;calls=[]
+    monkeypatch.setattr(hashlib,'file_digest',lambda *a,**k:calls.append(True) or original(*a,**k))
+    validate_pack(root,decode=False)
+    for _ in range(4):validate_pack(root,decode=False)
+    assert len(calls)==1
+    validate_pack(root,decode=False,force=True)
+    assert len(calls)==2
+    path=root/'idle.png';data=bytearray(path.read_bytes());data[-1]^=1;path.write_bytes(data)
+    with pytest.raises(MaterialError):validate_pack(root,decode=False)
+
+
+def test_pack_cache_detects_manifest_rewrite_and_deletion(tmp_path):
+    from workbuddy_pet.materials import validate_pack
+    root=source(tmp_path/'source')
+    first=validate_pack(root,decode=False)
+    path=root/'manifest.json';data=json.loads(path.read_text(encoding='utf-8'))
+    data['name']='新名称';path.write_text(json.dumps(data),encoding='utf-8')
+    assert validate_pack(root,decode=False).name=='新名称'
+    first.actions.clear()
+    assert 'idle' in validate_pack(root,decode=False).actions
+    (root/'idle.png').unlink()
+    with pytest.raises(MaterialError):validate_pack(root,decode=False)

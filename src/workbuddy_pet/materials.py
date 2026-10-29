@@ -1,5 +1,6 @@
 """Local, data-only character packs; no scripts or third-party assets."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from collections import OrderedDict
 import hashlib
 import json
 import math
@@ -8,6 +9,7 @@ import re
 import shutil
 import stat
 import tempfile
+import threading
 import warnings
 import zipfile
 
@@ -123,7 +125,55 @@ class CharacterPack:
         return self.actions.get(state, self.actions.get(FALLBACKS.get(state, ''), self.actions['idle']))
 
 
-def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
+_PACK_CACHE = OrderedDict()
+_CACHE_LOCK = threading.Lock()
+
+
+def _pack_signature(root):
+    manifest = checked(root, 'manifest.json')
+    if manifest.stat().st_size > 65536:
+        raise MaterialError('角色清单超过 64 KiB')
+    data = json.loads(manifest.read_text(encoding='utf-8-sig'))
+    names = {'manifest.json'}
+    names.update(item['file'] for item in data['actions'].values())
+    result = []
+    for name in sorted(names):
+        path = checked(root, name)
+        stat = path.stat()
+        result.append((name, stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns))
+    return tuple(result)
+
+
+def validate_pack(root: Path, *, decode=True, key='', force=False) -> CharacterPack:
+    """Cache successful metadata/hash validation; never cache full import decoding."""
+    root = Path(root).absolute()
+    if decode:
+        with _CACHE_LOCK:
+            _PACK_CACHE.pop(root, None)
+        return _validate_pack(root, decode=True, key=key)
+    try:
+        signature = _pack_signature(root)
+        with _CACHE_LOCK:
+            cached = _PACK_CACHE.get(root)
+            if not force and cached and cached[0] == signature:
+                _PACK_CACHE.move_to_end(root)
+                return replace(cached[1], key=key, actions=dict(cached[1].actions))
+        pack = _validate_pack(root, decode=False, key=key)
+        if _pack_signature(root) != signature:
+            raise MaterialError('校验时素材发生变化，请重试')
+        with _CACHE_LOCK:
+            _PACK_CACHE[root] = (signature, pack)
+            _PACK_CACHE.move_to_end(root)
+            while len(_PACK_CACHE) > 64:
+                _PACK_CACHE.popitem(last=False)
+        return replace(pack, actions=dict(pack.actions))
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        with _CACHE_LOCK:
+            _PACK_CACHE.pop(root, None)
+        raise MaterialError('角色清单损坏、素材缺失或校验失败') from None
+
+
+def _validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
     manifest_path = checked(root, 'manifest.json')
     try:
         if manifest_path.stat().st_size > 65536:
@@ -225,14 +275,14 @@ class MaterialLibrary:
         self.root.mkdir(parents=True, exist_ok=True)
         return self.root.resolve()
 
-    def load(self, key: str):
+    def load(self, key: str, *, force=False):
         if not isinstance(key, str) or not re.fullmatch('[0-9a-f]{32}', key):
             raise MaterialError('角色库标识无效')
         root = self._root()
         target = root / key
         if target.is_symlink() or target.is_junction():
             raise MaterialError('角色库目录无效')
-        return validate_pack(target, decode=False, key=key)
+        return validate_pack(target, decode=False, key=key, force=force)
 
     def list_packs(self):
         result = []
