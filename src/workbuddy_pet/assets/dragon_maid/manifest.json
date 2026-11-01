@@ -1,0 +1,113 @@
+{
+  "schema": 3,
+  "id": "dragon-maid",
+  "name": "白发龙角女仆",
+  "version": "1.0.0",
+  "author": "用户提供",
+  "license": "LicenseRef-User-Provided",
+  "quality": "hd",
+  "anchor": [
+    65,
+    52,
+    657,
+    666
+  ],
+  "source": {
+    "changes": "原始17段GIF字节与时序保留。经用户确认，思考动作同时对应工作，盘腿坐对应基础待机；睡觉和鞠躬加入随机待机。",
+    "rights": "用户授权本项目发布；原包未声明通用再分发许可，不沿用其他角色的许可。"
+  },
+  "actions": {
+    "idle": {
+      "file": "actions/idle.gif",
+      "loop": true
+    },
+    "thinking": {
+      "file": "actions/thinking.gif",
+      "loop": true
+    },
+    "working": {
+      "file": "actions/working.gif",
+      "loop": true
+    },
+    "waiting": {
+      "file": "actions/waiting.gif",
+      "loop": true
+    },
+    "review": {
+      "file": "actions/review.gif",
+      "loop": true
+    },
+    "done": {
+      "file": "actions/done.gif",
+      "loop": false
+    },
+    "failed": {
+      "file": "actions/failed.gif",
+      "loop": false
+    },
+    "click_wave": {
+      "file": "actions/click_wave.gif",
+      "loop": false
+    },
+    "click_heart": {
+      "file": "actions/click_heart.gif",
+      "loop": false
+    },
+    "click_shy": {
+      "file": "actions/click_shy.gif",
+      "loop": false
+    },
+    "click_surprised": {
+      "file": "actions/click_surprised.gif",
+      "loop": false
+    },
+    "leisure_snack": {
+      "file": "actions/leisure_snack.gif",
+      "loop": true
+    },
+    "leisure_phone": {
+      "file": "actions/leisure_phone.gif",
+      "loop": true
+    },
+    "leisure_stretch": {
+      "file": "actions/leisure_stretch.gif",
+      "loop": true
+    },
+    "leisure_music": {
+      "file": "actions/leisure_music.gif",
+      "loop": true
+    },
+    "idle_scratch": {
+      "file": "actions/idle_scratch.gif",
+      "loop": false
+    },
+    "idle_sleep": {
+      "file": "actions/idle_sleep.gif",
+      "loop": false
+    },
+    "idle_bow": {
+      "file": "actions/idle_bow.gif",
+      "loop": false
+    }
+  },
+  "files": {
+    "actions/idle.gif": "e7bd941d2df1c5bcf8d7fb1f2941e6d8d67c69e4bcea43d7df797df261540cb4",
+    "actions/thinking.gif": "cd007b846a13ea0ddcab10d225af6f087598b17fab43a9775e1b13ad6ccc7be3",
+    "actions/working.gif": "cd007b846a13ea0ddcab10d225af6f087598b17fab43a9775e1b13ad6ccc7be3",
+    "actions/waiting.gif": "61f5ccf6474ee98183ccefd78a5f14ebace20849aefcae809fe63b51b5545e2f",
+    "actions/review.gif": "d06f30082dda630655897dd281013882e0ccafbbd708a8b4a50189015b298178",
+    "actions/done.gif": "0732b373295bbf0c122e48beaacc633ecd91feadb935a7077048e65cdad33c2f",
+    "actions/failed.gif": "944b26344feaa49cbb49bfb53be785cb822f66e170688774d70722417cf71bb6",
+    "actions/click_wave.gif": "350310258379715fdee820fde9e79d49205afa5abaff00b1adc8081d654f79a3",
+    "actions/click_heart.gif": "65643c8af480df527365f29a98df859a2cbf53a8da02af75062587e87484a7c1",
+    "actions/click_shy.gif": "1cc8252755394f5acd92195f73a5b888d10b1ea2c9aa5a27ee6ec2d3e06f828b",
+    "actions/click_surprised.gif": "c09e24b388ca690b46c30c30879330558be37987a54a0e0bfd1bf2433aae3665",
+    "actions/leisure_snack.gif": "7bdf506cd4a9f087a23237d8468c710fd623764c7337c870e73075143baff7d3",
+    "actions/leisure_phone.gif": "5383bca3546a2844014f5cd20af050cf3aa1f355728ded0a6fca928a81cef7e1",
+    "actions/leisure_stretch.gif": "34d8588c3dc8ffd008c3e11dff52b044f08182a237364c8ab90d0d5167b33152",
+    "actions/leisure_music.gif": "93d3c246069d0e469a8ae3396a9fc6cd4a0d5841b07dda6c790baa84cd7bad40",
+    "actions/idle_scratch.gif": "0637d630a194724483f5d1695912a99a3b4da040195639b64d597f53e4eb8eba",
+    "actions/idle_sleep.gif": "a4f9eefdfb926a486bb300e26194fe9e50ec5df2f74e3f5a14ef5c27e6ea0412",
+    "actions/idle_bow.gif": "957c802d54ea54f2493cdc6b1ba20e65894576c2d423cb1fabed2427e7eed9cc"
+  }
+}

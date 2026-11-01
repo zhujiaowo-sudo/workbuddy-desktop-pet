@@ -73,15 +73,16 @@ def main():
         assert runtime['chat_behavior']=='open-workbuddy','Chat must only open WorkBuddy'
         assert (root/('preview-'+suffix+'.png')).is_file()
     from workbuddy_pet.settings import Settings,save_settings
-    fish_root=root/'gui-builtin-fish'
-    save_settings(fish_root,Settings(character='builtin-blue-fish',notifications=False))
-    result=subprocess.run([str(exe),'--root',str(fish_root),'--demo','--smoke-seconds','2','--workbuddy-home',str(root/'absent-workbuddy'),'--capture',str(root/'preview-builtin-fish.png')],env=env,capture_output=True,timeout=25)
-    assert result.returncode==0,'Frozen builtin blue fish startup failed'
-    runtime=json.loads((fish_root/'runtime.json').read_text(encoding='utf-8'))
-    assert runtime['animation_loaded'] and not runtime['card_only']
-    assert json.loads((fish_root/'settings.json').read_text(encoding='utf-8'))['character']=='builtin-blue-fish'
+    for character in ('builtin-blue-fish','builtin-dragon-maid'):
+        character_root=root/('gui-'+character)
+        save_settings(character_root,Settings(character=character,notifications=False))
+        result=subprocess.run([str(exe),'--root',str(character_root),'--demo','--smoke-seconds','2','--workbuddy-home',str(root/'absent-workbuddy'),'--capture',str(root/(character+'.png'))],env=env,capture_output=True,timeout=25)
+        assert result.returncode==0,f'Frozen {character} startup failed'
+        runtime=json.loads((character_root/'runtime.json').read_text(encoding='utf-8'))
+        assert runtime['animation_loaded'] and not runtime['card_only']
+        assert json.loads((character_root/'settings.json').read_text(encoding='utf-8'))['character']==character
     print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
-                      'three_views':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
+                      'unified_dashboard':True,'three_builtin_characters':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
 
 
 if __name__ == "__main__":

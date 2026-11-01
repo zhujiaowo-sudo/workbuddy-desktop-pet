@@ -9,6 +9,8 @@ class PetTray(QSystemTrayIcon):
         super().__init__(mascot_icon(), parent)
         self.setToolTip("WorkBuddy 小搭子")
         self.menu = QMenu()
+        from .theme import MENU
+        self.menu.setStyleSheet(MENU)
         for text, callback in (("显示 / 隐藏桌宠", show), ("设置与连接诊断", settings), ("退出桌宠", quit_app)):
             action = QAction(text, self.menu)
             action.triggered.connect(callback)

@@ -1,3 +1,4 @@
+from .theme import STYLE
 """Explicit first-run consent; discovery never reads connection tickets."""
 from PySide6.QtCore import Signal,Qt
 from PySide6.QtWidgets import QDialog,QVBoxLayout,QLabel,QCheckBox,QPushButton,QHBoxLayout
@@ -11,7 +12,7 @@ class BindingDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle('连接 WorkBuddy');self.setFixedWidth(370)
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
-        self.setStyleSheet('QDialog{background:#fbfeff;} QLabel,QCheckBox{color:#36516b;} QPushButton{background:#e4f1fb;color:#246b9e;padding:9px;border:0;border-radius:8px;}')
+        self.setStyleSheet(STYLE)
         layout=QVBoxLayout(self)
         title=QLabel('欢迎使用 WorkBuddy 小搭子');title.setStyleSheet('font-size:16px;font-weight:600;');layout.addWidget(title)
         self.status=QLabel('正在自动查找 WorkBuddy…');self.status.setWordWrap(True);layout.addWidget(self.status)

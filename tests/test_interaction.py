@@ -58,7 +58,7 @@ def test_idle_animation_yields_to_tasks_and_preserves_real_card(tmp_path,qt_app)
     controller.bubble.set_compact(True);controller.refresh()
     text=controller.bubble.capsule.text()
     controller.idle_director.next_due=0;controller.refresh()
-    assert controller.idle_director.active and controller.visual_action.startswith('leisure_')
+    assert controller.idle_director.active and controller.visual_action in controller.active_pack.actions and controller.visual_action != 'idle'
     assert controller.bubble.capsule.text()==text and not controller.active_interaction
     now=time.time()
     controller.consume([Event('task',now,'task','UserPromptSubmit'),Event('tool',now+.01,'task','PreToolUse')])

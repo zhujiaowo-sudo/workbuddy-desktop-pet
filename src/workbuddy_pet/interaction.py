@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import random
 
 from .materials import LEISURE_ACTIONS
+from .state import effective_state
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ def idle_allowed(sessions, display, wall_time):
     if display.state not in ('idle', 'done'):
         return False
     for session in sessions.values():
-        if session.state not in ('idle', 'done'):
+        if effective_state(session,wall_time) not in ('idle', 'done'):
             return False
         if session.state == 'done' and wall_time - session.at < 12:
             return False
@@ -49,19 +50,26 @@ class IdleDirector:
         self.next_due = None
         self.until = 0
 
-    def step(self, now, eligible):
-        if not eligible:
+    def finish(self, now):
+        self.active = None
+        self.next_due = now + self.rng.uniform(18, 40)
+
+    def step(self, now, eligible, actions=LEISURE_ACTIONS):
+        actions=tuple(actions)
+        if not eligible or not actions:
             self.cancel()
             return None
+        if self.active and self.active.action not in actions:
+            self.cancel()
         if self.active and now < self.until:
             return self.active
         if self.active:
-            self.active = None
-            self.next_due = now + self.rng.uniform(45, 110)
+            self.finish(now)
         if self.next_due is None:
-            self.next_due = now + self.rng.uniform(45, 110)
+            self.next_due = now + self.rng.uniform(18, 40)
         if now >= self.next_due:
-            action = self.rng.choice([a for a in LEISURE_ACTIONS if a != self.previous])
+            choices=[a for a in actions if a != self.previous] or list(actions)
+            action = self.rng.choice(choices)
             self.active = Interaction('', action, self.rng.uniform(6, 10))
             self.previous = action
             self.until = now + self.active.seconds

@@ -18,7 +18,7 @@ TASK_ACTIONS = STATES
 CLICK_ACTIONS = ('click_wave', 'click_heart', 'click_shy', 'click_surprised')
 LEISURE_ACTIONS = ('leisure_snack', 'leisure_phone', 'leisure_stretch', 'leisure_music')
 ALL_ACTIONS = STATES + CLICK_ACTIONS + LEISURE_ACTIONS
-OPTIONAL_IDLE_ACTIONS = ('idle_scratch',)
+OPTIONAL_IDLE_ACTIONS = ('idle_scratch', 'idle_sleep', 'idle_bow')
 LOOP_ACTIONS = frozenset(STATES[:5] + LEISURE_ACTIONS)
 FALLBACKS = dict(zip(CLICK_ACTIONS + LEISURE_ACTIONS,
                      ('done', 'waiting', 'waiting', 'review', 'idle', 'thinking', 'done', 'idle')))
@@ -141,8 +141,9 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         actions = data.get('actions')
         if quality not in ('light', 'hd') or not isinstance(actions, dict) or 'idle' not in actions:
             raise MaterialError('角色包需要 idle 待机动作，以及 light/hd 画质')
-        if schema >= 2 and (not set(ALL_ACTIONS)<=set(actions) or not set(actions)<=set(ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS)):
-            raise MaterialError('完整互动包需要15个规定动作，只可额外提供可选idle_scratch')
+        optional = OPTIONAL_IDLE_ACTIONS if schema == 3 else ('idle_scratch',)
+        if schema >= 2 and (not set(ALL_ACTIONS)<=set(actions) or not set(actions)<=set(ALL_ACTIONS+optional)):
+            raise MaterialError('完整互动包需要15个规定动作，可选动作需符合对应schema规范')
         anchor = data.get('anchor') if schema >= 2 else None
         if schema == 3 and anchor is None:
             raise MaterialError('长动画包需要统一可见包络 anchor')
@@ -157,7 +158,7 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
             raise MaterialError('文件校验清单无效')
         parsed, seen, pixel_count = {}, set(), 0
         for state, item in actions.items():
-            if state not in (ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS if schema >= 2 else STATES) or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
+            if state not in (ALL_ACTIONS+optional if schema >= 2 else STATES) or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
                 raise MaterialError('动作名称或循环设置无效')
             name = item.get('file')
             path = checked(root, name)

@@ -197,3 +197,12 @@ def configure_startup(enabled: bool, command: list[str]) -> None:
                 winreg.DeleteValue(key, "WorkBuddyDesktopPet")
             except FileNotFoundError:
                 pass
+
+
+def ui_animations_enabled():
+    """Respect Windows' UI animation preference; never change the system setting."""
+    if os.name!='nt':return False
+    import ctypes
+    enabled=ctypes.c_int()
+    if not ctypes.windll.user32.SystemParametersInfoW(0x1042,0,ctypes.byref(enabled),0):return False
+    return bool(enabled.value)

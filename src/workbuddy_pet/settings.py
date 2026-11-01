@@ -63,7 +63,7 @@ def load_settings(root: Path) -> Settings:
             path = ""
         character = value.get('character', 'builtin')
         import re
-        if character not in ('builtin','builtin-blue-fish') and not (isinstance(character, str) and re.fullmatch('[0-9a-f]{32}', character)):
+        if character not in ('builtin','builtin-blue-fish','builtin-dragon-maid') and not (isinstance(character, str) and re.fullmatch('[0-9a-f]{32}', character)):
             character = 'builtin'
         seconds = value.get('collapse_seconds', 30)
         card_position=value.get('card_position')
@@ -79,7 +79,7 @@ def load_settings(root: Path) -> Settings:
                         value.get('quick_action') if value.get('quick_action') in ('checkin','website','custom','refresh') else 'checkin',
                         value.get('quick_url') if isinstance(value.get('quick_url'),str) and len(value['quick_url'])<=2048 else '',
                         value.get('auto_update',True) is True,
-                        value.get('avatar_collapsed') is True and value.get('compact') is True,
+                        value.get('avatar_collapsed') is True,
                         value.get('minimal') is True)
     except (OSError, ValueError, TypeError):
         return Settings()

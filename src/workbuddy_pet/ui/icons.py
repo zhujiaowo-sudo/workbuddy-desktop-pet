@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QPushButton
 def action_icon(kind):
     pixmap=QPixmap(40,40);pixmap.setDevicePixelRatio(2);pixmap.fill(Qt.GlobalColor.transparent)
     p=QPainter(pixmap);p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    p.setPen(QPen(QColor('#608eae'),1.5,Qt.PenStyle.SolidLine,Qt.PenCapStyle.RoundCap,Qt.PenJoinStyle.RoundJoin))
+    p.setPen(QPen(QColor('#666666'),1.5,Qt.PenStyle.SolidLine,Qt.PenCapStyle.RoundCap,Qt.PenJoinStyle.RoundJoin))
     if kind=='refresh':
         p.drawArc(QRectF(4,4,12,12),45*16,290*16);p.drawLine(16,3,16,7);p.drawLine(16,7,12,7)
     elif kind=='data':
@@ -38,8 +38,8 @@ def action_icon(kind):
 
 
 def action_button(kind,tip):
-    button=QPushButton();button.setIcon(action_icon(kind));button.setFixedSize(22,24)
-    button.setToolTip(tip);button.setAccessibleName(tip);button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    button=QPushButton();button.setIcon(action_icon(kind));button.setFixedSize(28,28)
+    button.setToolTip(tip);button.setAccessibleName(tip);button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
     button.setStyleSheet('QPushButton{background:transparent;border:0;border-radius:6px;padding:0;} '
-                         'QPushButton:hover{background:#e4f1fb;} QPushButton:pressed{background:#d5eafa;}')
+                         'QPushButton:hover{background:#f5f5f5;} QPushButton:pressed{background:#f5f5f5;}')
     return button

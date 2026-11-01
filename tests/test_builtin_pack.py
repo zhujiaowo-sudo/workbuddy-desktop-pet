@@ -8,9 +8,9 @@ from workbuddy_pet.materials import ALL_ACTIONS,OPTIONAL_IDLE_ACTIONS,LOOP_ACTIO
 def test_bundled_gifs_preserve_all_authored_frames_and_timing():
     audit=json.loads((Path(__file__).resolve().parents[1]/'art/mint-orbit/user-gifs-v2.0.0.json').read_text())
     pack=validate_pack(PACK_ROOT)
-    assert set(pack.actions)==set(ALL_ACTIONS+OPTIONAL_IDLE_ACTIONS)==set(audit)
+    assert set(pack.actions)==set(ALL_ACTIONS+('idle_scratch',))==set(audit)
     assert pack.schema==3 and pack.quality=='hd'
-    assert set(PACK_ROOT.parent.iterdir())=={PACK_ROOT,PACK_ROOT.parent/'mint-orbit-idle.png',PACK_ROOT.parent/'blue_fish'}
+    assert set(PACK_ROOT.parent.iterdir())=={PACK_ROOT,PACK_ROOT.parent/'mint-orbit-idle.png',PACK_ROOT.parent/'blue_fish',PACK_ROOT.parent/'dragon_maid',PACK_ROOT.parent/'ui'}
     for action,spec in pack.actions.items():
         path=PACK_ROOT/spec.file;expected=audit[action]
         assert hashlib.sha256(path.read_bytes()).hexdigest()==expected['sha256']

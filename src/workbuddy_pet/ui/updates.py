@@ -1,3 +1,4 @@
+from .theme import STYLE
 """Modeless update flow; all network and extraction work stays off the GUI thread."""
 import json
 from pathlib import Path
@@ -20,7 +21,7 @@ class UpdateDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle('WorkBuddy 小搭子 · 软件更新');self.resize(420,390)
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
-        self.setStyleSheet('QDialog{background:#fbfeff;} QLabel{color:#36516b;} QPushButton{padding:9px;border-radius:7px;background:#e4f1fb;color:#246b9e;}')
+        self.setStyleSheet(STYLE)
         layout=QVBoxLayout(self)
         self.heading=QLabel();self.heading.setStyleSheet('font-size:16px;font-weight:600;');layout.addWidget(self.heading)
         self.notes=QTextEdit();self.notes.setReadOnly(True);layout.addWidget(self.notes)

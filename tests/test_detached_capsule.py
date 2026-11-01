@@ -125,9 +125,10 @@ def test_optional_scratch_yields_to_existing_leisure_tasks_menu_and_click(tmp_pa
     controller=controller_for(tmp_path,qt_app,Settings(character=pack.key,notifications=False))
     try:
         controller.sessions={};controller.bubble.set_compact(True)
-        controller.idle_director.next_due=time.monotonic()+100;controller.ambient_director.next_due=0
+        controller.idle_director.rng.choice=lambda values:'idle_scratch' if 'idle_scratch' in values else values[0]
+        controller.idle_director.next_due=0
         controller.refresh();assert controller.visual_action=='idle_scratch'
-        controller.idle_director.next_due=0;controller.refresh()
+        controller.idle_director.finish(time.monotonic());controller.idle_director.next_due=0;controller.refresh()
         assert controller.visual_action.startswith('leisure_') and controller.ambient_director.active is None
         now=time.time();controller.consume([Event('task',now,'s','UserPromptSubmit'),Event('tool',now+.01,'s','PreToolUse')])
         assert controller.visual_action=='working' and controller.ambient_director.active is None

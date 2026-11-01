@@ -13,7 +13,7 @@ python -m venv .venv
 .venv\Scripts\python tools/build_windows.py --work C:/wb-pet-build
 ```
 
-产物为 `dist/workbuddy-desktop-pet-0.6.8-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。必须包含`update_install.ps1`；自动更新的发布顺序及恢复说明见[软件更新](updating.md)。所有附件及校验文件先上传草稿，确认 CI 后发布为正式版本（非 prerelease）并设为 latest。
+产物为 `dist/workbuddy-desktop-pet-0.7.0-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。必须包含`update_install.ps1`；自动更新的发布顺序及恢复说明见[软件更新](updating.md)。所有附件及校验文件先上传草稿，确认 CI 后发布为正式版本（非 prerelease）并设为 latest。
 
 程序包内置薄荷星伴2.0.0完整16段用户GIF及同套待机首帧，不包含旧动画、旧模板或原生成图。`仅卡片启动.vbs`隐藏人物并停止解码；素材页可导出内置整套副本。Release上传当前用户EXE安装包、完整程序ZIP、安装说明及SHA256SUMS，不再发布旧模板或两档外部默认包。
 
@@ -25,7 +25,7 @@ python -m venv .venv
 
 ```powershell
 python tools/build_installer.py --compiler "C:/path/to/Inno Setup 7/ISCC.exe"
-python tools/verify_installer.py --installer dist/workbuddy-desktop-pet-0.6.8-windows-x64-setup.exe --scratch C:/wb-pet-installer-smoke
+python tools/verify_installer.py --installer dist/workbuddy-desktop-pet-0.7.0-windows-x64-setup.exe --scratch C:/wb-pet-installer-smoke
 ```
 
 安装器验证只使用隔离的合成用户目录，拒绝覆盖已有安装器注册。编译脚本将EXE哈希加入校验清单；ZIP继续供程序内更新，更新保留卸载器文件。

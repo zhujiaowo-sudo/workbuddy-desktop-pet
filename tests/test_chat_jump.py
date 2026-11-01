@@ -26,9 +26,8 @@ def test_chat_entries_jump_to_current_workbuddy_without_embedded_panel(tmp_path,
     assert controller.bubble.tabs.count()==4 and not hasattr(controller.bubble,'chat')
     assert all(editor.isReadOnly() for editor in controller.bubble.findChildren(QTextEdit))
     assert all(button.text()!='发送' for button in controller.bubble.findChildren(QPushButton))
-    menu=next(action for action in controller.pet.context_menu.actions() if action.data()=='chat')
-    entries=(lambda:QTest.mouseClick(controller.bubble.chat_button,Qt.MouseButton.LeftButton),
-             menu.trigger,lambda:controller.open_page('chat'),lambda:controller.bubble.open_page('chat'))
+    entries=(lambda:QTest.mouseClick(controller.bubble.session_link,Qt.MouseButton.LeftButton),
+             lambda:controller.open_page('chat'),lambda:controller.bubble.open_page('chat'))
     for entry in entries:
         before=(controller.bubble.mode,controller.bubble.tabs.currentIndex())
         calls.clear();entry()

@@ -8,7 +8,7 @@ def test_summary_minus_only_collapses_card_and_keeps_avatar(tmp_path,qt_app):
     controller=controller_for(tmp_path,qt_app)
     try:
         controller.open_card();assert controller.pet.isVisible()
-        QTest.mouseClick(controller.bubble.collapse_button,Qt.MouseButton.LeftButton)
+        QTest.mouseClick(controller.bubble.back_button,Qt.MouseButton.LeftButton)
         assert controller.bubble.compact and controller.pet.isVisible() and not controller.avatar_collapsed
         assert not controller.settings.avatar_collapsed and controller.settings.compact
         assert controller.bubble.show_avatar_action.text()=='收成胶囊'
@@ -23,7 +23,9 @@ def test_single_menu_toggle_switches_label_and_restores_without_duplicate(tmp_pa
             assert action.text()=='收成胶囊'
             action.trigger();assert not controller.pet.isVisible() and action.text()=='显示桌宠'
             labels=[a.text() for a in controller.bubble.context_menu.actions()]
-            assert labels.count('显示桌宠')==1 and '收成胶囊' not in labels
+            assert labels.count('显示')==1 and '收成胶囊' not in labels and '显示桌宠' not in labels
+            controller.populate_menu(controller.bubble.context_menu)
+            assert controller.bubble.context_menu.mode_actions['detached'].isChecked()
             action.trigger();assert controller.pet.isVisible() and action.text()=='收成胶囊'
             assert not controller.avatar_collapsed and controller.bubble.compact
         controller.apply_settings(replace(controller.settings,card_only=True))

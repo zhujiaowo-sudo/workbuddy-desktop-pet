@@ -22,7 +22,7 @@ from .ui.pet import PetWindow, mascot_icon
 from .ui.card import CardWindow,PAGE_KEYS
 from .ui.animation import AnimationPlayer
 from .ui.materials import MaterialPanel
-from .materials import MaterialLibrary, MaterialError
+from .materials import MaterialLibrary, MaterialError, LEISURE_ACTIONS, OPTIONAL_IDLE_ACTIONS
 from .local_data import LocalDataReader,UsageSnapshot
 from .placement import card_position,fit_capsule_pet,panel_height_limit,pet_below_capsule
 from .background import Task
@@ -139,9 +139,11 @@ class Controller(QObject):
         self.bubble.materials.activate_requested.connect(self.activate_character)
         self.bubble.materials.remove_requested.connect(self.remove_character)
         self.bubble.materials.card_only_requested.connect(self.enable_card_only)
-        self.bubble.add_page(self.bubble.materials,'素材')
+        self.bubble.add_page(self.bubble.materials,'角色')
         from .cli import diagnose
         self.dialog = SettingsDialog(self.settings,diagnose(self.root),self.bubble,embedded=True)
+        self.bubble.settings_save.clicked.connect(self.dialog.save)
+        self.dialog.changed.connect(lambda:self.bubble.settings_save.setText('保存'))
         self.dialog.saved.connect(self.apply_settings)
         self.dialog.install_requested.connect(self.install_integration)
         self.dialog.uninstall_requested.connect(self.uninstall_integration)
@@ -253,7 +255,6 @@ class Controller(QObject):
         self.schedule_position_save()
 
     def save_compact(self,value):
-        if not value and self.avatar_collapsed:self.restore_avatar(persist=False)
         if not value and self.settings.card_only:self.avatar_collapsed=False
         self.bubble.set_avatar_hidden(self.avatar_collapsed or self.settings.card_only,self.settings.card_only)
         self.settings=replace(self.settings,compact=value,avatar_collapsed=self.avatar_collapsed,
@@ -300,11 +301,10 @@ class Controller(QObject):
         self.bubble.show();self.refresh()
 
     def open_card(self):
-        self.restore_avatar()
         self.finish_interaction()
         self.user_visible=True
-        self.pet.setVisible(not self.settings.card_only)
-        self.bubble.show();self.bubble.open_summary(manual=True)
+        self.pet.setVisible(not self.settings.card_only and not self.avatar_collapsed)
+        self.bubble.show();self.bubble.open_page('details')
         self.position_bubble()
         self.bubble.raise_();self.bubble.activateWindow()
 
@@ -318,16 +318,20 @@ class Controller(QObject):
             action.triggered.connect(lambda checked=False,key=pack.key:self.activate_character(key))
         submenu.addSeparator();submenu.addAction('管理素材…',lambda:self.open_page('materials'))
         for key,action in menu.mode_actions.items():
-            action.setChecked(self.settings.minimal if key=='minimal' else not self.settings.minimal)
+            selected='detached' if self.avatar_collapsed or self.settings.card_only else 'minimal' if self.settings.minimal else 'standard'
+            action.setChecked(key==selected)
 
     def set_display_mode(self,minimal):
         self.restore_avatar(exit_card_only=True)
         self.settings=replace(self.settings,minimal=minimal,compact=True)
         self.bubble.minimal=minimal;self.bubble.set_compact(True)
-        self.dialog.settings=self.settings
+        self.dialog.settings=self.settings;self.dialog.sync_display(self.settings)
         save_settings(self.root,self.settings);self.bubble.show();self.position_bubble()
 
     def open_page(self,key):
+        if key=='open':self.open_workbuddy();return
+        if key=='mode:detached':
+            self.collapse_avatar();self.dialog.sync_display(self.settings);return
         if key.startswith('mode:'):
             self.set_display_mode(key=='mode:minimal');return
         if key=='chat':self.open_current_conversation();return
@@ -336,8 +340,7 @@ class Controller(QObject):
         if key=='capsule':
             self.collapse_avatar()
         else:
-            self.restore_avatar()
-            self.user_visible=True;self.pet.setVisible(not self.settings.card_only);self.bubble.show()
+            self.user_visible=True;self.pet.setVisible(not self.settings.card_only and not self.avatar_collapsed);self.bubble.show()
             self.bubble.open_page(key)
             self.position_bubble();self.bubble.raise_();self.bubble.activateWindow()
 
@@ -361,6 +364,9 @@ class Controller(QObject):
     def finish_long_interaction(self):
         if self.active_interaction and self.active_pack and self.active_pack.schema==3:
             self.finish_interaction()
+        elif self.idle_director.active:
+            self.idle_director.finish(time.monotonic())
+            self.refresh()
 
     def finish_interaction(self,refresh=True):
         was_active=self.active_interaction is not None
@@ -431,7 +437,9 @@ class Controller(QObject):
 
     def load_data(self,days=None):
         self.requested_days=days
-        if self.stats_job or self.shutting_down:return
+        if self.shutting_down:return
+        self.bubble.set_data_busy(True)
+        if self.stats_job:return
         self.next_data=time.monotonic()+15
         self.stats_job=Task(lambda:self.data_reader.snapshot(days),self)
         def received(snapshot):
@@ -602,15 +610,16 @@ class Controller(QObject):
                   and self.bubble.mode in ('capsule','summary') and self.pet.press_position is None
                   and not self.pet.context_menu.isVisible() and not self.bubble.context_menu.isVisible()
                   and idle_allowed(self.sessions,display,time.time()))
-        leisure=self.idle_director.step(now,eligible)
-        ambient=self.ambient_director.step(now,eligible and not leisure and bool(self.active_pack and 'idle_scratch' in self.active_pack.actions))
+        pool=tuple(a for a in LEISURE_ACTIONS+OPTIONAL_IDLE_ACTIONS if self.active_pack and a in self.active_pack.actions)
+        leisure=self.idle_director.step(now,eligible,pool)
+        ambient=self.ambient_director.step(now,False)
         base='idle' if display.state=='done' and idle_allowed(self.sessions,display,time.time()) else display.state
         action=self.active_interaction.action if self.active_interaction else leisure.action if leisure else ambient.action if ambient else base
         self.visual_action=action
         self.pet.set_display(display)
         self.bubble.set_display(display)
         if self.active_pack and self.pet.isVisible():
-            try:self.player.load(self.active_pack,action,defer=not self.active_interaction and action not in ('review','waiting','failed'))
+            try:self.player.load(self.active_pack,action,defer=not self.active_interaction and action not in ('thinking','working','review','waiting','failed'))
             except MaterialError:
                 self.player.clear();self.active_pack=None
                 self.pet.timer.start()
@@ -687,6 +696,9 @@ class Controller(QObject):
                 configure_startup(settings.startup, runtime_command(self.root))
             save_settings(self.root, settings)
             self.settings = settings
+            self.avatar_collapsed=settings.avatar_collapsed
+            self.bubble.minimal=settings.minimal and not (settings.card_only or self.avatar_collapsed)
+            self.bubble.set_mode(self.bubble.mode)
             if settings.card_only or previous.character!=settings.character:
                 self.idle_director.cancel();self.finish_interaction(refresh=False)
             self.next_balance=0
@@ -704,10 +716,13 @@ class Controller(QObject):
             self.reset_position(settings.position)
             if self.dialog:
                 self.dialog.hint.setText("设置已保存。")
+                self.bubble.settings_save.setText("已保存")
                 self.dialog.settings = settings
                 self.dialog.card_only.setChecked(settings.card_only)
+                self.dialog.sync_display(settings)
         except (OSError, ValueError) as error:
             if self.dialog:
+                self.bubble.settings_save.setText('保存失败')
                 self.dialog.hint.setText(str(error) if isinstance(error,ValueError) else '保存失败，请检查用户目录是否可写。')
 
     def first_binding(self):

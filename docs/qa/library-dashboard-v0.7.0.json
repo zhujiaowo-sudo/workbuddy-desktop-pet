@@ -1,0 +1,328 @@
+{
+  "native_scale_reviews": {
+    "1": [
+      {
+        "action": "idle",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 7.703,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "thinking",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 7.765,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "working",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 7.766,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "waiting",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 7.703,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "review",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 7.765,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "done",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 7.625,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "failed",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 8.687,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_wave",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 7.171,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_heart",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 7.625,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_shy",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 7.625,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_surprised",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 5.64,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_snack",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 8.672,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_phone",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 9.297,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_stretch",
+        "scale": "1",
+        "frames_rendered": 92,
+        "seconds": 12.203,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_music",
+        "scale": "1",
+        "frames_rendered": 93,
+        "seconds": 8.313,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "idle_scratch",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 6.906,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "idle_sleep",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 10.89,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "idle_bow",
+        "scale": "1",
+        "frames_rendered": 90,
+        "seconds": 8.813,
+        "max_queue": 6,
+        "cycles": 3
+      }
+    ],
+    "1.5": [
+      {
+        "action": "idle",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 7.703,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "thinking",
+        "scale": "1.5",
+        "frames_rendered": 91,
+        "seconds": 7.766,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "working",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 7.766,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "waiting",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 7.703,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "review",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 7.765,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "done",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 7.641,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "failed",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 8.703,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_wave",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 7.172,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_heart",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 7.625,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_shy",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 7.625,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "click_surprised",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 5.625,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_snack",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 8.672,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_phone",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 9.297,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_stretch",
+        "scale": "1.5",
+        "frames_rendered": 92,
+        "seconds": 12.203,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "leisure_music",
+        "scale": "1.5",
+        "frames_rendered": 93,
+        "seconds": 8.313,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "idle_scratch",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 6.907,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "idle_sleep",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 10.89,
+        "max_queue": 6,
+        "cycles": 3
+      },
+      {
+        "action": "idle_bow",
+        "scale": "1.5",
+        "frames_rendered": 90,
+        "seconds": 8.843,
+        "max_queue": 6,
+        "cycles": 3
+      }
+    ]
+  },
+  "transitions": {
+    "1": [
+      "idle_to_bow",
+      "task_interrupts_bow",
+      "review_interrupts_click",
+      "hidden_stops_decode_and_dashboard_keeps_hidden",
+      "restore_minimal"
+    ],
+    "1.5": [
+      "idle_to_bow",
+      "task_interrupts_bow",
+      "review_interrupts_click",
+      "hidden_stops_decode_and_dashboard_keeps_hidden",
+      "restore_minimal"
+    ]
+  },
+  "assets": "原始GIF逐字节保留；18个标识，17个不同文件内容",
+  "ui": "合成会话与演示余额，不连接真实WorkBuddy数据",
+  "capture_method": "Windows原生Qt窗口，事件循环播放；逐动作首中末帧截图",
+  "reference": "https://github.com/emilkowalski/skills/tree/main/skills/emil-design-eng",
+  "automated_tests": {
+    "passed": 197,
+    "failed": 0
+  },
+  "frozen_verification": {
+    "collector": true,
+    "gui": true,
+    "import": true,
+    "three_builtin_sets": true,
+    "hidden_mode": true,
+    "native_svg_controls": true
+  }
+}

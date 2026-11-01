@@ -1,7 +1,7 @@
 from pathlib import Path
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QPushButton,QFileDialog
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QPushButton,QFileDialog,QGridLayout
 
 from ..background import Task
 from ..materials import MaterialError, ALL_ACTIONS, OPTIONAL_IDLE_ACTIONS
@@ -18,29 +18,29 @@ class MaterialPanel(QWidget):
         super().__init__(parent)
         self.library,self.job=library,None
         layout=QVBoxLayout(self)
-        note=QLabel('支持旧版角色包及15动作完整互动包。导入在本机校验；点击、任务和休闲动作可分别预览。')
+        note=QLabel('选择角色和动作预览，确认后启用。支持导入本地角色包。')
         note.setWordWrap(True);layout.addWidget(note)
         self.choices=QComboBox();layout.addWidget(self.choices)
         self.description=QLabel();self.description.setTextFormat(Qt.TextFormat.PlainText);self.description.setWordWrap(True);layout.addWidget(self.description)
-        self.preview=QLabel('内置16段动作无需下载');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(130);layout.addWidget(self.preview)
+        self.preview=QLabel('角色预览');self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter);self.preview.setFixedHeight(150);layout.addWidget(self.preview)
         self.player=AnimationPlayer(self);self.player.changed.connect(self.update_preview)
         self.preview_pack=None
         self.action_choice=QComboBox()
         labels=('待机','思考','玩电脑 / 执行','等待回复','等待确认','完成','失败','点击 · 招手','点击 · 比心',
                 '点击 · 害羞','点击 · 惊讶','休闲 · 吃零食','休闲 · 玩手机','休闲 · 伸懒腰','休闲 · 听音乐')
         for action,label in zip(ALL_ACTIONS,labels):self.action_choice.addItem(label,action)
-        self.action_choice.addItem('待机挠头（可选）','idle_scratch')
+        for action,label in (('idle_scratch','待机 · 挠头'),('idle_sleep','待机 · 睡觉'),('idle_bow','待机 · 鞠躬')):self.action_choice.addItem(label,action)
         self.action_choice.currentIndexChanged.connect(self.preview_action)
         layout.addWidget(self.action_choice)
         self.choices.currentIndexChanged.connect(self.preview_selected)
         row=QHBoxLayout()
-        self.activate=QPushButton('启用所选角色');self.activate.clicked.connect(lambda:self.activate_requested.emit(self.choices.currentData() or 'builtin'));row.addWidget(self.activate)
-        self.remove=QPushButton('删除所选素材');self.remove.clicked.connect(lambda:self.remove_requested.emit(self.choices.currentData()));row.addWidget(self.remove)
-        card=QPushButton('仅显示卡片');card.clicked.connect(self.card_only_requested);row.addWidget(card);layout.addLayout(row)
-        row=QHBoxLayout()
-        self.import_zip=QPushButton('导入 ZIP');self.import_zip.clicked.connect(self.choose_zip);row.addWidget(self.import_zip)
-        self.import_folder=QPushButton('导入文件夹');self.import_folder.clicked.connect(self.choose_folder);row.addWidget(self.import_folder)
-        self.template=QPushButton('导出当前内置套装');self.template.clicked.connect(self.export_template);row.addWidget(self.template);layout.addLayout(row)
+        self.activate=QPushButton('启用角色');self.activate.setProperty('primary',True);self.activate.clicked.connect(lambda:self.activate_requested.emit(self.choices.currentData() or 'builtin'));row.addWidget(self.activate)
+        self.remove=QPushButton('删除副本');self.remove.clicked.connect(lambda:self.remove_requested.emit(self.choices.currentData()));row.addWidget(self.remove)
+        layout.addLayout(row)
+        row=QGridLayout()
+        self.import_zip=QPushButton('导入 ZIP');self.import_zip.clicked.connect(self.choose_zip);row.addWidget(self.import_zip,0,0)
+        self.import_folder=QPushButton('导入文件夹');self.import_folder.clicked.connect(self.choose_folder);row.addWidget(self.import_folder,0,1)
+        self.template=QPushButton('导出当前内置套装');self.template.clicked.connect(self.export_template);row.addWidget(self.template,1,0,1,2);layout.addLayout(row)
         self.status=QLabel('本地导入不上传文件；分享角色可直接分享素材 ZIP。');self.status.setWordWrap(True);layout.addWidget(self.status)
         layout.addStretch()
         self.reload()
@@ -73,7 +73,8 @@ class MaterialPanel(QWidget):
                 self.action_choice.model().item(index).setEnabled(action in pack.actions)
                 if self.action_choice.currentData()==action and action not in pack.actions:self.action_choice.setCurrentIndex(0)
             coverage='完整互动 · 15/15动作' if pack.schema>=2 else f'兼容包 · {len(pack.actions)}/15动作，缺项由内置道具与近似表情补充'
-            if 'idle_scratch' in pack.actions:coverage+=' + 待机挠头'
+            if pack.schema>=2:coverage=f'{len(pack.actions)} 个动作 · 离线可用'
+            if pack.key=='builtin-dragon-maid':coverage+='\n工作复用思考 · 基础待机为盘腿坐'
             license_label='用户提供（其他用途需另行授权）' if pack.license=='LicenseRef-User-Provided' else pack.license
             self.description.setText(f'作者：{pack.author}  /  许可：{license_label}\n{coverage}')
             self.preview_action();self.player.set_visible(self.isVisible())

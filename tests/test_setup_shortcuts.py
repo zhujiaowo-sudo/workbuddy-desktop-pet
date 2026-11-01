@@ -25,7 +25,7 @@ def test_websites_and_registration_paths():
     assert path_from_registration('other.exe') is None
 
 
-def test_manual_capsule_hides_and_expansion_restores_avatar(tmp_path,qt_app):
+def test_manual_capsule_hides_and_dashboard_preserves_display_mode(tmp_path,qt_app):
     from workbuddy_pet.app import Controller
     controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
     controller.demo_timer.stop()
@@ -33,6 +33,8 @@ def test_manual_capsule_hides_and_expansion_restores_avatar(tmp_path,qt_app):
         controller.open_page('capsule')
         assert controller.bubble.compact and not controller.pet.isVisible() and not controller.player.visible
         controller.bubble.open_summary(manual=True)
+        assert not controller.pet.isVisible()
+        controller.set_display_mode(False)
         assert controller.pet.isVisible() and not controller.settings.card_only
         assert any(a.text()=='退出桌宠' for a in controller.pet.context_menu.actions())
         controller.apply_settings(replace(controller.settings,card_only=True))

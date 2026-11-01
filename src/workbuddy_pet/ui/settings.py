@@ -1,3 +1,4 @@
+from .theme import STYLE
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -11,6 +12,7 @@ from ..settings import Settings
 
 class SettingsDialog(QDialog):
     saved = Signal(object)
+    changed = Signal()
     install_requested = Signal()
     uninstall_requested = Signal()
     reset_requested = Signal()
@@ -25,10 +27,10 @@ class SettingsDialog(QDialog):
         self.settings = settings
         self.setWindowTitle("WorkBuddy 桌宠设置")
         if not embedded:self.resize(490,500)
-        self.setStyleSheet("QDialog{background:#fbfeff;} QLabel{color:#36516b;font-size:11px;} QCheckBox{font-size:11px;} QPushButton{padding:5px 7px;border-radius:7px;background:#e4f1fb;color:#246b9e;font-size:11px;} QLineEdit,QSpinBox,QTextEdit{padding:5px;border:1px solid #d4e2ed;border-radius:6px;background:white;font-size:11px;}")
+        self.setStyleSheet(STYLE)
         layout = QVBoxLayout(self)
         if embedded:layout.setContentsMargins(4,6,4,4)
-        heading = QLabel("小搭子的设置")
+        heading = QLabel("偏好设置")
         heading.setStyleSheet("font-size:17px;font-weight:600;padding:4px 0;")
         layout.addWidget(heading)
         form = QFormLayout()
@@ -54,7 +56,11 @@ class SettingsDialog(QDialog):
         form.addRow("自动启动", self.startup)
         self.card_only = QCheckBox('仅显示卡片，隐藏人物')
         self.card_only.setChecked(settings.card_only)
-        form.addRow('人物显示', self.card_only)
+        self.card_only.hide()
+        self.display_mode=QComboBox()
+        for label,key in (('桌宠＋胶囊','standard'),('桌宠＋积分','minimal'),('仅胶囊','detached')):self.display_mode.addItem(label,key)
+        self.sync_display(settings)
+        form.addRow('显示方式',self.display_mode)
         self.auto_collapse = QCheckBox('闲置时自动缩成胶囊')
         self.auto_collapse.setChecked(settings.auto_collapse)
         form.addRow('自动收起', self.auto_collapse)
@@ -102,11 +108,25 @@ class SettingsDialog(QDialog):
         self.report.setReadOnly(True)
         self.report.setMaximumHeight(160)
         self.set_diagnostic(diagnostic)
-        layout.addWidget(self.report)
+        diagnostic=QPushButton('连接诊断 ▸');diagnostic.setCheckable(True)
+        diagnostic.toggled.connect(self.report.setVisible);layout.addWidget(diagnostic)
+        layout.addWidget(self.report);self.report.hide()
         save = QPushButton("保存设置")
-        save.setStyleSheet("background:#388fd1;color:white;font-weight:600;padding:11px;")
+        save.setStyleSheet("background:#666666;color:white;font-weight:600;padding:11px;")
         save.clicked.connect(self.save)
-        layout.addWidget(save)
+        save.setProperty('primary',True)
+        save.setStyleSheet('')
+        if embedded:save.hide()
+        else:layout.insertWidget(1,save)
+        for signal in (self.path.textEdited,self.size.valueChanged,self.notify.toggled,self.startup.toggled,
+                       self.display_mode.currentIndexChanged,self.auto_collapse.toggled,self.collapse_seconds.valueChanged,
+                       self.balance_enabled.toggled,self.checkin_enabled.toggled,self.quick_action.currentIndexChanged,
+                       self.quick_url.textEdited,self.auto_update.toggled):signal.connect(self.changed)
+
+
+    def sync_display(self,settings):
+        mode='detached' if settings.card_only or settings.avatar_collapsed else 'minimal' if settings.minimal else 'standard'
+        self.display_mode.setCurrentIndex(self.display_mode.findData(mode))
 
     def choose_path(self):
         name, _ = QFileDialog.getOpenFileName(self, "选择 WorkBuddy", self.path.text(), "WorkBuddy (WorkBuddy.exe)")
@@ -116,7 +136,8 @@ class SettingsDialog(QDialog):
     def save(self):
         self.saved.emit(replace(self.settings, workbuddy_path=self.path.text().strip(), size=self.size.value(),
                                 notifications=self.notify.isChecked(), startup=self.startup.isChecked(),
-                                card_only=self.card_only.isChecked(), auto_collapse=self.auto_collapse.isChecked(),
+                                card_only=self.display_mode.currentData()=='detached',avatar_collapsed=False,
+                                minimal=self.display_mode.currentData()=='minimal',auto_collapse=self.auto_collapse.isChecked(),
                                 collapse_seconds=self.collapse_seconds.value(),balance_enabled=self.balance_enabled.isChecked(),
                                 checkin_enabled=self.checkin_enabled.isChecked(),quick_action=self.quick_action.currentData(),
                                 quick_url=self.quick_url.text().strip(),auto_update=self.auto_update.isChecked()))

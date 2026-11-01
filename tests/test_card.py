@@ -84,7 +84,7 @@ def test_collapse_reanchors_above_pet_without_moving_it(tmp_path,qt_app,monkeypa
         controller.bubble.set_compact(False);qt_app.processEvents()
         assert controller.pet.pos()==position
         assert controller.bubble.mode=='summary'
-        assert controller.bubble.width()==320 and controller.bubble.height()==202
+        assert controller.bubble.width()==380 and 320<=controller.bubble.height()<=540
     controller.shutdown()
 
 
@@ -93,7 +93,7 @@ def test_context_menu_selects_page_before_expansion(tmp_path,qt_app,monkeypatch)
     from PySide6.QtGui import QContextMenuEvent
     from workbuddy_pet.app import Controller
     controller=Controller(qt_app,tmp_path,True,workbuddy_home=tmp_path/'absent')
-    chat_calls=[];monkeypatch.setattr(controller,'open_current_conversation',lambda:chat_calls.append('open'))
+    chat_calls=[];monkeypatch.setattr(controller,'open_workbuddy',lambda:chat_calls.append('open'))
     controller.demo_timer.stop();controller.bubble.set_compact(True)
     event=QContextMenuEvent(QContextMenuEvent.Reason.Mouse,QPoint(20,20),controller.pet.mapToGlobal(QPoint(20,20)))
     qt_app.sendEvent(controller.pet,event)
@@ -105,7 +105,7 @@ def test_context_menu_selects_page_before_expansion(tmp_path,qt_app,monkeypatch)
         key=action.data()
         if key=='capsule':assert controller.bubble.compact
         elif key=='summary':assert controller.bubble.mode=='summary'
-        elif key=='chat':
+        elif key=='open':
             assert chat_calls==['open'] and (controller.bubble.mode,controller.bubble.tabs.currentIndex())==previous
         else:
             assert not controller.bubble.compact
@@ -127,8 +127,8 @@ def test_navigation_never_overlaps_divider_and_content(qt_app):
             content_top=card.tabs.pages.mapTo(card,QPoint()).y()
             assert tab_top>=divider_bottom+5
             assert content_top>=tab_top+card.tabs.bar.height()+5
-            assert card.collapse_button.mapTo(card.summary,QPoint()).y()<35
-            assert card.collapse_button.mapTo(card,QPoint()).x()>card.width()/2
+            assert card.back_button.mapTo(card,QPoint()).y()<35
+            assert card.back_button.mapTo(card,QPoint()).x()>card.width()/2
             image=card.grab().toImage()
             assert image.pixelColor(2,card.height()//2).alpha()==255
     card.close()
@@ -183,19 +183,19 @@ def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
     gap=card.capsule.geometry().right()+3
     assert image.pixelColor(round(gap*ratio),round(16*ratio)).alpha()==0
     QTest.mouseClick(card.capsule,Qt.MouseButton.LeftButton);qt_app.processEvents()
-    assert card.mode=='summary' and not card.expanded.isVisible()
+    assert card.mode=='expanded' and card.expanded.isVisible() and card.tabs.currentIndex()==0
     assert card.remaining_value.text()=='123' and card.today_value.text()=='3.500'
     assert card.session_link.isVisible() and card.session_link.toolTip()=='测试会话'
-    QTest.mouseClick(card.data_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
+    card.tabs.setCurrentIndex(1);qt_app.processEvents()
     assert card.mode=='expanded' and card.tabs.currentIndex()==1
-    assert card.summary.isVisible() and card.expanded.isVisible()
+    assert not card.summary.isVisible() and card.expanded.isVisible()
     QTest.mouseClick(card.back_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
-    assert card.mode=='summary'
+    assert card.mode=='capsule'
     controller.open_page('settings');qt_app.processEvents()
     assert card.mode=='expanded' and card.tabs.currentIndex()==3
     controller.open_card();qt_app.processEvents()
-    assert card.mode=='summary'
-    QTest.mouseClick(card.collapse_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
+    assert card.mode=='expanded' and card.tabs.currentIndex()==0
+    QTest.mouseClick(card.back_button,Qt.MouseButton.LeftButton);qt_app.processEvents()
     assert card.mode=='capsule'
     controller.shutdown()
 

@@ -776,6 +776,38 @@
                   "const": false
                 }
               }
+            },
+            "idle_sleep": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/idle_sleep\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
+            },
+            "idle_bow": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/idle_bow\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
             }
           }
         },
