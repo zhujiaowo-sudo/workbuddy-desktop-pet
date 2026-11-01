@@ -1,19 +1,20 @@
-from .theme import STYLE
+from .theme import STYLE,palette_for,style_for,tint_css
 """Compact opaque card with separate navigation and content surfaces."""
 import math
+import re
 import time
 from PySide6.QtCore import Qt,QEvent,Signal,QRectF,QSize,QPropertyAnimation,QEasingCurve
 from PySide6.QtGui import QColor,QPainter,QPen,QFontMetrics
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTabBar,
     QStackedWidget,QScrollArea,QComboBox,QTableWidget,QTableWidgetItem,QHeaderView,
-    QAbstractItemView,QLineEdit,QTextEdit,QApplication,QFrame)
+    QAbstractItemView,QLineEdit,QTextEdit,QApplication,QFrame,QGraphicsDropShadowEffect)
 
 from ..state import DisplayState
 from .pet import LABELS,SUBTITLES,mascot_icon
 from .icons import action_button,action_icon
 
 PAGE_KEYS=('details','data','materials','settings')
-MODE_SIZES={'capsule':(342,36),'summary':(380,540),'expanded':(380,540)}
+MODE_SIZES={'capsule':(342,36),'summary':(380,540),'expanded':(380,540),'window':(304,238)}
 
 
 class PageTabs(QWidget):
@@ -79,6 +80,7 @@ class CardWindow(QWidget):
         self.pointer_open=False
         self.panel_fade=QPropertyAnimation(self,b'windowOpacity',self)
         self.panel_fade.setDuration(160);self.panel_fade.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.window_mode=False;self.theme_key='gray';self.capsule_transparent=False
         self.minimal=False;self.mode='summary';self.compact=False;self.demo=demo;self.display=DisplayState()
         self.last_interaction=time.monotonic();self.drag_origin=None;self.pressed=None;self.child_drag=None
         self.local_sessions={};self.current_session=None;self.balance=None
@@ -102,6 +104,12 @@ class CardWindow(QWidget):
         self.balance_badge.setStyleSheet('background:#f5f5f5;border-radius:18px;color:#666666;font-size:11px;font-weight:700;padding:3px;')
         self.balance_badge.clicked.connect(self.balance_requested)
         compact.addWidget(self.signin_button);compact.addWidget(self.capsule);compact.addWidget(self.balance_badge);self.root_layout.addWidget(self.compact_bar)
+        from .compact import CompactPanel
+        self.window_panel=CompactPanel(self)
+        self.window_panel.capsule_button.clicked.connect(lambda:self.page_requested.emit('presentation:capsule'))
+        self.window_panel.expand_button.clicked.connect(lambda:self.open_page('details'))
+        self.window_panel.session.clicked.connect(lambda:self.conversation_requested.emit(self.current_session) if self.current_session else self.open_requested.emit())
+        self.root_layout.addWidget(self.window_panel)
         self.full=QWidget();full=QVBoxLayout(self.full);full.setContentsMargins(0,0,0,0);full.setSpacing(8)
         self.expanded=QWidget();expanded=QVBoxLayout(self.expanded);expanded.setContentsMargins(12,8,12,10);expanded.setSpacing(6)
         row=QHBoxLayout();self.page_title=QLabel('WorkBuddy');self.page_title.setStyleSheet('font-size:14px;font-weight:600;')
@@ -164,9 +172,9 @@ class CardWindow(QWidget):
         self.data_refresh=refresh=QPushButton('刷新');refresh.clicked.connect(lambda:self.data_requested.emit(self.range.currentData()));row.addWidget(refresh)
         stats.addLayout(row);self.data_status=QLabel('');stats.addWidget(self.data_status)
         self.range.currentIndexChanged.connect(lambda:self.data_requested.emit(self.range.currentData()))
-        self.total=QLabel('正在读取本机统计…');self.total.setStyleSheet('font-size:16px;font-weight:600;');stats.addWidget(self.total)
+        self.total=QLabel('正在读取本机统计…');self.total.setStyleSheet('font-size:16px;font-weight:800;');stats.addWidget(self.total)
         self.scope=QLabel();self.scope.setWordWrap(True);stats.addWidget(self.scope)
-        self.balance_label=QLabel();self.balance_label.setWordWrap(True);stats.addWidget(self.balance_label)
+        self.balance_label=QLabel();self.balance_label.setWordWrap(True);self.balance_label.setStyleSheet('font-weight:700;');stats.addWidget(self.balance_label)
         self.table=QTableWidget(0,3);self.table.setHorizontalHeaderLabels(['模型','请求','积分'])
         self.table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
         self.table.setColumnWidth(1,54);self.table.setColumnWidth(2,88);self.table.setMinimumHeight(110);self.table.setMaximumHeight(180)
@@ -178,7 +186,7 @@ class CardWindow(QWidget):
             'QHeaderView::section{background:#ffffff;padding:5px;border:0;color:#666666;}');stats.addWidget(self.table)
         self.missing=QLabel();self.missing.setWordWrap(True);self.missing.setStyleSheet('font-size:11px;color:#808080;');stats.addWidget(self.missing);stats.addStretch(1)
         self.tabs.addTab(self.stats,'用量')
-        self.set_balance(None);self.set_display(DisplayState());self.set_compact(False);self.observe_activity()
+        self.set_balance(None);self.set_display(DisplayState());self.set_compact(False);self.observe_activity();self.apply_appearance('gray',False)
 
     @staticmethod
     def add_metric(row,heading,value,note):
@@ -186,7 +194,7 @@ class CardWindow(QWidget):
         frame.setStyleSheet('QWidget#metric{background:transparent;border:0;}')
         layout=QVBoxLayout(frame);layout.setContentsMargins(10,6,10,6);layout.setSpacing(0)
         caption=QLabel(heading);caption.setStyleSheet('font-size:11px;color:#666666;')
-        number=QLabel(value);number.setStyleSheet('font-size:21px;font-weight:600;color:#202020;')
+        number=QLabel(value);number.setStyleSheet('font-size:21px;font-weight:800;color:#202020;')
         number.setMinimumWidth(0)
         foot=QLabel(note);foot.setStyleSheet('font-size:11px;color:#808080;')
         layout.addWidget(caption);layout.addWidget(number);layout.addWidget(foot);row.addWidget(frame,1)
@@ -209,7 +217,7 @@ class CardWindow(QWidget):
         if watched is self.capsule and event.type()==QEvent.Type.MouseButtonRelease:
             self.pointer_open=event.button()==Qt.MouseButton.LeftButton
 
-        if self.compact and event.type()==QEvent.Type.ContextMenu and watched in (self,self.compact_bar,self.capsule,self.balance_badge,self.signin_button):
+        if self.compact and event.type()==QEvent.Type.ContextMenu and (watched in (self,self.compact_bar,self.capsule,self.balance_badge,self.signin_button,self.window_panel) or self.window_panel.isAncestorOf(watched)):
             self.child_drag=None;self.pressed=None
             self.context_menu.popup(event.globalPos());event.accept();return True
         if event.type() in (QEvent.Type.MouseButtonPress,QEvent.Type.KeyPress,QEvent.Type.Wheel):self.last_interaction=time.monotonic()
@@ -255,25 +263,52 @@ class CardWindow(QWidget):
 
     def open_summary(self,checked=False,*,manual=False):self.set_mode('summary',manual=manual)
 
-    def set_compact(self,value,manual=False):self.set_mode('capsule' if value else 'summary',manual=manual)
+    def set_compact(self,value,manual=False):self.set_mode('window' if self.window_mode else 'capsule' if value else 'summary',manual=manual)
 
     def set_mode(self,mode,manual=False):
-        if mode not in ('capsule','summary','expanded'):return
+        if mode not in MODE_SIZES:return
         self.panel_fade.stop();self.setWindowOpacity(1.0)
-        self.mode=mode;self.compact=mode=='capsule'
+        self.mode=mode;self.compact=mode in ('capsule','window')
         self.signin_button.setVisible(not self.minimal);self.capsule.setVisible(not self.minimal)
         self.balance_badge.setFixedHeight(48 if self.minimal else 36)
-        self.balance_badge.setStyleSheet('background:white;border:1px solid rgba(0,0,0,24);border-radius:%dpx;color:#666666;font-size:11px;font-weight:700;padding:0px;'%(24 if self.minimal else 18))
-        self.resize_balance_badge()
-        self.full.setVisible(not self.compact);self.compact_bar.setVisible(self.compact)
-        self.expanded.setVisible(not self.compact)
+        self.style_capsule();self.resize_balance_badge()
+        self.full.setVisible(not self.compact);self.compact_bar.setVisible(mode=='capsule')
+        self.window_panel.setVisible(mode=='window');self.expanded.setVisible(not self.compact)
         if mode=='summary':self.tabs.setCurrentIndex(0)
-        self.setFixedSize(self.capsule_width(),48 if self.minimal else 36) if self.compact else self.setFixedSize(*MODE_SIZES[mode])
-        self.root_layout.activate()
-        self.update_session_link();self.last_interaction=time.monotonic()
+        if mode=='capsule':self.setFixedSize(self.capsule_width(),48 if self.minimal else 36)
+        else:self.setFixedSize(*MODE_SIZES[mode])
+        self.root_layout.activate();self.update_session_link();self.last_interaction=time.monotonic()
         if manual:self.compact_changed.emit(self.compact)
-        self.resized.emit()
-        self.update()
+        self.resized.emit();self.update()
+
+    def apply_appearance(self,key,transparent):
+        self.theme_key=key if key in ('gray','blue','red') else 'gray'
+        self.capsule_transparent=bool(transparent);self.setStyleSheet(style_for(self.theme_key))
+        special=(self.capsule,self.signin_button,self.balance_badge,self.window_panel)
+        for widget in self.findChildren(QWidget):
+            if widget in special or self.window_panel.isAncestorOf(widget):continue
+            css=getattr(widget,'_neutral_css',None)
+            if css is None:css=widget.styleSheet();widget._neutral_css=css
+            if css:widget.setStyleSheet(tint_css(css,self.theme_key))
+        p=palette_for(self.theme_key)
+        self.tabs.bar.setStyleSheet(tint_css(self.tabs.bar._neutral_css,self.theme_key).replace('color:#202020',f'color:{p.accent}'))
+        self.page_title.setStyleSheet(f'font-size:14px;font-weight:600;color:{p.accent};')
+        for frame in self.findChildren(QWidget,'metric'):
+            frame.setStyleSheet(f'QWidget#metric{{background:{p.soft};border:0;border-radius:8px;}}')
+        self.window_panel.apply_theme(self.theme_key);self.style_capsule();self.resize_balance_badge();self.update()
+
+    def style_capsule(self):
+        p=palette_for(self.theme_key);clear=self.capsule_transparent and not self.minimal
+        # Alpha 1 retains native layered-window hit testing while looking transparent.
+        bg='rgba(255,255,255,0.004)' if clear else p.background
+        border='transparent' if clear else p.border
+        for button,radius,size,weight in ((self.signin_button,18,12,600),(self.capsule,18,12,600),(self.balance_badge,24 if self.minimal else 18,13,800)):
+            padding='7px' if button is self.signin_button else '0px'
+            button.setStyleSheet(f'QPushButton{{background:{bg};border:1px solid {border};border-radius:{radius}px;color:{p.accent};font-size:{size}px;font-weight:{weight};padding:{padding};}} QPushButton:hover{{background:{p.soft};}} QPushButton:focus{{border-color:{p.accent};}}')
+            effect=button.graphicsEffect()
+            if clear and effect is None:
+                effect=QGraphicsDropShadowEffect(button);effect.setBlurRadius(3);effect.setOffset(0,0);effect.setColor(QColor(255,255,255,230));button.setGraphicsEffect(effect)
+            if effect:effect.setEnabled(clear)
 
     def fit_height(self,maximum):
         if self.compact:return
@@ -323,12 +358,13 @@ class CardWindow(QWidget):
         if self.minimal:
             self.balance_badge.setText(str(math.floor(self.balance)) if self.balance is not None else '—')
         width=48 if self.minimal else max(42,self.balance_badge.fontMetrics().horizontalAdvance(self.balance_badge.text())+22)
-        font=self.balance_badge.font();font.setPixelSize(11)
+        font=self.balance_badge.font();font.setPixelSize(13);font.setBold(True)
         while self.minimal and font.pixelSize()>7 and QFontMetrics(font).horizontalAdvance(self.balance_badge.text())>42:
             font.setPixelSize(font.pixelSize()-1)
         self.balance_badge.setFont(font)
+        self.balance_badge.setStyleSheet(re.sub(r'font-size:\d+px',f'font-size:{font.pixelSize()}px',self.balance_badge.styleSheet()))
         self.balance_badge.setFixedWidth(width)
-        if self.compact:
+        if self.mode=='capsule':
             self.setFixedSize(self.capsule_width(),48 if self.minimal else 36);self.root_layout.activate();self.resized.emit()
 
     def maybe_collapse(self,settings,now=None):
@@ -358,6 +394,7 @@ class CardWindow(QWidget):
         shown=self.interaction_text if interacting else text
         self.capsule.setText(self.capsule.fontMetrics().elidedText(shown,Qt.TextElideMode.ElideRight,186))
         self.capsule.setToolTip((shown+'\n当前任务：' if interacting else '')+text+'\n点击打开数据看板')
+        self.window_panel.set_context(name,self.interaction_text if interacting else self.title.text(),self.display.reminders,self.title.toolTip())
         self.subtitle.setVisible(interacting)
         if interacting:self.subtitle.setText(self.subtitle.fontMetrics().elidedText(self.interaction_text,Qt.TextElideMode.ElideRight,self.width()-28))
 
@@ -371,9 +408,11 @@ class CardWindow(QWidget):
         self.remaining_value.setText(text)
         self.remaining_value.setToolTip(self.balance_badge.toolTip())
         self.remaining_note.setToolTip(source_note)
+        self.window_panel.set_balance(self.balance,self.balance_badge.toolTip())
 
     def set_snapshot(self,snapshot,active_ids=()):
         self.set_data_busy(False)
+        self.window_panel.set_snapshot(snapshot)
         if not snapshot.available:self.data_status.setText('更新失败 · 可重新刷新')
         self.local_sessions={s.id:s for s in snapshot.sessions};self.update_session_link()
         self.total.setText(f'{snapshot.total_credit:,.3f} 积分 · {snapshot.request_count} 次请求' if snapshot.available else '统计暂不可用')
@@ -389,6 +428,8 @@ class CardWindow(QWidget):
             for col,text in enumerate((model.model,str(model.requests),f'{model.credit:.3f}')):
                 item=QTableWidgetItem(text);item.setToolTip(text)
                 item.setTextAlignment((Qt.AlignmentFlag.AlignRight if col else Qt.AlignmentFlag.AlignLeft)|Qt.AlignmentFlag.AlignVCenter)
+                if col==2:
+                    font=item.font();font.setBold(True);item.setFont(font)
                 self.table.setItem(row,col,item)
         while self.sessions_layout.count():
             item=self.sessions_layout.takeAt(0)
@@ -407,12 +448,13 @@ class CardWindow(QWidget):
     def paintEvent(self,event):
         painter=QPainter(self);painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
         painter.fillRect(self.rect(),Qt.GlobalColor.transparent);painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QPen(QColor('#f5f5f5'),1));painter.setBrush(QColor('#ffffff'))
-        if not self.compact:
-            for surface in (self.expanded,):
+        colors=palette_for(self.theme_key)
+        painter.setPen(QPen(QColor(colors.border),1));painter.setBrush(QColor(colors.background))
+        if self.mode!='capsule':
+            for surface in (self.window_panel if self.mode=='window' else self.expanded,):
                 if surface.isHidden():continue
                 rect=QRectF(surface.geometry()).adjusted(.5,.5,-.5,-.5)
-                painter.drawRoundedRect(rect,10,10)
+                painter.drawRoundedRect(rect,15 if self.mode=='window' else 10,15 if self.mode=='window' else 10)
         painter.end()
 
     def mousePressEvent(self,event):
@@ -426,7 +468,7 @@ class CardWindow(QWidget):
     def mouseReleaseEvent(self,event):
         if self.pressed is not None:
             delta=event.globalPosition().toPoint()-self.pressed
-            if delta.manhattanLength()<=6 and self.compact:self.open_page('details')
+            if delta.manhattanLength()<=6 and self.mode=='capsule':self.open_page('details')
             self.pressed=None
 
     def resizeEvent(self,event):super().resizeEvent(event);self.resized.emit()

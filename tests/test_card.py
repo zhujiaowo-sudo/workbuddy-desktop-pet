@@ -178,7 +178,7 @@ def test_three_levels_and_numeric_credit_without_capsule_frame(tmp_path,qt_app):
     # Transparent rounded corners and the gap between the only two modules.
     assert image.pixelColor(0,0).alpha()==0
     assert image.pixelColor(round((card.signin_button.geometry().right()+3)*ratio),round(18*ratio)).alpha()==0
-    assert card.capsule.font().pixelSize()==12 and card.balance_badge.font().pixelSize()==11
+    assert card.capsule.font().pixelSize()==12 and card.balance_badge.font().pixelSize()==13
     assert card.balance_badge.font().bold() and card.signin_button.size().toTuple()==(36,36)
     gap=card.capsule.geometry().right()+3
     assert image.pixelColor(round(gap*ratio),round(16*ratio)).alpha()==0

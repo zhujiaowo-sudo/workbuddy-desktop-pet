@@ -161,6 +161,7 @@ class Controller(QObject):
         self.tray = PetTray(self, self.toggle_visible, self.open_settings, app.quit)
         self.tray.messageClicked.connect(self.open_workbuddy)
         self.bubble.minimal=self.settings.minimal and not (self.avatar_collapsed or self.settings.card_only)
+        self.bubble.window_mode=self.settings.window_mode
         self.bubble.set_compact(self.settings.compact)
         self._card_placed=False  # First placement uses saved pet/card coordinates, not the hidden widget's origin.
         self.reset_position(self.settings.position)
@@ -191,6 +192,7 @@ class Controller(QObject):
         app.aboutToQuit.connect(self.shutdown)
         from .ui.updates import UpdateManager
         self.updates=UpdateManager(self)
+        self.apply_appearance()
         self.dialog.update_requested.connect(lambda:self.updates.check(manual=True))
         if not demo:QTimer.singleShot(1000,self.first_binding)
         self.refresh()
@@ -318,19 +320,59 @@ class Controller(QObject):
             action.triggered.connect(lambda checked=False,key=pack.key:self.activate_character(key))
         submenu.addSeparator();submenu.addAction('管理素材…',lambda:self.open_page('materials'))
         for key,action in menu.mode_actions.items():
-            selected='detached' if self.avatar_collapsed or self.settings.card_only else 'minimal' if self.settings.minimal else 'standard'
+            from .settings import display_mode
+            selected=display_mode(self.settings)
             action.setChecked(key==selected)
+        for key,action in menu.theme_actions.items():action.setChecked(key==self.settings.theme)
+        menu.transparent_action.setChecked(self.settings.capsule_transparent)
+
+    def apply_appearance(self):
+        from .ui.theme import menu_style,style_for
+        self.bubble.apply_appearance(self.settings.theme,self.settings.capsule_transparent)
+        self.dialog.setStyleSheet(style_for(self.settings.theme))
+        for menu in (self.pet.context_menu,self.bubble.context_menu,self.tray.menu):
+            menu.setStyleSheet(menu_style(self.settings.theme))
+        if getattr(self,'updates',None):self.updates.dialog.setStyleSheet(style_for(self.settings.theme))
+        if getattr(self,'binding',None):self.binding.setStyleSheet(style_for(self.settings.theme))
+
+    def set_appearance(self,*,theme=None,transparent=None):
+        self.settings=replace(self.settings,theme=theme if theme in ('gray','blue','red') else self.settings.theme,
+                              capsule_transparent=self.settings.capsule_transparent if transparent is None else bool(transparent))
+        self.apply_appearance();self.dialog.settings=self.settings
+        self.dialog.theme_combo.setCurrentIndex(self.dialog.theme_combo.findData(self.settings.theme))
+        self.dialog.transparent.setChecked(self.settings.capsule_transparent)
+        save_settings(self.root,self.settings)
+
+    def set_window_mode(self,hidden=False):
+        if hidden:self.collapse_avatar()
+        else:self.restore_avatar(exit_card_only=True)
+        self.settings=replace(self.settings,window_mode=True,minimal=False,compact=True)
+        self.bubble.window_mode=True;self.bubble.minimal=False;self.bubble.set_mode('window')
+        self.dialog.settings=self.settings;self.dialog.sync_display(self.settings)
+        save_settings(self.root,self.settings);self.bubble.show();self.position_bubble();self.refresh()
+
+    def switch_to_capsule(self):
+        self.settings=replace(self.settings,window_mode=False,minimal=False,compact=True)
+        self.bubble.window_mode=False;self.bubble.minimal=False;self.bubble.set_compact(True,manual=True)
+        self.dialog.settings=self.settings;self.dialog.sync_display(self.settings);save_settings(self.root,self.settings)
+        self.position_bubble();self.refresh()
 
     def set_display_mode(self,minimal):
+        self.bubble.window_mode=False
         self.restore_avatar(exit_card_only=True)
-        self.settings=replace(self.settings,minimal=minimal,compact=True)
+        self.settings=replace(self.settings,minimal=minimal,compact=True,window_mode=False)
         self.bubble.minimal=minimal;self.bubble.set_compact(True)
         self.dialog.settings=self.settings;self.dialog.sync_display(self.settings)
         save_settings(self.root,self.settings);self.bubble.show();self.position_bubble()
 
     def open_page(self,key):
+        if key.startswith('theme:'):self.set_appearance(theme=key.split(':',1)[1]);return
+        if key.startswith('transparent:'):self.set_appearance(transparent=key.endswith(':1'));return
+        if key=='presentation:capsule':self.switch_to_capsule();return
+        if key in ('mode:window','mode:window_only'):self.set_window_mode(key=='mode:window_only');return
         if key=='open':self.open_workbuddy();return
         if key=='mode:detached':
+            self.settings=replace(self.settings,window_mode=False);self.bubble.window_mode=False
             self.collapse_avatar();self.dialog.sync_display(self.settings);return
         if key.startswith('mode:'):
             self.set_display_mode(key=='mode:minimal');return
@@ -607,7 +649,7 @@ class Controller(QObject):
                                        or not self.pet.isVisible()):
             self.finish_interaction(refresh=False)
         eligible=(self.pet.isVisible() and not self.settings.card_only and not self.active_interaction
-                  and self.bubble.mode in ('capsule','summary') and self.pet.press_position is None
+                  and self.bubble.mode in ('capsule','summary','window') and self.pet.press_position is None
                   and not self.pet.context_menu.isVisible() and not self.bubble.context_menu.isVisible()
                   and idle_allowed(self.sessions,display,time.time()))
         pool=tuple(a for a in LEISURE_ACTIONS+OPTIONAL_IDLE_ACTIONS if self.active_pack and a in self.active_pack.actions)
@@ -698,7 +740,10 @@ class Controller(QObject):
             self.settings = settings
             self.avatar_collapsed=settings.avatar_collapsed
             self.bubble.minimal=settings.minimal and not (settings.card_only or self.avatar_collapsed)
-            self.bubble.set_mode(self.bubble.mode)
+            self.bubble.window_mode=settings.window_mode
+            if previous.window_mode!=settings.window_mode:self.bubble.set_mode('window' if settings.window_mode else 'capsule')
+            else:self.bubble.set_mode(self.bubble.mode)
+            self.apply_appearance()
             if settings.card_only or previous.character!=settings.character:
                 self.idle_director.cancel();self.finish_interaction(refresh=False)
             self.next_balance=0
@@ -736,6 +781,8 @@ class Controller(QObject):
         from .ui.onboarding import BindingDialog
         if self.binding is None:
             self.binding=BindingDialog(self.bubble)
+            from .ui.theme import style_for
+            self.binding.setStyleSheet(style_for(self.settings.theme))
             self.binding.bind_requested.connect(self.complete_binding)
             self.binding.detect_requested.connect(self.detect_workbuddy)
         self.binding.found(self.settings.workbuddy_path)
@@ -918,7 +965,7 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
     if capture:
         def capture_view():
             if capture_page=='interaction':controller.bubble.set_compact(True);controller.interact()
-            elif capture_page in ('capsule','summary'):controller.bubble.set_mode(capture_page)
+            elif capture_page in ('capsule','summary','window'):controller.bubble.set_mode(capture_page)
             else:controller.bubble.open_page(capture_page)
             app.processEvents()
             controller.capture(capture)

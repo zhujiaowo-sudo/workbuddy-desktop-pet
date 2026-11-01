@@ -35,6 +35,9 @@ class Settings:
     auto_update: bool = True
     avatar_collapsed: bool = False
     minimal: bool = False
+    theme: str = 'gray'
+    capsule_transparent: bool = False
+    window_mode: bool = False
 
 
 def clamp_position(position: tuple[int, int], size: tuple[int, int], screens: Sequence[Rect]) -> tuple[int, int]:
@@ -80,10 +83,20 @@ def load_settings(root: Path) -> Settings:
                         value.get('quick_url') if isinstance(value.get('quick_url'),str) and len(value['quick_url'])<=2048 else '',
                         value.get('auto_update',True) is True,
                         value.get('avatar_collapsed') is True,
-                        value.get('minimal') is True)
+                        value.get('minimal') is True and value.get('window_mode') is not True,
+                        value.get('theme') if value.get('theme') in ('gray','blue','red') else 'gray',
+                        value.get('capsule_transparent') is True,value.get('window_mode') is True)
     except (OSError, ValueError, TypeError):
         return Settings()
 
 
 def save_settings(root: Path, value: Settings) -> None:
     atomic_json(root / "settings.json", asdict(value))
+
+
+DISPLAY_MODES=(('桌宠＋胶囊','standard'),('桌宠＋窗口','window'),('桌宠＋积分','minimal'),('仅胶囊','detached'),('仅窗口','window_only'))
+
+def display_mode(settings):
+    hidden=settings.card_only or settings.avatar_collapsed
+    if settings.window_mode:return 'window_only' if hidden else 'window'
+    return 'detached' if hidden else 'minimal' if settings.minimal else 'standard'

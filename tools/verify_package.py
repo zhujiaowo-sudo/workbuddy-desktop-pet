@@ -56,7 +56,7 @@ def main():
     env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
     from workbuddy_pet import __version__
     for page,mode,card_only in (('summary','summary',True),('capsule','capsule',True),('data','expanded',True),
-                               ('capsule','capsule',False),('interaction','capsule',False)):
+                               ('capsule','capsule',False),('window','window',True),('window','window',False),('interaction','capsule',False)):
         suffix=page+('-card' if card_only else '-pet')
         gui_root=root/('gui-'+suffix)
         result = subprocess.run([str(exe), "--root", str(gui_root), "--demo", "--smoke-seconds", "2",
@@ -82,7 +82,7 @@ def main():
         assert runtime['animation_loaded'] and not runtime['card_only']
         assert json.loads((character_root/'settings.json').read_text(encoding='utf-8'))['character']==character
     print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
-                      'unified_dashboard':True,'three_builtin_characters':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
+                      'unified_dashboard':True,'persistent_window':True,'three_builtin_characters':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
 
 
 if __name__ == "__main__":

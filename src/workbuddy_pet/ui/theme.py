@@ -41,3 +41,34 @@ MENU = '''QMenu { background:#ffffff; color:#262626; border:1px solid rgba(0,0,0
 QMenu::item { padding:8px 25px 8px 18px; border-radius:4px; }
 QMenu::item:selected { background:#f0f0f0; }
 QMenu::separator { height:1px; background:#ececec; margin:5px 8px; }'''
+
+
+from dataclasses import dataclass
+import re
+
+@dataclass(frozen=True)
+class Palette:
+    accent: str
+    hover: str
+    soft: str
+    border: str
+    background: str = '#ffffff'
+
+THEMES={'gray':Palette('#343c48','#4c5666','#f0f2f5','#dfe3e9'),
+        'blue':Palette('#326bc4','#2659aa','#edf4ff','#d7e5fa'),
+        'red':Palette('#b83b50','#9e3043','#fff0f2','#f1d9df')}
+THEME_NAMES=(('灰白','gray'),('白蓝','blue'),('红白','red'))
+
+def palette_for(key):return THEMES.get(key,THEMES['gray'])
+
+def tint_css(css,key):
+    p=palette_for(key)
+    soft={'#f3f3f3','#f5f5f5','#fafafa','#f7f7f7','#f0f0f0','#efefef','#ebebeb'}
+    border={'#e5e5e5','#e7e7e7','#e0e0e0','#e8e8e8','#ececec','#eeeeee','#d4d4d4'}
+    return re.sub(r'#[0-9a-fA-F]{6}',lambda m:p.soft if m[0].lower() in soft else p.border if m[0].lower() in border else m[0],css)
+
+def style_for(key):
+    p=palette_for(key)
+    return tint_css(STYLE,key).replace('background:#202020; border-color:#202020',f'background:{p.accent}; border-color:{p.accent}').replace('background:#3a3a3a',f'background:{p.hover}')
+
+def menu_style(key):return tint_css(MENU,key)

@@ -1,0 +1,50 @@
+{
+  "version": "0.7.1",
+  "automated_tests": 203,
+  "native": {
+    "1": {
+      "scale": "1",
+      "all_themes": true,
+      "two_buttons": true,
+      "window_return": true,
+      "hidden_preserved": true,
+      "transparency": true,
+      "transparent_native_hit_test": true,
+      "transparent_drag": true,
+      "bold": true
+    },
+    "1.5": {
+      "scale": "1.5",
+      "all_themes": true,
+      "two_buttons": true,
+      "window_return": true,
+      "hidden_preserved": true,
+      "transparency": true,
+      "bold": true
+    }
+  },
+  "synthetic_data_only": true,
+  "animation_assets_unchanged": true,
+  "feature_interactions": [
+    "window and capsule preserve avatar visibility",
+    "dashboard close returns selected persistent presentation",
+    "window permits random idle animations",
+    "appearance preserves character and authorization",
+    "local daily trend independent of usage filter",
+    "transparent padding remains clickable and draggable"
+  ],
+  "frozen_verification": true,
+  "release_gate": "Windows CI install, upgrade, uninstall must pass before publishing",
+  "frozen_cases": [
+    "collector",
+    "PowerShell stdin",
+    "import",
+    "capsule",
+    "persistent window with pet",
+    "persistent window without pet",
+    "dashboard",
+    "three builtin characters",
+    "docking",
+    "interaction"
+  ]
+}

@@ -1,7 +1,7 @@
 """Read-only local usage. Billing credits and context capacity are distinct."""
 from dataclasses import dataclass
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime,timedelta
 from decimal import Decimal, InvalidOperation
 import json
 import math
@@ -28,6 +28,13 @@ class ModelUsage:
 
 
 @dataclass(frozen=True)
+class DailyUsage:
+    day: str
+    credit: float
+    requests: int
+
+
+@dataclass(frozen=True)
 class UsageSnapshot:
     available: bool = False
     message: str = '尚未找到 WorkBuddy 本地数据库，请在同一 Windows 账户启动 WorkBuddy 并完成一次对话'
@@ -41,6 +48,7 @@ class UsageSnapshot:
     today_credit: float = 0
     today_requests: int = 0
     today_date: str = ''
+    daily_usage: tuple[DailyUsage, ...] = ()
 
 
 def timestamp(value):
@@ -176,6 +184,9 @@ class LocalDataReader:
         midnight = local_day.timestamp()
         today_total = Decimal(0)
         today_count = 0
+        daily={(local_day.date()-timedelta(days=offset)).isoformat():[Decimal(0),0] for offset in range(6,-1,-1)}
+        known_time=False
+        week_start=(local_day-timedelta(days=6)).timestamp()
         cutoff = current - days * 86400 if days else None
         for sid, title, custom, selected, used, size, credit_raw in rows:
             session_total = Decimal(0)
@@ -196,6 +207,11 @@ class LocalDataReader:
                 if at is not None and midnight <= at <= current:
                     today_total += cost
                     today_count += 1
+                if at is not None and at<=current:
+                    known_time=True
+                    if week_start<=at:
+                        key=datetime.fromtimestamp(at).date().isoformat()
+                        if key in daily:daily[key][0]+=cost;daily[key][1]+=1
                 if cutoff is not None and (at is None or at < cutoff):
                     continue
                 entry = totals.setdefault(model, [0, Decimal(0)])
@@ -208,4 +224,5 @@ class LocalDataReader:
         models = tuple(ModelUsage(model, n, float(cost)) for model, (n, cost) in sorted(totals.items(), key=lambda p: -p[1][1]))
         return UsageSnapshot(True, '本机记录 · 含本机账户；不代表完整账单', tuple(sessions), models,
                              float(total), count, unknown_model, unknown_time, days,
-                             float(today_total),today_count,local_day.date().isoformat())
+                             float(today_total),today_count,local_day.date().isoformat(),
+                             tuple(DailyUsage(day,float(cost),n) for day,(cost,n) in daily.items()) if known_time or not unknown_time else ())

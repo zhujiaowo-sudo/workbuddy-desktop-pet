@@ -1,4 +1,4 @@
-from .theme import STYLE
+from .theme import STYLE,THEME_NAMES
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -7,7 +7,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
                               QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout,QComboBox)
 
-from ..settings import Settings
+from ..settings import Settings,DISPLAY_MODES,display_mode
 
 
 class SettingsDialog(QDialog):
@@ -58,10 +58,15 @@ class SettingsDialog(QDialog):
         self.card_only.setChecked(settings.card_only)
         self.card_only.hide()
         self.display_mode=QComboBox()
-        for label,key in (('桌宠＋胶囊','standard'),('桌宠＋积分','minimal'),('仅胶囊','detached')):self.display_mode.addItem(label,key)
+        for label,key in DISPLAY_MODES:self.display_mode.addItem(label,key)
         self.sync_display(settings)
         form.addRow('显示方式',self.display_mode)
-        self.auto_collapse = QCheckBox('闲置时自动缩成胶囊')
+        self.theme_combo=QComboBox()
+        for label,key in THEME_NAMES:self.theme_combo.addItem(label,key)
+        self.theme_combo.setCurrentIndex(self.theme_combo.findData(settings.theme));form.addRow('看板配色',self.theme_combo)
+        self.transparent=QCheckBox('胶囊透明底');self.transparent.setChecked(settings.capsule_transparent)
+        self.transparent.setToolTip('只改变胶囊背景，窗口和大看板保持实底。');form.addRow('胶囊外观',self.transparent)
+        self.auto_collapse = QCheckBox('自动收起临时概览（窗口常驻）')
         self.auto_collapse.setChecked(settings.auto_collapse)
         form.addRow('自动收起', self.auto_collapse)
         self.collapse_seconds = QSpinBox()
@@ -121,11 +126,11 @@ class SettingsDialog(QDialog):
         for signal in (self.path.textEdited,self.size.valueChanged,self.notify.toggled,self.startup.toggled,
                        self.display_mode.currentIndexChanged,self.auto_collapse.toggled,self.collapse_seconds.valueChanged,
                        self.balance_enabled.toggled,self.checkin_enabled.toggled,self.quick_action.currentIndexChanged,
-                       self.quick_url.textEdited,self.auto_update.toggled):signal.connect(self.changed)
+                       self.quick_url.textEdited,self.auto_update.toggled,self.theme_combo.currentIndexChanged,self.transparent.toggled):signal.connect(self.changed)
 
 
     def sync_display(self,settings):
-        mode='detached' if settings.card_only or settings.avatar_collapsed else 'minimal' if settings.minimal else 'standard'
+        mode=display_mode(settings)
         self.display_mode.setCurrentIndex(self.display_mode.findData(mode))
 
     def choose_path(self):
@@ -136,7 +141,9 @@ class SettingsDialog(QDialog):
     def save(self):
         self.saved.emit(replace(self.settings, workbuddy_path=self.path.text().strip(), size=self.size.value(),
                                 notifications=self.notify.isChecked(), startup=self.startup.isChecked(),
-                                card_only=self.display_mode.currentData()=='detached',avatar_collapsed=False,
+                                card_only=self.display_mode.currentData() in ('detached','window_only'),avatar_collapsed=False,
+                                window_mode=self.display_mode.currentData() in ('window','window_only'),
+                                theme=self.theme_combo.currentData(),capsule_transparent=self.transparent.isChecked(),
                                 minimal=self.display_mode.currentData()=='minimal',auto_collapse=self.auto_collapse.isChecked(),
                                 collapse_seconds=self.collapse_seconds.value(),balance_enabled=self.balance_enabled.isChecked(),
                                 checkin_enabled=self.checkin_enabled.isChecked(),quick_action=self.quick_action.currentData(),
