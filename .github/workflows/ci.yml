@@ -22,9 +22,21 @@ jobs:
           QT_QPA_PLATFORM: offscreen
       - run: python tools/build_windows.py --work C:/wb-pet-build
       - run: python tools/verify_package.py --scratch C:/wb-pet-smoke
+      - name: Build current-user installer
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'innosetup-7.1.1-x64.exe'
+          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe' -OutFile $download
+          if ((Get-FileHash $download -Algorithm SHA256).Hash -ne '8A5A6711C3766A6E5FB74F280BA0E3551E719CE94538D901FDBD1F8F9920B3F0') { throw 'Inno Setup checksum mismatch' }
+          $compilerDir = Join-Path $env:RUNNER_TEMP 'InnoSetup7'
+          $install = Start-Process -FilePath $download -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER','/NOICONS',"/DIR=`"$compilerDir`"" -WindowStyle Hidden -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw 'Compiler installation failed' }
+          python tools/build_installer.py --compiler "$compilerDir/ISCC.exe"
+      - run: python tools/verify_installer.py --installer dist/workbuddy-desktop-pet-0.6.8-windows-x64-setup.exe --scratch C:/wb-pet-installer-smoke
       - uses: actions/upload-artifact@v4
         with:
           name: workbuddy-desktop-pet-windows-x64
           path: |
             dist/*.zip
+            dist/*-setup.exe
             dist/SHA256SUMS.txt

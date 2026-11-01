@@ -13,11 +13,24 @@ python -m venv .venv
 .venv\Scripts\python tools/build_windows.py --work C:/wb-pet-build
 ```
 
-产物为 `dist/workbuddy-desktop-pet-0.6.4-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。必须包含`update_install.ps1`；自动更新的发布顺序及恢复说明见[软件更新](updating.md)。所有附件及校验文件先上传草稿，确认 CI 后发布为正式版本（非 prerelease）并设为 latest。
+产物为 `dist/workbuddy-desktop-pet-0.6.8-windows-x64.zip` 和 `dist/SHA256SUMS.txt`。完整解压后运行目录中的 `WorkBuddyDesktopPet.exe`，不可只复制单个 exe。程序使用动态 Qt 库，必须保留 `_internal` 和随包许可文件。必须包含`update_install.ps1`；自动更新的发布顺序及恢复说明见[软件更新](updating.md)。所有附件及校验文件先上传草稿，确认 CI 后发布为正式版本（非 prerelease）并设为 latest。
 
-程序包内置薄荷星伴2.0.0完整16段用户GIF及同套待机首帧，不包含旧动画、旧模板或原生成图。`仅卡片启动.vbs`隐藏人物并停止解码；素材页可导出内置整套副本。Release只需上传完整程序ZIP、安装说明及SHA256SUMS，不再发布旧模板或两档外部默认包。
+程序包内置薄荷星伴2.0.0完整16段用户GIF及同套待机首帧，不包含旧动画、旧模板或原生成图。`仅卡片启动.vbs`隐藏人物并停止解码；素材页可导出内置整套副本。Release上传当前用户EXE安装包、完整程序ZIP、安装说明及SHA256SUMS，不再发布旧模板或两档外部默认包。
 
-## 首次连接
+## EXE 安装向导
+
+推荐下载发行页的 `windows-x64-setup.exe`：仅当前用户安装，默认 `%LOCALAPPDATA%/Programs/WorkBuddyDesktopPet`，首次在向导选择连接、积分、手动签到和可选自启。已有授权与角色选择保留，接入命令随程序位置更新。安装完成可直接启动；缺少 WorkBuddy 时请安装并登录，再从桌宠设置连接。卸载入口位于 Windows 应用列表，用户数据及旧程序回退目录保留。
+
+源码构建先完成上述便携包步骤，再安装官方 Inno Setup 7（本版使用7.1.1）：
+
+```powershell
+python tools/build_installer.py --compiler "C:/path/to/Inno Setup 7/ISCC.exe"
+python tools/verify_installer.py --installer dist/workbuddy-desktop-pet-0.6.8-windows-x64-setup.exe --scratch C:/wb-pet-installer-smoke
+```
+
+安装器验证只使用隔离的合成用户目录，拒绝覆盖已有安装器注册。编译脚本将EXE哈希加入校验清单；ZIP继续供程序内更新，更新保留卸载器文件。
+
+## 便携包首次连接
 
 1. 解压到固定位置。当前程序包未做代码签名；可核对发行页提供的SHA-256，不修改系统安全设置。
 2. 启动桌宠，右键角色或点数据小卡顶栏的齿轮打开设置。

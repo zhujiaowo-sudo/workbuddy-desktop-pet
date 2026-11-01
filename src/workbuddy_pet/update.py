@@ -154,6 +154,12 @@ def stage_package(archive,install_dir,cancel=lambda:False):
             raise UpdateError('更新包缺少 Windows 程序或运行库')
         with exe.open('rb') as stream:
             if stream.read(2)!=b'MZ':raise UpdateError('更新包程序格式无效')
+        # Inno maintenance files belong to this installation, not to the portable ZIP.
+        for name in ('unins000.exe','unins000.dat','unins000.msg'):
+            source=plain(install_dir/name)
+            if source.is_file():
+                if source.stat().st_size>32*1024*1024:raise UpdateError('卸载文件大小异常')
+                shutil.copyfile(source,stage/name)
         return stage
     except Exception:
         shutil.rmtree(work)

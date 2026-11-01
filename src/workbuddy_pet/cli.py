@@ -96,7 +96,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--smoke-seconds", type=float, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--capture", type=Path, help=argparse.SUPPRESS)
     parser.add_argument('--capture-page',choices=('summary','details','data','materials','settings','capsule','interaction'),default='summary',help=argparse.SUPPRESS)
+    parser.add_argument('--setup-workbuddy-exe',type=Path,help=argparse.SUPPRESS)
+    parser.add_argument('--setup-apply',action='store_true',help=argparse.SUPPRESS)
+    parser.add_argument('--setup-remove',action='store_true',help=argparse.SUPPRESS)
+    for option in ('connect','balance','checkin','startup'):
+        parser.add_argument('--setup-'+option,choices=('0','1'),default='0',help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    if args.setup_apply or args.setup_remove:
+        from .setup import stop_running, apply_setup, remove_setup
+        from .storage import atomic_json
+        try:
+            if args.setup_apply:stop_running(args.root)
+            result = remove_setup(args.root) if args.setup_remove else apply_setup(
+                args.root,args.workbuddy_home,connect=args.setup_connect=='1',balance=args.setup_balance=='1',
+                checkin=args.setup_checkin=='1',startup=args.setup_startup=='1',workbuddy_exe=args.setup_workbuddy_exe)
+            atomic_json(args.root/'setup-result.json',result)
+            return 2 if result['state']=='needs_workbuddy' else 0
+        except (OSError,ValueError,KeyError):
+            atomic_json(args.root/'setup-result.json',{'state':'failed','message':'配置未完成，请打开桌宠设置重新连接 WorkBuddy'})
+            return 1
     if args.hook:
         try:
             return hook_main(args.hook, hook_stdin(), args.root)
