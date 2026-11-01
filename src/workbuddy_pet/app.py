@@ -23,7 +23,7 @@ from .ui.card import CardWindow,PAGE_KEYS
 from .ui.animation import AnimationPlayer
 from .ui.materials import MaterialPanel
 from .materials import MaterialLibrary, MaterialError
-from .local_data import LocalDataReader
+from .local_data import LocalDataReader,UsageSnapshot
 from .placement import card_position,fit_capsule_pet,panel_height_limit,pet_below_capsule
 from .background import Task
 from .balance import read_balance
@@ -442,7 +442,7 @@ class Controller(QObject):
             if job:job.deleteLater()
             if self.snapshot and self.snapshot.days!=self.requested_days and not self.shutting_down:self.load_data(self.requested_days)
         self.stats_job.done.connect(received)
-        self.stats_job.failed.connect(lambda _:self.bubble.scope.setText('本地数据暂不可读，稍后重试。'))
+        self.stats_job.failed.connect(lambda _:received(UsageSnapshot(message='读取本机统计失败，请重启 WorkBuddy 后刷新',days=days)))
         self.stats_job.finished.connect(finished)
         self.stats_job.start()
 

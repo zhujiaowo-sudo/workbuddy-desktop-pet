@@ -1,4 +1,6 @@
-> v0.6.6：右键可快捷切换角色，选择极简圆形积分或胶囊模式；拖动人物时增加拎起与放下动效。蓝色小鱼思考动画更新。长时间未更新的任务停止思考展示，并提示状态待确认，不据此判定任务完成。
+> v0.6.7：本机用量读取兼容缺少辅助字段的数据库，并分别说明数据未初始化、结构差异、占用和访问问题。余额、事件与本机统计是独立通路。
+
+> v0.6.7：右键可快捷切换角色，选择极简圆形积分或胶囊模式；拖动人物时增加拎起与放下动效。蓝色小鱼思考动画更新。长时间未更新的任务停止思考展示，并提示状态待确认，不据此判定任务完成。
 
 # WorkBuddy Desktop Pet · WorkBuddy 桌面搭子
 
@@ -28,9 +30,9 @@
 <img src="src/workbuddy_pet/assets/blue_fish/actions/click_wave.gif" width="220" alt="蓝色小鱼挥手GIF">
 <img src="src/workbuddy_pet/assets/blue_fish/actions/working.gif" width="220" alt="蓝色小鱼工作GIF">
 
-v0.6.6新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒，包括吃酸菜鱼。素材页可在薄荷星伴与蓝色小鱼之间切换；更新保持当前角色选择。新套装由用户提供并授权本项目发布，原包未声明通用再分发许可，见[蓝色小鱼素材说明](licenses/blue-fish/NOTICE.txt)。
+v0.6.7新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒，包括吃酸菜鱼。素材页可在薄荷星伴与蓝色小鱼之间切换；更新保持当前角色选择。新套装由用户提供并授权本项目发布，原包未声明通用再分发许可，见[蓝色小鱼素材说明](licenses/blue-fish/NOTICE.txt)。
 
-当前正式版为 **v0.6.6**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.6.6.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
+当前正式版为 **v0.6.7**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.6.7.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
 
 ## 功能特性
 
@@ -46,13 +48,13 @@ v0.6.6新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒�
 | 自制角色 | 导入 ZIP 或文件夹、按动作预览、启用、删除；支持 PNG/APNG、GIF、WebP，可导出内置完整套装副本。 |
 | 更新与连接管理 | 首次连接引导、接入诊断、可选登录自启；正式发布版支持检查更新、校验下载、安装重启与失败回退。 |
 
-**接入范围：** 已在 WorkBuddy 5.9.2 验证主要任务开始、工具调用与完成事件；等待确认、等待回复、失败和子任务的真实事件联调仍需补充。播放器及状态逻辑支持这些状态，不能据此认定所有 WorkBuddy 版本都会发出对应事件。详见[兼容性记录](docs/compatibility.md)。
+**接入范围：** 已在 WorkBuddy 5.9.2 验证主要任务开始、工具调用与完成事件；播放器及状态逻辑支持这些状态，不能据此认定所有 WorkBuddy 版本都会发出对应事件。详见[兼容性记录](docs/compatibility.md)。
 
 ## 运行环境
 
 | 项目 | 要求 |
 | --- | --- |
-| 操作系统 | Windows 10 / 11，x64；已验证 Windows 10 22H2，较旧版本需另测。当前不提供 macOS、Linux 或 ARM64 安装包。 |
+| 操作系统 | Windows 10 / 11，x64；已验证 Windows 10 22H2，建议使用 Windows 10 22H2 及以上版本。当前不提供 macOS、Linux 或 ARM64 安装包。 |
 | WorkBuddy | 实际任务联动需在同一台电脑安装并登录 WorkBuddy；当前主要接入验证基于5.9.2。 |
 | 程序安装包 | 无需安装 Python；需要完整保留解压目录中的程序、`_internal` 和许可文件。 |
 | 源码运行 | Python 3.12+，依赖 PySide6 Essentials 与 Pillow；推荐使用 Python 3.12 和仓库锁定依赖。 |
@@ -60,7 +62,7 @@ v0.6.6新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒�
 
 ## 安装与首次连接
 
-1. 打开[最新发行页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest)，下载 `workbuddy-desktop-pet-0.6.6-windows-x64.zip`。源码 ZIP 不含可直接运行的 Windows 程序。
+1. 打开[最新发行页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest)，下载 `workbuddy-desktop-pet-0.6.7-windows-x64.zip`。源码 ZIP 不含可直接运行的 Windows 程序。
 2. 将压缩包**完整解压到固定、可写的目录**，运行 `WorkBuddyDesktopPet/WorkBuddyDesktopPet.exe`。不要仅复制单个 exe；接入命令引用安装位置，连接后请保持目录位置稳定。
 3. 在 WorkBuddy 中登录。桌宠会尝试自动检测安装位置；未识别时，打开“设置与连接”，使用“检测”或手动选择 `WorkBuddy.exe`。
 4. 在首次连接引导中确认绑定，并按需要勾选余额、签到的独立授权。程序添加本项目的本地状态插件，保留其他插件配置，不替你处理 WorkBuddy 的审批决定。
@@ -92,7 +94,7 @@ v0.6.6新增蓝色小鱼1.0.0，完整16组720×720透明GIF，各16帧/2.72秒�
 
 自制素材通过“导入 ZIP／导入文件夹”进入本机角色库，校验后预览并启用；不会修改原文件。旧版 `schema=1/2` 继续兼容，完整长动画使用 `schema=3`，提供15个必填动作，可另加挠头。尺寸、帧数、停留时长及透明度要求见[素材规范](docs/materials.md)和[JSON Schema](docs/pet-pack.schema.json)。
 
-v0.6.6内置薄荷星伴与蓝色小鱼两套完整动作，不再提供旧分件动作或机器人素材模板。外部自导入角色仍可使用，普通程序更新不会强制清空用户角色库。应用、任务栏和托盘保留独立的蓝色小搭子图标，人物切换不会改变应用图标。
+v0.6.7内置薄荷星伴与蓝色小鱼两套完整动作，不再提供旧分件动作或机器人素材模板。外部自导入角色仍可使用，普通程序更新不会强制清空用户角色库。应用、任务栏和托盘保留独立的蓝色小搭子图标，人物切换不会改变应用图标。
 
 ## 数据与权限
 

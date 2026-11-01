@@ -30,7 +30,7 @@ class ModelUsage:
 @dataclass(frozen=True)
 class UsageSnapshot:
     available: bool = False
-    message: str = '尚未找到 WorkBuddy 本地数据库'
+    message: str = '尚未找到 WorkBuddy 本地数据库，请在同一 Windows 账户启动 WorkBuddy 并完成一次对话'
     sessions: tuple[SessionInfo, ...] = ()
     models: tuple[ModelUsage, ...] = ()
     total_credit: float = 0
@@ -138,11 +138,35 @@ class LocalDataReader:
         try:
             with closing(sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True, timeout=.3)) as db:
                 db.execute('PRAGMA query_only=ON')
-                rows = db.execute('SELECT s.id, s.title, s.custom_title, s.model, u.used, u.size, u.credit_json '
-                                  'FROM sessions s LEFT JOIN session_usage u ON u.session_id=s.id '
-                                  'WHERE s.deleted_at IS NULL ORDER BY s.updated_at DESC LIMIT 5000').fetchall()
-        except (sqlite3.Error, OSError):
-            return UsageSnapshot(message='本地数据库暂不可读或版本不兼容，稍后重试', days=days)
+                columns = {table: {r[1] for r in db.execute('PRAGMA table_info("'+table+'")')}
+                           for table in ('sessions','session_usage')}
+                sc, uc = columns['sessions'], columns['session_usage']
+                if not sc:
+                    return UsageSnapshot(message='本机会话数据库尚未初始化，请在 WorkBuddy 完成一次对话后刷新',days=days)
+                if 'id' not in sc:
+                    return UsageSnapshot(message='本机会话表结构不兼容，请提供 WorkBuddy 版本以便适配',days=days)
+                if not {'session_id','credit_json'} <= uc:
+                    return UsageSnapshot(message='当前数据库缺少用量字段，请先在 WorkBuddy 完成一次对话；仍无统计时请提供客户端版本',days=days)
+                # Only fixed, known identifiers enter SQL; optional UI columns cannot disable billing.
+                def col(alias, name, fields):
+                    return alias+'."'+name+'"' if name in fields else 'NULL'
+                select = ['s.id']+[col('s',name,sc) for name in ('title','custom_title','model')]
+                select += [col('u',name,uc) for name in ('used','size','credit_json')]
+                query = 'SELECT '+', '.join(select)+' FROM sessions s LEFT JOIN session_usage u ON u.session_id=s.id'
+                if 'deleted_at' in sc:query += ' WHERE s.deleted_at IS NULL'
+                query += ' ORDER BY '+('s.updated_at DESC' if 'updated_at' in sc else 's.id')+' LIMIT 5000'
+                rows = db.execute(query).fetchall()
+        except (sqlite3.Error, OSError) as error:
+            code = getattr(error,'sqlite_errorcode',0) & 255
+            if code in (sqlite3.SQLITE_BUSY,sqlite3.SQLITE_LOCKED):
+                message='WorkBuddy 数据库正被占用，桌宠会自动重试，也可稍后点击刷新'
+            elif code in (sqlite3.SQLITE_CORRUPT,sqlite3.SQLITE_NOTADB):
+                message='无法识别本机数据库格式，请重启 WorkBuddy；仍失败时请提供客户端版本'
+            elif isinstance(error,PermissionError) or code in (sqlite3.SQLITE_PERM,sqlite3.SQLITE_AUTH,sqlite3.SQLITE_CANTOPEN,sqlite3.SQLITE_READONLY):
+                message='无法打开本机数据库，请使用运行 WorkBuddy 的同一 Windows 账户，并检查数据目录访问权限'
+            else:
+                message='读取本机统计失败，请重启 WorkBuddy 后刷新（数据库错误码：'+str(code)+'）'
+            return UsageSnapshot(message=message, days=days)
         metadata = self._history({r[0] for r in rows})
         sessions, totals = [], {}
         total = Decimal(0)

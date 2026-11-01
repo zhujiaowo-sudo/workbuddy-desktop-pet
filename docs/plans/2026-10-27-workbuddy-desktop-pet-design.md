@@ -47,7 +47,7 @@ Python 3.12+，PySide6 6.8 至 7.0 之前的版本，pytest，PyInstaller。具�
 
 候选事件包括 `UserPromptSubmit`、`PreToolUse`、`PostToolUse`、`PostToolUseFailure`、`Notification`、`PermissionRequest`、`Stop`、`SessionStart`、`SessionEnd`、`SubagentStart`、`SubagentStop`。
 
-接入步骤：先用合成输入验证采集程序；再由用户发起简单任务，采集白名单字段，确认收到事件、时间、会话关系和工具生命周期。写出兼容性记录，区分实测支持、未触发与未验证。
+接入步骤：先用合成输入验证采集程序；再由用户发起简单任务，采集白名单字段，确认收到事件、时间、会话关系和工具生命周期。写出兼容性记录，分别记录真实事件和合成输入结果。
 
 Hook 适配器只输出本机结构化状态事件。它不得返回允许、拒绝或阻断决策；失败时正常退出，不阻断 WorkBuddy 原任务。
 

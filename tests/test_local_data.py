@@ -75,3 +75,36 @@ def test_today_uses_local_midnight_and_is_independent_of_report_range(tmp_path):
         assert snap.today_date=='2026-10-27' and snap.unknown_time==1
     tomorrow=reader.snapshot(now=datetime(2026,10,28).timestamp())
     assert tomorrow.today_credit==0 and tomorrow.today_requests==0
+
+
+def test_optional_schema_columns_do_not_disable_usage(tmp_path):
+    with sqlite3.connect(tmp_path/'workbuddy.db') as db:
+        db.executescript('CREATE TABLE sessions(id TEXT); CREATE TABLE session_usage(session_id TEXT,credit_json TEXT);')
+        db.execute('INSERT INTO sessions VALUES(?)',('s',))
+        db.execute('INSERT INTO session_usage VALUES(?,?)',('s','{"r":2.5}'))
+    result=LocalDataReader(tmp_path).snapshot()
+    assert result.available and result.total_credit==2.5 and result.request_count==1
+    assert result.sessions[0].title=='未命名会话' and result.unknown_time==1
+
+
+def test_missing_usage_is_not_a_zero_bill(tmp_path):
+    with sqlite3.connect(tmp_path/'workbuddy.db') as db:
+        db.executescript('CREATE TABLE sessions(id TEXT); CREATE TABLE session_usage(session_id TEXT);')
+    result=LocalDataReader(tmp_path).snapshot()
+    assert not result.available and '用量字段' in result.message
+
+
+def test_uninitialized_and_corrupt_have_distinct_messages(tmp_path):
+    path=tmp_path/'workbuddy.db';path.touch()
+    assert '尚未初始化' in LocalDataReader(tmp_path).snapshot().message
+    path.write_bytes(b'not a database'*100)
+    assert '无法识别' in LocalDataReader(tmp_path).snapshot().message
+
+
+def test_locked_database_reports_retry_without_modifying_it(tmp_path):
+    fixture_home(tmp_path)
+    with sqlite3.connect(tmp_path/'workbuddy.db') as lock:
+        lock.execute('BEGIN EXCLUSIVE')
+        result=LocalDataReader(tmp_path).snapshot()
+        assert not result.available and '占用' in result.message
+    assert LocalDataReader(tmp_path).snapshot().available

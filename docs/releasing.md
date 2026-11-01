@@ -29,7 +29,7 @@ python -m venv .venv
 
 “演示”模式仅展示合成事件，不表示已连接。用户数据保存在 `%LOCALAPPDATA%/WorkBuddyDesktopPet`；源代码目录不保存 WorkBuddy 对话或登录凭据。
 
-本地插件接入使用解压位置生成运行命令，安装后请保持目录位置不变；目录迁移尚未验证。当前构建依赖 Windows 原生 ICU，已在 Windows 10 22H2 上验证。较旧 Windows 10 版本需另行测试。
+本地插件接入使用解压位置生成运行命令，安装后请保持目录位置不变；移动目录后请重新绑定本地插件。当前构建依赖 Windows 原生 ICU，已在 Windows 10 22H2 上验证。运行环境以 Windows 10 22H2 及以上 x64 为基准。
 
 ## 命令行
 
