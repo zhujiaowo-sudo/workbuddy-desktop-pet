@@ -33,7 +33,12 @@
 <img src="src/workbuddy_pet/assets/dragon_maid/actions/idle.gif" width="220" alt="白发龙角女仆盘腿坐待机GIF">
 <img src="src/workbuddy_pet/assets/dragon_maid/actions/idle_bow.gif" width="220" alt="白发龙角女仆鞠躬GIF">
 
-v0.7.0增加第三套内置角色：18个动作标识、每段30帧，完整保留用户提供的720×720透明GIF。按用户选择，以盘腿坐作为基础待机，思考复用于工作；闲置时还会随机睡觉、鞠躬、挠头和播放休闲动作。更新保留现有角色，可在右键“角色”中切换。素材由用户授权本项目发布，其他使用需另行授权，见[素材署名](src/workbuddy_pet/assets/dragon_maid/ATTRIBUTION.md)。
+第三套内置角色当前为1.0.1：20个动作标识、每段30帧，完整保留用户提供的720×720透明GIF。按用户选择，以盘腿坐作为基础待机，思考复用于工作；闲置时还会随机睡觉、鞠躬、挠头和播放休闲动作。更新保留现有角色，可在右键“角色”中切换。素材由用户授权本项目发布，其他使用需另行授权，见[素材署名](src/workbuddy_pet/assets/dragon_maid/ATTRIBUTION.md)。
+
+从v0.7.2起，龙女使用专用拎起与放下动作：短按继续招手等互动，开始拖动时拎起，保持悬空，松开后放下；提前松开会从对应姿势衔接。其他角色继续使用原有拖动效果。
+
+<img src="src/workbuddy_pet/assets/dragon_maid/actions/drag_lift.gif" width="200" alt="龙女拎起动作">
+<img src="src/workbuddy_pet/assets/dragon_maid/actions/drag_drop.gif" width="200" alt="龙女放下动作">
 
 ### 更清晰的桌面工具界面
 
@@ -45,7 +50,7 @@ v0.7.0增加第三套内置角色：18个动作标识、每段30帧，完整保�
 
 设计参考 [Emil Kowalski 的设计工程指南](https://github.com/emilkowalski/skills/tree/main/skills/emil-design-eng) 与 [Sonner](https://github.com/emilkowalski/sonner)，以 PySide6 独立实现。高频导航与键盘操作即时响应；鼠标展开看板使用短促淡入，并尊重 Windows 的系统动画设置。
 
-当前正式版为 **v0.7.1**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.7.1.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
+当前正式版为 **v0.7.2**，动画已随程序内置，无需另下素材包。见[版本说明](docs/releases/v0.7.2.md)与[全部发行版本](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases)。
 
 ## 功能特性
 
@@ -75,7 +80,7 @@ v0.7.0增加第三套内置角色：18个动作标识、每段30帧，完整保�
 
 ## 安装与首次连接
 
-1. 打开[最新发行页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest)，下载 `workbuddy-desktop-pet-0.7.1-windows-x64-setup.exe`。
+1. 打开[最新发行页](https://github.com/zhujiaowo-sudo/workbuddy-desktop-pet/releases/latest)，下载 `workbuddy-desktop-pet-0.7.2-windows-x64-setup.exe`。
 2. 运行中文安装向导，默认仅安装到当前用户的程序目录，无需管理员权限。首次安装在同一页确认 WorkBuddy 接入、积分查询、手动签到及可选自启。
 3. 安装完成后启动桌宠。已使用桌宠的用户自动沿用原角色、素材和授权；首次接入需先安装并登录 WorkBuddy。若未检测到或连接失败，设置页会提供重新连接入口。
 4. 在 WorkBuddy **新建任务**验证状态变化；旧会话可能尚未加载插件。若持续没有事件，保存工作后重新打开 WorkBuddy。登录和任务审批仍在 WorkBuddy 中完成。
@@ -91,7 +96,7 @@ v0.7.0增加第三套内置角色：18个动作标识、每段30帧，完整保�
 | 操作 | 效果 |
 | --- | --- |
 | 左键点击人物 | 弹出回应短句，依次播放招手／比心／害羞／惊讶；重要任务提示具有优先级。 |
-| 拖动人物或胶囊 | 移动桌宠或卡片组合；人物隐藏时胶囊可独立拖动。 |
+| 拖动人物或胶囊 | 移动桌宠或卡片组合；人物隐藏时胶囊可独立拖动；龙女拖动时播放专用拎起／放下动作。 |
 | 点击会话胶囊 | 直接打开统一看板的概览，查看会话、剩余积分和今日消耗。 |
 | 点击会话名称 | 回到 WorkBuddy 对应对话，无当前会话时唤起主程序。 |
 | 右键人物或胶囊 | 打开 WorkBuddy、数据看板、角色、显示、设置或退出。 |

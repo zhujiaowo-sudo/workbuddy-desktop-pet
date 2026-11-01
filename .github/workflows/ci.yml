@@ -32,7 +32,7 @@ jobs:
           $install = Start-Process -FilePath $download -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER','/NOICONS',"/DIR=`"$compilerDir`"" -WindowStyle Hidden -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw 'Compiler installation failed' }
           python tools/build_installer.py --compiler "$compilerDir/ISCC.exe"
-      - run: python tools/verify_installer.py --installer dist/workbuddy-desktop-pet-0.7.1-windows-x64-setup.exe --scratch C:/wb-pet-installer-smoke
+      - run: python tools/verify_installer.py --installer dist/workbuddy-desktop-pet-0.7.2-windows-x64-setup.exe --scratch C:/wb-pet-installer-smoke
       - uses: actions/upload-artifact@v4
         with:
           name: workbuddy-desktop-pet-windows-x64

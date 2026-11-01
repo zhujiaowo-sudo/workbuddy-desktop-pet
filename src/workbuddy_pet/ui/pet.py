@@ -47,6 +47,9 @@ class PetWindow(QWidget):
     page_requested = Signal(str)
     interact_requested = Signal()
     manual_activity = Signal()
+    drag_started = Signal()
+    drag_released = Signal()
+    drag_cancelled = Signal()
     quit_requested = Signal()
 
     def __init__(self, size: int = 160, demo: bool = False, *, use_builtin_image=True):
@@ -60,6 +63,7 @@ class PetWindow(QWidget):
         self.tick = 0
         self.press_position = None
         self.dragging = False
+        self.authored_drag = False
         self.player = None
         self.visual_action = 'idle'
         self.effect_action = ''
@@ -267,7 +271,9 @@ class PetWindow(QWidget):
             delta = event.globalPosition().toPoint() - self.press_position
             was_dragging=self.dragging
             self.dragging = self.dragging or delta.manhattanLength() > 6
-            if self.dragging and not was_dragging:self.animate_lift(True)
+            if self.dragging and not was_dragging:
+                self.drag_started.emit()
+                if not self.authored_drag:self.animate_lift(True)
             if self.dragging:
                 step=event.globalPosition().toPoint().x()-getattr(self,'last_drag_x',event.globalPosition().toPoint().x())
                 self.drag_angle=max(-3.0,min(3.0,step*.15));self.update()
@@ -280,11 +286,14 @@ class PetWindow(QWidget):
         if event.button() == Qt.MouseButton.LeftButton and self.press_position is not None:
             if not self.dragging:
                 self.interact_requested.emit()
-            else:self.animate_lift(False)
+            else:
+                self.drag_released.emit()
+                if not self.authored_drag:self.animate_lift(False)
             self.dragging=False
             self.press_position = None
 
     def contextMenuEvent(self, event):
+        self.drag_cancelled.emit()
         self.manual_activity.emit()
         self.press_position=None;self.dragging=False;self.animate_lift(False)
         self.context_menu.popup(event.globalPos())
@@ -298,6 +307,7 @@ class PetWindow(QWidget):
 
     def hideEvent(self, event):
         super().hideEvent(event)
+        self.drag_cancelled.emit()
         self.timer.stop()
         self.motion_animation.stop();self.motion=0.0
         self.lift_animation.stop();self._set_lift(0);self.press_position=None;self.dragging=False

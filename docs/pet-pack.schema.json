@@ -808,7 +808,57 @@
                   "const": false
                 }
               }
+            },
+            "drag_lift": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/drag_lift\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                },
+                "release_frames": {
+                  "type": "array",
+                  "minItems": 8,
+                  "maxItems": 240,
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 239
+                  }
+                }
+              }
+            },
+            "drag_drop": {
+              "type": "object",
+              "required": [
+                "file",
+                "loop"
+              ],
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "pattern": "^actions/drag_drop\\.(webp|png|gif)$"
+                },
+                "loop": {
+                  "const": false
+                }
+              }
             }
+          },
+          "dependentRequired": {
+            "drag_lift": [
+              "drag_drop"
+            ],
+            "drag_drop": [
+              "drag_lift"
+            ]
           }
         },
         "anchor": {

@@ -16,6 +16,7 @@ class AnimationPlayer(QObject):
     def __init__(self,parent=None):
         super().__init__(parent)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.timeout.connect(self._timeout);self.timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self.frame_number=0;self.start_frame=0
         self.frames=();self.index=0;self.loop=True;self.visible=True
         self.identity=None;self.content_bounds=None;self.canvas_size=None;self.frame_started=0
         self.stream=None;self.stream_path=None;self.deadline=0;self.error=None;self.pending=None;self.loop_range=None;self.ended=False
@@ -24,9 +25,10 @@ class AnimationPlayer(QObject):
     def pixmap(self):
         return self.frames[self.index][0] if self.frames else None
 
-    def load(self,pack,state,*,defer=False):
+    def load(self,pack,state,*,defer=False,start_frame=0,preserve_frame=False,restart=False):
+        if type(start_frame) is not int or not 0<=start_frame<240:raise MaterialError('起始帧无效')
         action=pack.action(state);identity=(pack.key,action.file,action.loop,getattr(action,'loop_range',None))
-        if identity==self.identity:
+        if identity==self.identity and not restart:
             if self.error:raise MaterialError(self.error)
             if self.stream and self.stream.tail_started.is_set() and not self.ended:
                 self.pending=(pack,state)
@@ -37,11 +39,14 @@ class AnimationPlayer(QObject):
         if defer and self.stream and not self.ended:
             self.pending=(pack,state);self.stream.exit.set();return
         if getattr(pack, 'schema', 1) == 3:
+            previous=self.pixmap if preserve_frame and self.identity and self.identity[0]==pack.key else None
             self.clear(notify=False)
+            if previous is not None:self.frames=((previous,50),)
+            self.start_frame=start_frame;self.frame_number=start_frame
             self.identity=identity;self.loop=action.loop;self.content_bounds=pack.anchor
             self.canvas_size=(720,720) if pack.quality=='hd' else (512,512)
             self.stream_path=pack.root/action.file;self.loop_range=getattr(action,'loop_range',None)
-            if self.visible:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range);self.timer.start(1)
+            if self.visible:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range,self.start_frame);self.timer.start(1)
             self.bounds_changed.emit();self.changed.emit()
             return
         frames=decode_animation(pack.root/action.file);prepared=[]
@@ -61,7 +66,7 @@ class AnimationPlayer(QObject):
         had_frames=bool(self.frames or self.stream_path);self.timer.stop()
         if self.stream:self.stream.close()
         self.stream=None;self.stream_path=None;self.deadline=0;self.error=None;self.pending=None;self.loop_range=None;self.ended=False
-        self.frames=();self.index=0;self.identity=None;self.content_bounds=None;self.canvas_size=None
+        self.frames=();self.index=0;self.frame_number=0;self.start_frame=0;self.identity=None;self.content_bounds=None;self.canvas_size=None
         if notify and had_frames:self.bounds_changed.emit();self.changed.emit()
 
     def set_visible(self,value):
@@ -71,7 +76,7 @@ class AnimationPlayer(QObject):
             self.pending=None;self.ended=False
             if self.stream:self.stream.close()
             self.stream=None;self.deadline=0
-            if value:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range);self.timer.start(1)
+            if value:self.stream=FrameStream(self.stream_path,self.loop,self.loop_range,self.start_frame);self.timer.start(1)
         elif value:
             self.frame_started=time.perf_counter()
             self.deadline=self.frame_started+(self.frames[self.index][1]/1000 if self.frames else 0)
@@ -112,6 +117,7 @@ class AnimationPlayer(QObject):
             latest=frame
             self.deadline=(self.deadline or now)+frame.duration/1000
         if latest:
+            self.frame_number=latest.number
             image=QImage(latest.rgba,*latest.size,QImage.Format.Format_RGBA8888).copy()
             self.frames=((QPixmap.fromImage(image),latest.duration),);self.index=0
             self.changed.emit()

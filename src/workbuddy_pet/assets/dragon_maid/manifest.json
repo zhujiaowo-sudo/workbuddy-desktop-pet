@@ -2,18 +2,18 @@
   "schema": 3,
   "id": "dragon-maid",
   "name": "白发龙角女仆",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "用户提供",
   "license": "LicenseRef-User-Provided",
   "quality": "hd",
   "anchor": [
     65,
-    52,
+    24,
     657,
     666
   ],
   "source": {
-    "changes": "原始17段GIF字节与时序保留。经用户确认，思考动作同时对应工作，盘腿坐对应基础待机；睡觉和鞠躬加入随机待机。",
+    "changes": "原始17段GIF字节与时序保留。经用户确认，思考动作同时对应工作，盘腿坐对应基础待机；睡觉和鞠躬加入随机待机。 新增用户提供的拎起与放下原始GIF，开始拖动与松开触发，短按互动保留。",
     "rights": "用户授权本项目发布；原包未声明通用再分发许可，不沿用其他角色的许可。"
   },
   "actions": {
@@ -88,6 +88,46 @@
     "idle_bow": {
       "file": "actions/idle_bow.gif",
       "loop": false
+    },
+    "drag_lift": {
+      "file": "actions/drag_lift.gif",
+      "loop": false,
+      "release_frames": [
+        14,
+        14,
+        13,
+        13,
+        12,
+        12,
+        11,
+        11,
+        10,
+        10,
+        9,
+        9,
+        8,
+        8,
+        7,
+        7,
+        6,
+        6,
+        5,
+        5,
+        4,
+        4,
+        3,
+        3,
+        2,
+        2,
+        1,
+        1,
+        0,
+        0
+      ]
+    },
+    "drag_drop": {
+      "file": "actions/drag_drop.gif",
+      "loop": false
     }
   },
   "files": {
@@ -108,6 +148,8 @@
     "actions/leisure_music.gif": "93d3c246069d0e469a8ae3396a9fc6cd4a0d5841b07dda6c790baa84cd7bad40",
     "actions/idle_scratch.gif": "0637d630a194724483f5d1695912a99a3b4da040195639b64d597f53e4eb8eba",
     "actions/idle_sleep.gif": "a4f9eefdfb926a486bb300e26194fe9e50ec5df2f74e3f5a14ef5c27e6ea0412",
-    "actions/idle_bow.gif": "957c802d54ea54f2493cdc6b1ba20e65894576c2d423cb1fabed2427e7eed9cc"
+    "actions/idle_bow.gif": "957c802d54ea54f2493cdc6b1ba20e65894576c2d423cb1fabed2427e7eed9cc",
+    "actions/drag_lift.gif": "baf91b5804cfbb29f75f1d5c3349a60fdc99805f9d2e138b23517087b4f6e1e4",
+    "actions/drag_drop.gif": "3e1fa09ff15a4927bf8dfd1f4fb24001af4f4811bc2058521a503b72902881d3"
   }
 }

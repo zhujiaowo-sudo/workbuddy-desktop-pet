@@ -10,8 +10,8 @@ def test_dragon_pack_all_frames_hashes_and_user_approved_mapping():
     from workbuddy_pet.materials import validate_pack
     from PIL import Image
     pack=builtin_pack('builtin-dragon-maid');validate_pack(pack.root)
-    audit=json.loads((Path(__file__).resolve().parents[1]/'art/dragon-maid/user-gifs-v1.0.0.json').read_text())
-    assert len(audit)==len(pack.actions)==18
+    audit=json.loads((Path(__file__).resolve().parents[1]/'art/dragon-maid/user-gifs-v1.0.1.json').read_text())
+    assert len(audit)==len(pack.actions)==20
     for entry in audit:
         source=pack.root/pack.actions[entry['action']].file
         assert hashlib.sha256(source.read_bytes()).hexdigest()==entry['sha256']

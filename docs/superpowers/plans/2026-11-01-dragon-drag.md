@@ -15,10 +15,12 @@
 - 重要任务抢占但不影响真实事件；两个动作不参与随机待机。
 - 不叠加旧缩放和摆动；100%／150%全段无裁切。
 
-- [ ] 素材校验与清单：扩展materials.py和JSON Schema，保留原始哈希、预览导出；tests/test_dragon_drag.py验证成对动作、映射和旧包。
-- [ ] 播放器：FrameStream(start_frame=0)，Frame.number及AnimationPlayer.frame_number；验证跳帧、末帧保持和有界队列。
-- [ ] 手势与Controller：拖动开始／松开／取消信号，衔接映射、优先级、短按和其他角色回归。
-- [ ] 两种原生缩放全帧与三轮衔接验收，更新使用说明、版本0.7.2和素材1.0.1。
-- [ ] 回归、冻结程序、安装包、Windows CI成功后发布及本机升级。
+- [x] 素材校验与清单：扩展materials.py和JSON Schema，保留原始哈希、预览导出；tests/test_dragon_drag.py验证成对动作、映射和旧包。
+- [x] 播放器：FrameStream(start_frame=0)，Frame.number及AnimationPlayer.frame_number；验证跳帧、末帧保持和有界队列。
+- [x] 手势与Controller：拖动开始／松开／取消信号，衔接映射、优先级、短按和其他角色回归。
+- [x] 两种原生缩放全帧与三轮衔接验收，更新使用说明、版本0.7.2和素材1.0.1。
+- [x] 210项回归、最终冻结程序与安装包验证完成。
+
+发布门禁：Windows CI安装、升级、卸载成功后发布，再执行保留偏好的本机升级；结果以正式Release与本机安装记录为准。
 
 在本会话执行，先加入失败测试，再实现并运行相关检查；独立验证后提交。

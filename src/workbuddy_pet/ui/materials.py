@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QPushButton,QFileDialog,QGridLayout
 
 from ..background import Task
-from ..materials import MaterialError, ALL_ACTIONS, OPTIONAL_IDLE_ACTIONS
+from ..materials import MaterialError, ALL_ACTIONS, OPTIONAL_IDLE_ACTIONS, DRAG_ACTIONS
 from ..builtin import builtin_pack,BUILTIN_PACKS
 from .animation import AnimationPlayer
 
@@ -29,7 +29,7 @@ class MaterialPanel(QWidget):
         labels=('待机','思考','玩电脑 / 执行','等待回复','等待确认','完成','失败','点击 · 招手','点击 · 比心',
                 '点击 · 害羞','点击 · 惊讶','休闲 · 吃零食','休闲 · 玩手机','休闲 · 伸懒腰','休闲 · 听音乐')
         for action,label in zip(ALL_ACTIONS,labels):self.action_choice.addItem(label,action)
-        for action,label in (('idle_scratch','待机 · 挠头'),('idle_sleep','待机 · 睡觉'),('idle_bow','待机 · 鞠躬')):self.action_choice.addItem(label,action)
+        for action,label in (('idle_scratch','待机 · 挠头'),('idle_sleep','待机 · 睡觉'),('idle_bow','待机 · 鞠躬'),('drag_lift','拖动 · 拎起'),('drag_drop','拖动 · 放下')):self.action_choice.addItem(label,action)
         self.action_choice.currentIndexChanged.connect(self.preview_action)
         layout.addWidget(self.action_choice)
         self.choices.currentIndexChanged.connect(self.preview_selected)
@@ -68,7 +68,7 @@ class MaterialPanel(QWidget):
                 pack=builtin_pack(key or 'builtin')
             else:pack=self.library.load(key)
             self.preview_pack=pack
-            for action in OPTIONAL_IDLE_ACTIONS:
+            for action in OPTIONAL_IDLE_ACTIONS+DRAG_ACTIONS:
                 index=self.action_choice.findData(action)
                 self.action_choice.model().item(index).setEnabled(action in pack.actions)
                 if self.action_choice.currentData()==action and action not in pack.actions:self.action_choice.setCurrentIndex(0)

@@ -95,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--chat',action='store_true',help='在 WorkBuddy 中打开当前对话')
     parser.add_argument("--smoke-seconds", type=float, default=0, help=argparse.SUPPRESS)
     parser.add_argument("--capture", type=Path, help=argparse.SUPPRESS)
-    parser.add_argument('--capture-page',choices=('summary','details','data','materials','settings','capsule','interaction','window'),default='summary',help=argparse.SUPPRESS)
+    parser.add_argument('--capture-page',choices=('summary','details','data','materials','settings','capsule','interaction','window','drag_lift','drag_drop'),default='summary',help=argparse.SUPPRESS)
     parser.add_argument('--setup-workbuddy-exe',type=Path,help=argparse.SUPPRESS)
     parser.add_argument('--setup-apply',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('--setup-remove',action='store_true',help=argparse.SUPPRESS)

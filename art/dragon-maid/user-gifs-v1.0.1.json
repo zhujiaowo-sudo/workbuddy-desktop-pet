@@ -1,0 +1,122 @@
+[
+  {
+    "action": "click_heart",
+    "frames": 30,
+    "duration_ms": 2520,
+    "sha256": "65643c8af480df527365f29a98df859a2cbf53a8da02af75062587e87484a7c1"
+  },
+  {
+    "action": "click_shy",
+    "frames": 30,
+    "duration_ms": 2520,
+    "sha256": "1cc8252755394f5acd92195f73a5b888d10b1ea2c9aa5a27ee6ec2d3e06f828b"
+  },
+  {
+    "action": "click_surprised",
+    "frames": 30,
+    "duration_ms": 1860,
+    "sha256": "c09e24b388ca690b46c30c30879330558be37987a54a0e0bfd1bf2433aae3665"
+  },
+  {
+    "action": "click_wave",
+    "frames": 30,
+    "duration_ms": 2370,
+    "sha256": "350310258379715fdee820fde9e79d49205afa5abaff00b1adc8081d654f79a3"
+  },
+  {
+    "action": "done",
+    "frames": 30,
+    "duration_ms": 2520,
+    "sha256": "0732b373295bbf0c122e48beaacc633ecd91feadb935a7077048e65cdad33c2f"
+  },
+  {
+    "action": "failed",
+    "frames": 30,
+    "duration_ms": 2880,
+    "sha256": "944b26344feaa49cbb49bfb53be785cb822f66e170688774d70722417cf71bb6"
+  },
+  {
+    "action": "idle",
+    "frames": 30,
+    "duration_ms": 2500,
+    "sha256": "e7bd941d2df1c5bcf8d7fb1f2941e6d8d67c69e4bcea43d7df797df261540cb4"
+  },
+  {
+    "action": "idle_bow",
+    "frames": 30,
+    "duration_ms": 2920,
+    "sha256": "957c802d54ea54f2493cdc6b1ba20e65894576c2d423cb1fabed2427e7eed9cc"
+  },
+  {
+    "action": "idle_scratch",
+    "frames": 30,
+    "duration_ms": 2280,
+    "sha256": "0637d630a194724483f5d1695912a99a3b4da040195639b64d597f53e4eb8eba"
+  },
+  {
+    "action": "idle_sleep",
+    "frames": 30,
+    "duration_ms": 3600,
+    "sha256": "a4f9eefdfb926a486bb300e26194fe9e50ec5df2f74e3f5a14ef5c27e6ea0412"
+  },
+  {
+    "action": "leisure_music",
+    "frames": 30,
+    "duration_ms": 2700,
+    "sha256": "93d3c246069d0e469a8ae3396a9fc6cd4a0d5841b07dda6c790baa84cd7bad40"
+  },
+  {
+    "action": "leisure_phone",
+    "frames": 30,
+    "duration_ms": 3030,
+    "sha256": "5383bca3546a2844014f5cd20af050cf3aa1f355728ded0a6fca928a81cef7e1"
+  },
+  {
+    "action": "leisure_snack",
+    "frames": 30,
+    "duration_ms": 2820,
+    "sha256": "7bdf506cd4a9f087a23237d8468c710fd623764c7337c870e73075143baff7d3"
+  },
+  {
+    "action": "leisure_stretch",
+    "frames": 30,
+    "duration_ms": 4000,
+    "sha256": "34d8588c3dc8ffd008c3e11dff52b044f08182a237364c8ab90d0d5167b33152"
+  },
+  {
+    "action": "review",
+    "frames": 30,
+    "duration_ms": 2520,
+    "sha256": "d06f30082dda630655897dd281013882e0ccafbbd708a8b4a50189015b298178"
+  },
+  {
+    "action": "thinking",
+    "frames": 30,
+    "duration_ms": 2520,
+    "sha256": "cd007b846a13ea0ddcab10d225af6f087598b17fab43a9775e1b13ad6ccc7be3"
+  },
+  {
+    "action": "waiting",
+    "frames": 30,
+    "duration_ms": 2500,
+    "sha256": "61f5ccf6474ee98183ccefd78a5f14ebace20849aefcae809fe63b51b5545e2f"
+  },
+  {
+    "action": "working",
+    "frames": 30,
+    "duration_ms": 2520,
+    "sha256": "cd007b846a13ea0ddcab10d225af6f087598b17fab43a9775e1b13ad6ccc7be3"
+  },
+  {
+    "action": "drag_lift",
+    "frames": 30,
+    "duration_ms": 2040,
+    "sha256": "baf91b5804cfbb29f75f1d5c3349a60fdc99805f9d2e138b23517087b4f6e1e4"
+  },
+  {
+    "action": "drag_drop",
+    "frames": 30,
+    "duration_ms": 2020,
+    "sha256": "3e1fa09ff15a4927bf8dfd1f4fb24001af4f4811bc2058521a503b72902881d3"
+  }
+]

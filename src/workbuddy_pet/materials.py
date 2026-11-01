@@ -18,6 +18,7 @@ TASK_ACTIONS = STATES
 CLICK_ACTIONS = ('click_wave', 'click_heart', 'click_shy', 'click_surprised')
 LEISURE_ACTIONS = ('leisure_snack', 'leisure_phone', 'leisure_stretch', 'leisure_music')
 ALL_ACTIONS = STATES + CLICK_ACTIONS + LEISURE_ACTIONS
+DRAG_ACTIONS = ('drag_lift', 'drag_drop')
 OPTIONAL_IDLE_ACTIONS = ('idle_scratch', 'idle_sleep', 'idle_bow')
 LOOP_ACTIONS = frozenset(STATES[:5] + LEISURE_ACTIONS)
 FALLBACKS = dict(zip(CLICK_ACTIONS + LEISURE_ACTIONS,
@@ -70,6 +71,7 @@ class Frame:
     rgba: bytes
     duration: int
     bounds: tuple[int,int,int,int] | None = None
+    number: int = 0
 
 
 def iter_animation(path: Path, *, long=False):
@@ -105,6 +107,7 @@ class Action:
     file: str
     loop: bool = True
     loop_range: tuple[int, int] | None = None
+    release_frames: tuple[int, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -141,7 +144,7 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         actions = data.get('actions')
         if quality not in ('light', 'hd') or not isinstance(actions, dict) or 'idle' not in actions:
             raise MaterialError('角色包需要 idle 待机动作，以及 light/hd 画质')
-        optional = OPTIONAL_IDLE_ACTIONS if schema == 3 else ('idle_scratch',)
+        optional = OPTIONAL_IDLE_ACTIONS+DRAG_ACTIONS if schema == 3 else ('idle_scratch',)
         if schema >= 2 and (not set(ALL_ACTIONS)<=set(actions) or not set(actions)<=set(ALL_ACTIONS+optional)):
             raise MaterialError('完整互动包需要15个规定动作，可选动作需符合对应schema规范')
         anchor = data.get('anchor') if schema >= 2 else None
@@ -156,7 +159,10 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
         hashes = data.get('files', {})
         if not isinstance(hashes, dict):
             raise MaterialError('文件校验清单无效')
+        if bool('drag_lift' in actions)!=bool('drag_drop' in actions):raise MaterialError('拎起与放下动作须成对提供')
         parsed, seen, pixel_count = {}, set(), 0
+        frame_counts={}
+
         for state, item in actions.items():
             if state not in (ALL_ACTIONS+optional if schema >= 2 else STATES) or not isinstance(item, dict) or type(item.get('loop', True)) is not bool:
                 raise MaterialError('动作名称或循环设置无效')
@@ -173,6 +179,12 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
                 with path.open('rb') as stream:
                     if hashlib.file_digest(stream, 'sha256').hexdigest() != hashes[name]:
                         raise MaterialError('素材 SHA-256 校验失败')
+            release_frames=item.get('release_frames')
+            if release_frames is not None:
+                if (schema!=3 or state!='drag_lift' or not isinstance(release_frames,list) or not 8<=len(release_frames)<=240
+                    or any(type(n) is not int or not 0<=n<240 for n in release_frames)):
+                    raise MaterialError('release_frames须为拎起各帧对应的放下帧索引')
+                release_frames=tuple(release_frames)
             loop_range = item.get('loop_range')
             if loop_range is not None:
                 if (schema != 3 or not item.get('loop') or not isinstance(loop_range,list) or len(loop_range)!=2
@@ -207,8 +219,12 @@ def validate_pack(root: Path, *, decode=True, key='') -> CharacterPack:
                     raise MaterialError('loop_range必须在末尾保留退出帧')
                 if schema == 3 and elapsed > 12000:
                     raise MaterialError('长动画每段不得超过12秒')
+                frame_counts[state]=count
                 seen.add(name)
-            parsed[state] = Action(name, item.get('loop', True),loop_range)
+            parsed[state] = Action(name, item.get('loop', True),loop_range,release_frames)
+        mapping=parsed.get('drag_lift').release_frames if 'drag_lift' in parsed else None
+        if decode and mapping and (len(mapping)!=frame_counts['drag_lift'] or max(mapping)>=frame_counts['drag_drop']):
+            raise MaterialError('release_frames与实际动画帧数不符')
         return CharacterPack(key, root, data['name'], data['author'], quality, data['license'], parsed, schema, anchor)
     except (OSError, ValueError, TypeError, KeyError) as error:
         if isinstance(error, MaterialError):

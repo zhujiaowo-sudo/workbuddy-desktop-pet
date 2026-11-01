@@ -1,0 +1,81 @@
+{
+  "version": "0.7.2",
+  "automated_tests": 210,
+  "native": {
+    "1": {
+      "scale": "1",
+      "cycles": [
+        {
+          "cycle": 1,
+          "lift_frames": 30,
+          "drop_frames": 30,
+          "hold_stable": true,
+          "max_queue": 6
+        },
+        {
+          "cycle": 2,
+          "lift_frames": 30,
+          "drop_frames": 30,
+          "hold_stable": true,
+          "max_queue": 6
+        },
+        {
+          "cycle": 3,
+          "lift_frames": 30,
+          "drop_frames": 30,
+          "hold_stable": true,
+          "max_queue": 6
+        }
+      ],
+      "early_release": true,
+      "regrab": true,
+      "source_frames": 60,
+      "raw_gifs_unchanged": true
+    },
+    "1.5": {
+      "scale": "1.5",
+      "cycles": [
+        {
+          "cycle": 1,
+          "lift_frames": 30,
+          "drop_frames": 30,
+          "hold_stable": true,
+          "max_queue": 6
+        },
+        {
+          "cycle": 2,
+          "lift_frames": 30,
+          "drop_frames": 30,
+          "hold_stable": true,
+          "max_queue": 6
+        },
+        {
+          "cycle": 3,
+          "lift_frames": 30,
+          "drop_frames": 30,
+          "hold_stable": true,
+          "max_queue": 6
+        }
+      ],
+      "early_release": true,
+      "regrab": true,
+      "source_frames": 60,
+      "raw_gifs_unchanged": true
+    }
+  },
+  "synthetic_data_only": true,
+  "gif_hash_audit": "art/dragon-maid/user-gifs-v1.0.1.json",
+  "feature_interactions": [
+    "short click remains interactive",
+    "other characters retain generic drag",
+    "early release uses matched pose",
+    "regrab resumes matching lift pose",
+    "critical task cancels drag",
+    "hide and character switch clear drag",
+    "new actions excluded from idle pool"
+  ],
+  "release_gate": "Windows installer install, upgrade and uninstall must pass",
+  "frozen_verification": true,
+  "frozen_drag_lift_and_drop": true,
+  "menu_cancel_is_immediate": true
+}

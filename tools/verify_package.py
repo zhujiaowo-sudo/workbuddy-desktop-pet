@@ -81,7 +81,15 @@ def main():
         runtime=json.loads((character_root/'runtime.json').read_text(encoding='utf-8'))
         assert runtime['animation_loaded'] and not runtime['card_only']
         assert json.loads((character_root/'settings.json').read_text(encoding='utf-8'))['character']==character
-    print(json.dumps({"frozen_collector": True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
+    for action in ('drag_lift','drag_drop'):
+        drag_root=root/action
+        save_settings(drag_root,Settings(character='builtin-dragon-maid',notifications=False))
+        result=subprocess.run([str(exe),'--root',str(drag_root),'--demo','--smoke-seconds','2',
+            '--workbuddy-home',str(root/'absent-workbuddy'),'--capture-page',action,'--capture',str(root/(action+'.png'))],env=env,capture_output=True,timeout=25)
+        assert result.returncode==0,'Frozen drag failed'
+        state=json.loads((drag_root/'runtime.json').read_text(encoding='utf-8'))
+        assert state['animation_loaded'] and state['visual_action']==action and state['panel_gap']==8
+    print(json.dumps({"frozen_collector": True,'authored_drag':True, "powershell_stdin": True, "frozen_gui": True,'frozen_material_import':True,'card_only':True,
                       'unified_dashboard':True,'persistent_window':True,'three_builtin_characters':True,'visible_docking':True,'interaction':True,'checkin_disabled_by_default':True,"captures": str(root)}, indent=2))
 
 

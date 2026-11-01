@@ -92,6 +92,7 @@ class Controller(QObject):
         self.active_interaction=None;self.interaction_deadline=0;self.interaction_index=0;self.last_pet_click=-1
         self.idle_director=IdleDirector()
         self.ambient_director=AmbientDirector()
+        self.drag_action=None;self.drag_pack=None;self.drag_return=False
         self.visual_action='idle'
         self.interaction_timer=QTimer(self);self.interaction_timer.setSingleShot(True)
         self.interaction_timer.timeout.connect(self.finish_interaction)
@@ -113,6 +114,9 @@ class Controller(QObject):
         self.pet.open_requested.connect(self.open_card)
         self.pet.interact_requested.connect(self.interact)
         self.pet.manual_activity.connect(self.pet_activity)
+        self.pet.drag_started.connect(self.start_drag)
+        self.pet.drag_released.connect(self.end_drag)
+        self.pet.drag_cancelled.connect(self.cancel_drag)
         self.pet.settings_requested.connect(self.open_settings)
         self.pet.page_requested.connect(self.open_page)
         self.pet.quit_requested.connect(app.quit)
@@ -394,6 +398,7 @@ class Controller(QObject):
         self.respond(response)
 
     def respond(self,response):
+        self.cancel_drag()
         if not self.user_visible or self.settings.card_only or self.shutting_down:return
         self.idle_director.cancel()
         seconds=13 if self.active_pack and self.active_pack.schema==3 else response.seconds
@@ -403,7 +408,36 @@ class Controller(QObject):
         if not self.active_pack or response.action not in self.active_pack.actions:self.pet.play_interaction_motion()
         self.interaction_timer.start(round(seconds*1000));self.refresh()
 
+    def start_drag(self):
+        pack=self.active_pack
+        if not pack or not {'drag_lift','drag_drop'}<=pack.actions.keys() or not self.pet.isVisible():return
+        if derive_display(self.sessions,time.time()).state in ('review','waiting','failed'):return
+        start=0
+        mapping=pack.action('drag_lift').release_frames
+        if self.drag_action=='drag_drop' and self.drag_pack==pack.key and mapping:
+            start=min(range(len(mapping)),key=lambda i:abs(mapping[i]-self.player.frame_number))
+        self.idle_director.cancel();self.ambient_director.cancel();self.finish_interaction(refresh=False)
+        self.pet.lift_animation.stop();self.pet._set_lift(0);self.pet.motion_animation.stop();self.pet._set_motion(0)
+        self.drag_action='drag_lift';self.drag_pack=pack.key
+        self.player.load(pack,'drag_lift',start_frame=start,preserve_frame=True,restart=True)
+        self.refresh()
+
+    def end_drag(self):
+        if self.drag_action!='drag_lift' or not self.active_pack:return
+        mapping=self.active_pack.action('drag_lift').release_frames
+        start=mapping[min(self.player.frame_number,len(mapping)-1)] if mapping else 0
+        self.drag_action='drag_drop'
+        self.player.load(self.active_pack,'drag_drop',start_frame=start,preserve_frame=True,restart=True)
+        self.refresh()
+
+    def cancel_drag(self):
+        if self.drag_action:self.drag_return=True
+        self.drag_action=None;self.drag_pack=None
+
     def finish_long_interaction(self):
+        if self.drag_action:
+            if self.drag_action=='drag_drop':self.cancel_drag();self.refresh()
+            return
         if self.active_interaction and self.active_pack and self.active_pack.schema==3:
             self.finish_interaction()
         elif self.idle_director.active:
@@ -426,6 +460,7 @@ class Controller(QObject):
         self.apply_settings(replace(self.settings,card_only=True))
 
     def restore_character(self):
+        self.cancel_drag();self.drag_return=False;self.pet.authored_drag=False
         self.idle_director.cancel()
         self.ambient_director.cancel()
         self.active_pack=None
@@ -444,6 +479,7 @@ class Controller(QObject):
                 self.settings=replace(self.settings,character='builtin')
                 save_settings(self.root,self.settings)
                 self.bubble.materials.status.setText('所选素材不可用，已恢复内置角色。')
+        self.pet.authored_drag=bool(self.active_pack and {'drag_lift','drag_drop'}<=self.active_pack.actions.keys())
         self.player.set_visible(self.pet.isVisible())
         self.bubble.materials.reload(self.settings.character)
         if not self.active_pack and self.pet.isVisible():self.pet.timer.start()
@@ -645,10 +681,12 @@ class Controller(QObject):
     def refresh(self):
         display = derive_display(self.sessions, time.time())
         now=time.monotonic()
+        if self.drag_action and (not self.pet.isVisible() or not self.active_pack or self.active_pack.key!=self.drag_pack
+                                or display.state in ('review','waiting','failed') or self.player.error):self.cancel_drag()
         if self.active_interaction and (now>=self.interaction_deadline or display.state in ('review','waiting','failed')
                                        or not self.pet.isVisible()):
             self.finish_interaction(refresh=False)
-        eligible=(self.pet.isVisible() and not self.settings.card_only and not self.active_interaction
+        eligible=(self.pet.isVisible() and not self.settings.card_only and not self.active_interaction and not self.drag_action
                   and self.bubble.mode in ('capsule','summary','window') and self.pet.press_position is None
                   and not self.pet.context_menu.isVisible() and not self.bubble.context_menu.isVisible()
                   and idle_allowed(self.sessions,display,time.time()))
@@ -657,11 +695,15 @@ class Controller(QObject):
         ambient=self.ambient_director.step(now,False)
         base='idle' if display.state=='done' and idle_allowed(self.sessions,display,time.time()) else display.state
         action=self.active_interaction.action if self.active_interaction else leisure.action if leisure else ambient.action if ambient else base
+        action=self.drag_action or action
         self.visual_action=action
         self.pet.set_display(display)
         self.bubble.set_display(display)
         if self.active_pack and self.pet.isVisible():
-            try:self.player.load(self.active_pack,action,defer=not self.active_interaction and action not in ('thinking','working','review','waiting','failed'))
+            try:
+                if not self.drag_action:
+                    self.player.load(self.active_pack,action,defer=not self.drag_return and not self.active_interaction and action not in ('thinking','working','review','waiting','failed'),preserve_frame=self.drag_return)
+                    self.drag_return=False
             except MaterialError:
                 self.player.clear();self.active_pack=None
                 self.pet.timer.start()
@@ -753,6 +795,7 @@ class Controller(QObject):
             self.bubble.set_quick_action(settings.quick_action,settings.quick_url)
             self.bubble.set_avatar_hidden(settings.card_only or self.avatar_collapsed,settings.card_only)
             self.pet.setVisible(self.user_visible and not settings.card_only and not self.avatar_collapsed)
+            self.pet.authored_drag=bool(self.active_pack and {'drag_lift','drag_drop'}<=self.active_pack.actions.keys())
             self.player.set_visible(self.pet.isVisible())
             if settings.card_only:
                 self.player.clear();self.active_pack=None;self.pet.timer.stop()
@@ -964,7 +1007,10 @@ def run_app(root: Path, demo=False, *, quit_requested=False, show_settings=False
     if open_chat:QTimer.singleShot(0,controller.open_current_conversation)
     if capture:
         def capture_view():
-            if capture_page=='interaction':controller.bubble.set_compact(True);controller.interact()
+            if capture_page in ('drag_lift','drag_drop'):
+                controller.start_drag()
+                if capture_page=='drag_drop':QTimer.singleShot(500,controller.end_drag)
+            elif capture_page=='interaction':controller.bubble.set_compact(True);controller.interact()
             elif capture_page in ('capsule','summary','window'):controller.bubble.set_mode(capture_page)
             else:controller.bubble.open_page(capture_page)
             app.processEvents()

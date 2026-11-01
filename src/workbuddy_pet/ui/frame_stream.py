@@ -1,4 +1,5 @@
 """Bounded, cancellable RGBA decoding. No Qt objects belong to the worker."""
+from dataclasses import replace
 import queue
 import threading
 from ..materials import iter_animation
@@ -7,20 +8,20 @@ _SLOTS = threading.BoundedSemaphore(2)
 
 
 class FrameStream:
-    def __init__(self, path, loop, loop_range=None):
+    def __init__(self, path, loop, loop_range=None, start_frame=0):
         self.frames = queue.Queue(6)
         self.stop = threading.Event()
         self.done = threading.Event()
         self.exit = threading.Event()
         self.tail_started = threading.Event()
         self.error = None
-        self.thread = threading.Thread(target=self._run, args=(path, loop, loop_range), daemon=True)
+        self.thread = threading.Thread(target=self._run, args=(path, loop, loop_range, start_frame), daemon=True)
         self.thread.start()
 
     def close(self):
         self.stop.set()
 
-    def _run(self, path, loop, loop_range):
+    def _run(self, path, loop, loop_range, start_frame):
         acquired = False
         try:
             while not self.stop.is_set():
@@ -32,6 +33,8 @@ class FrameStream:
             first = True
             while not self.stop.is_set():
                 for index,frame in enumerate(iter_animation(path, long=True)):
+                    if self.stop.is_set():return
+                    if first and index<start_frame:continue
                     if loop_range:
                         if not first and index < loop_range[0]:continue
                         if index == loop_range[1]:
@@ -41,7 +44,7 @@ class FrameStream:
                         return
                     while not self.stop.is_set():
                         try:
-                            self.frames.put(frame, timeout=.05)
+                            self.frames.put(replace(frame,number=index), timeout=.05)
                             break
                         except queue.Full:
                             pass
