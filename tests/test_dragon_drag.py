@@ -70,7 +70,7 @@ def test_drag_cancel_and_other_character_fallback(qt_app,tmp_path):
 def test_drag_pair_rejects_missing_action_and_invalid_mapping(monkeypatch):
     import json,copy,pytest
     from workbuddy_pet import materials
-    pack=builtin_pack('builtin-dragon-maid');original=json.loads((pack.root/'manifest.json').read_text())
+    pack=builtin_pack('builtin-dragon-maid');original=json.loads((pack.root/'manifest.json').read_text(encoding='utf-8'))
     for broken in ('pair','mapping'):
         data=copy.deepcopy(original)
         if broken=='pair':del data['actions']['drag_drop']
